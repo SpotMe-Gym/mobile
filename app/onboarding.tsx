@@ -4,21 +4,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useUserStore } from '../store/userStore';
 import { Button } from '../components/ui/Button';
-import { Ruler, Weight, User } from 'lucide-react-native';
+import { Ruler, Weight, User, Hash, Minus, Plus } from 'lucide-react-native';
 
 export default function Onboarding() {
   const router = useRouter();
-  const { setName, setGender, setHeight, setWeight, completeOnboarding } = useUserStore();
+  const { setName, setGender, setHeight, setWeight, setAge, completeOnboarding } = useUserStore();
 
   const [form, setForm] = useState({
     name: '',
     gender: '' as 'Male' | 'Female' | 'Other' | '',
     height: '',
-    weight: ''
+    weight: '',
+    age: '25', // Default age
   });
 
   const handleFinish = async () => {
-    if (!form.name || !form.gender || !form.height || !form.weight) {
+    if (!form.name || !form.gender || !form.height || !form.weight || !form.age) {
       Alert.alert("Missing Information", "Please fill in all fields to continue.");
       return;
     }
@@ -27,6 +28,7 @@ export default function Onboarding() {
     setGender(form.gender as any);
     setHeight(form.height);
     setWeight(form.weight);
+    setAge(form.age);
     completeOnboarding();
 
     // Slight delay to ensure state updates before navigation (though persist is async, usually fast enough)
@@ -75,6 +77,37 @@ export default function Onboarding() {
                 </Text>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        {/* Age Input (Premium Tactile UI) */}
+        <View className="mb-6">
+          <Text className="text-white font-medium mb-3 ml-1">Age</Text>
+          <View className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex-row justify-between items-center">
+            <TouchableOpacity
+              onPress={() => {
+                const current = parseInt(form.age) || 25;
+                if (current > 10) setForm({ ...form, age: (current - 1).toString() });
+              }}
+              className="h-12 w-12 bg-zinc-800 rounded-full items-center justify-center active:bg-zinc-700"
+            >
+              <Minus size={20} color="white" />
+            </TouchableOpacity>
+
+            <View className="items-center">
+              <Text className="text-4xl font-bold text-white">{form.age}</Text>
+              <Text className="text-zinc-500 text-xs uppercase tracking-widest">Years</Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => {
+                const current = parseInt(form.age) || 25;
+                if (current < 100) setForm({ ...form, age: (current + 1).toString() });
+              }}
+              className="h-12 w-12 bg-zinc-800 rounded-full items-center justify-center active:bg-zinc-700"
+            >
+              <Plus size={20} color="white" />
+            </TouchableOpacity>
           </View>
         </View>
 

@@ -1,0 +1,40 @@
+{
+  "common": {
+    "hello": "Hello",
+    "monday": "Monday",
+    "jan": "Jan"
+  },
+  "dashboard": {
+    "bodyWeight": "Body Weight",
+    "kg": "kg",
+    "thisWeek": "this week",
+    "todaysPlan": "Today's Plan",
+    "start": "Start",
+    "nutrition": "Nutrition",
+    "calories": "Calories",
+    "logMeal": "Log Meal",
+    "addWeight": "Add Weight",
+    "recentActivity": "Recent Activity",
+    "completed": "Completed"
+  },
+  "tabs": {
+    "home": "Home",
+    "workouts": "Workouts",
+    "nutrition": "Nutrition",
+    "profile": "Profile"
+  },
+  "settings": {
+    "units": "Units & Measurements",
+    "language": "Language",
+    "weight": "Weight Unit",
+    "height": "Height Unit",
+    "metric": "Metric",
+    "imperial": "Imperial",
+    "selectLanguage": "Select Language",
+    "english": "English",
+    "italian": "Italian",
+    "systemDefault": "System Default",
+    "accountDetails": "Account Details",
+    "appPreferences": "App Preferences"
+  }
+}

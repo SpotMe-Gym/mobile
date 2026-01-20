@@ -172,11 +172,13 @@ export function MacroCarousel({ totals }: MacroCarouselProps) {
 
         {/* Slide 2: Micros */}
         <View style={{ width: CARD_WIDTH }}>
-          <Card className={`bg-zinc-900 border border-zinc-800 p-5 ${expanded ? 'h-auto' : 'h-80'}`}>
+          <Card className={`bg-zinc-900 border border-zinc-800 p-5 ${expanded ? 'min-h-80' : 'h-80'}`}>
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-white text-lg font-bold">Micronutrients</Text>
-              <TouchableOpacity onPress={toggleExpand} className="p-2 bg-zinc-800 rounded-full">
-                {expanded ? <ChevronUp size={18} color="white" /> : <ChevronDown size={18} color="white" />}
+              <TouchableOpacity onPress={toggleExpand} className="p-2 bg-zinc-800 rounded-full h-8 w-8 items-center justify-center">
+                <View pointerEvents="none">
+                  {expanded ? <ChevronUp size={18} color="white" /> : <ChevronDown size={18} color="white" />}
+                </View>
               </TouchableOpacity>
             </View>
 

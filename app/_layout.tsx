@@ -1,11 +1,16 @@
 import "../global.css";
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../i18n'; // Import the instance
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { cssInterop } from 'nativewind';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 import { useUserStore } from '../store/userStore';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 cssInterop(SafeAreaView, { className: 'style' });
 
@@ -34,13 +39,17 @@ export default function RootLayout() {
   if (!isMounted) return null;
 
   return (
-    <View className="flex-1 bg-background">
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A0A0A' } }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-        <Stack.Screen name="nutrition-modal" options={{ headerShown: false, presentation: 'modal' }} />
-      </Stack>
-    </View>
+    <SafeAreaProvider>
+      <I18nextProvider i18n={i18n}>
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="light" />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A0A0A' } }}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+            <Stack.Screen name="nutrition-modal" options={{ headerShown: false, presentation: 'modal' }} />
+          </Stack>
+        </QueryClientProvider>
+      </I18nextProvider>
+    </SafeAreaProvider>
   );
 }

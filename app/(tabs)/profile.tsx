@@ -1,18 +1,28 @@
 import { View, Text, Image, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '../../store/userStore';
-import { Card } from '../../components/ui/Card'; // Fixed import path
-import { Settings, ChevronRight, User, Hash, Ruler, Weight } from 'lucide-react-native';
+import { Card } from '../../components/ui/Card';
+import { Settings, ChevronRight, User, Hash, Ruler, Weight, Languages } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 export default function Profile() {
-  const { name, weight, height } = useUserStore();
+  const router = useRouter();
+  const { t } = useTranslation();
+  const { name, weight, height, units } = useUserStore();
+
+  const settingsItems = [
+    { icon: User, label: t('settings.accountDetails'), path: null },
+    { icon: Hash, label: t('settings.units'), path: '/settings/units' },
+    { icon: Languages, label: t('settings.language'), path: '/settings/language' },
+  ];
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView className="flex-1 px-4">
         {/* Header */}
         <View className="flex-row justify-between items-center mb-6 mt-2">
-          <Text className="text-3xl font-bold text-white">Profile</Text>
+          <Text className="text-3xl font-bold text-white">{t('tabs.profile')}</Text>
           <TouchableOpacity>
             <Settings color="white" size={24} />
           </TouchableOpacity>
@@ -30,17 +40,17 @@ export default function Profile() {
         </View>
 
         {/* Stats Grid */}
-        <Text className="text-white text-lg font-bold mb-4">Physical Stats</Text>
+        <Text className="text-white text-lg font-bold mb-4">{t('dashboard.bodyWeight')} & Stats</Text>
         <View className="flex-row gap-3 mb-8">
           <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
             <Weight color="#3b82f6" size={24} />
             <Text className="text-white text-xl font-bold mt-2">{weight || '--'}</Text>
-            <Text className="text-zinc-500 text-xs">Weight (kg)</Text>
+            <Text className="text-zinc-500 text-xs">{units.weight}</Text>
           </Card>
           <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
             <Ruler color="#f97316" size={24} />
             <Text className="text-white text-xl font-bold mt-2">{height || '--'}</Text>
-            <Text className="text-zinc-500 text-xs">Height (cm)</Text>
+            <Text className="text-zinc-500 text-xs">{units.height}</Text>
           </Card>
           <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
             <Hash color="#22c55e" size={24} />
@@ -50,16 +60,13 @@ export default function Profile() {
         </View>
 
         {/* Settings List */}
-        <Text className="text-white text-lg font-bold mb-4">Settings</Text>
+        <Text className="text-white text-lg font-bold mb-4">{t('settings.appPreferences')}</Text>
         <View className="bg-zinc-900 rounded-2xl overflow-hidden mb-10">
-          {[
-            { icon: User, label: "Account Details" },
-            { icon: Hash, label: "Units & Measurements" },
-            { icon: Settings, label: "App Preferences" },
-          ].map((item, i) => (
+          {settingsItems.map((item, i) => (
             <TouchableOpacity
               key={i}
-              className={`flex-row items-center justify-between p-4 ${i !== 2 ? 'border-b border-zinc-800' : ''}`}
+              onPress={() => item.path && router.push(item.path as any)}
+              className={`flex-row items-center justify-between p-4 ${i !== settingsItems.length - 1 ? 'border-b border-zinc-800' : ''}`}
             >
               <View className="flex-row items-center">
                 <item.icon size={20} color="white" />

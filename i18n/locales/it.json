@@ -1,0 +1,40 @@
+{
+  "common": {
+    "hello": "Ciao",
+    "monday": "Lunedì",
+    "jan": "Gen"
+  },
+  "dashboard": {
+    "bodyWeight": "Peso Corporeo",
+    "kg": "kg",
+    "thisWeek": "questa settimana",
+    "todaysPlan": "Piano di Oggi",
+    "start": "Inizia",
+    "nutrition": "Nutrizione",
+    "calories": "Calorie",
+    "logMeal": "Aggiungi Pasto",
+    "addWeight": "Aggiungi Peso",
+    "recentActivity": "Attività Recente",
+    "completed": "Completato"
+  },
+  "tabs": {
+    "home": "Home",
+    "workouts": "Allenamenti",
+    "nutrition": "Nutrizione",
+    "profile": "Profilo"
+  },
+  "settings": {
+    "units": "Unità di Misura",
+    "language": "Lingua",
+    "weight": "Unità Peso",
+    "height": "Unità Altezza",
+    "metric": "Metrico",
+    "imperial": "Imperiale",
+    "selectLanguage": "Seleziona Lingua",
+    "english": "Inglese",
+    "italian": "Italiano",
+    "systemDefault": "Predefinito",
+    "accountDetails": "Dettagli Account",
+    "appPreferences": "Preferenze App"
+  }
+}

@@ -5,6 +5,7 @@ import { X } from 'lucide-react-native';
 import { useNutritionStore } from '../store/nutritionStore';
 import { MacroCarousel } from '../components/nutrition/MacroCarousel';
 import { MealList } from '../components/nutrition/MealList';
+import { Icon } from '../components/ui/Icon';
 
 
 export default function NutritionModal() {
@@ -38,8 +39,9 @@ export default function NutritionModal() {
           <TouchableOpacity
             onPress={() => router.back()}
             className="h-10 w-10 bg-zinc-900 rounded-full items-center justify-center"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <X size={20} color="white" />
+            <Icon icon={X} size={20} color="white" />
           </TouchableOpacity>
         </View>
 
