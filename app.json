@@ -37,6 +37,19 @@
             "deploymentTarget": "16.0"
           }
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow SpotMe to scan food barcodes.",
+          "microphonePermission": "Allow SpotMe to access microphone for video."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow SpotMe to find food products available in your region."
+        }
       ]
     ]
   }

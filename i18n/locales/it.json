@@ -15,7 +15,9 @@
     "logMeal": "Aggiungi Pasto",
     "addWeight": "Aggiungi Peso",
     "recentActivity": "Attività Recente",
-    "completed": "Completato"
+    "completed": "Completato",
+    "sinceLast": "dall'ultimo inserimento",
+    "noChange": "Nessun cambiamento"
   },
   "tabs": {
     "home": "Home",

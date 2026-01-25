@@ -39,17 +39,46 @@ export default function RootLayout() {
   if (!isMounted) return null;
 
   return (
-    <SafeAreaProvider>
-      <I18nextProvider i18n={i18n}>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A0A0A' } }}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-            <Stack.Screen name="nutrition-modal" options={{ headerShown: false, presentation: 'modal' }} />
-          </Stack>
-        </QueryClientProvider>
-      </I18nextProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <I18nextProvider i18n={i18n}>
+          <QueryClientProvider client={queryClient}>
+            <StatusBar style="light" />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A0A0A' } }}>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+              <Stack.Screen name="profile" options={{ headerShown: false }} />
+              <Stack.Screen name="workouts" options={{ headerShown: false }} />
+              <Stack.Screen name="nutrition/search" options={{ headerShown: false }} />
+
+              <Stack.Screen name="nutrition-modal" options={{ headerShown: false, presentation: 'modal' }} />
+              <Stack.Screen
+                name="nutrition-detail"
+                options={{
+                  headerShown: false,
+                  presentation: 'transparentModal',
+                  animation: 'none',
+                  animationDuration: 250,
+                  gestureEnabled: false,
+                  contentStyle: { backgroundColor: 'transparent' },
+                }}
+              />
+              <Stack.Screen
+                name="body-weight-detail"
+                options={{
+                  presentation: 'transparentModal',
+                  animation: 'none',
+                  animationDuration: 250,
+                  gestureEnabled: false,
+                  contentStyle: { backgroundColor: 'transparent' },
+                }}
+              />
+            </Stack>
+          </QueryClientProvider>
+        </I18nextProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
+
+// Force route refresh

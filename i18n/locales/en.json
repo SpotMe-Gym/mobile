@@ -15,7 +15,9 @@
     "logMeal": "Log Meal",
     "addWeight": "Add Weight",
     "recentActivity": "Recent Activity",
-    "completed": "Completed"
+    "completed": "Completed",
+    "sinceLast": "since last entry",
+    "noChange": "No change"
   },
   "tabs": {
     "home": "Home",

@@ -2,6 +2,7 @@ import { View, Text, ScrollView, Dimensions, TouchableOpacity, LayoutAnimation, 
 import { Card } from '../ui/Card';
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { CalorieGauge } from './CalorieGauge';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -18,76 +19,10 @@ interface MacroCarouselProps {
     fat: number;
   };
   micros?: { [key: string]: number }; // Placeholder for now
+  showGauge?: boolean; // Whether to show the gauge (false when shown separately)
 }
 
-const SegmentedGauge = ({ totals, limit }: { totals: { calories: number; protein: number; carbs: number; fat: number }; limit: number }) => {
-  const segments = 40; // Number of dashes
-  const radius = 80; // Arc radius
-  const startAngle = -90;
-  const endAngle = 90;
-  const range = endAngle - startAngle;
-  const step = range / (segments - 1);
-
-  const percentage = Math.min(Math.max(totals.calories / limit, 0), 1);
-  const activeSegments = Math.round(percentage * segments);
-
-  // Calculate Calorie Breakdown
-  const proteinCals = totals.protein * 4;
-  const carbsCals = totals.carbs * 4;
-  const fatCals = totals.fat * 9;
-  const totalCalculated = proteinCals + carbsCals + fatCals || 1; // avoid divide by zero
-
-  // Distribute active segments proportionally
-  const pRatio = proteinCals / totalCalculated;
-  const cRatio = carbsCals / totalCalculated;
-
-  const pSegs = Math.round(activeSegments * pRatio);
-  const cSegs = Math.round(activeSegments * cRatio);
-
-  // Determine index thresholds
-  const pEnd = pSegs;
-  const cEnd = pSegs + cSegs;
-
-  return (
-    <View className="items-center justify-center h-48 -mb-12">
-      <View className="relative items-center justify-center" style={{ width: radius * 2, height: radius }}>
-        {Array.from({ length: segments }).map((_, i) => {
-          const angle = startAngle + (i * step);
-          const isActive = i < activeSegments;
-
-          let color = 'bg-zinc-800';
-          if (isActive) {
-            if (i < pEnd) color = 'bg-blue-500';
-            else if (i < cEnd) color = 'bg-orange-500';
-            else color = 'bg-yellow-500';
-          }
-
-          return (
-            <View
-              key={i}
-              className={`absolute w-1 h-3 rounded-full ${color}`}
-              style={{
-                transform: [
-                  { rotate: `${angle}deg` },
-                  { translateY: -radius },
-                ],
-                opacity: isActive ? 1 : 0.4
-              }}
-            />
-          );
-        })}
-
-        {/* Center Text */}
-        <View className="absolute bottom-0 items-center">
-          <Text className="text-4xl font-bold text-white">{totals.calories}</Text>
-          <Text className="text-zinc-500 text-xs font-medium">of {limit} kcal</Text>
-        </View>
-      </View>
-    </View>
-  );
-};
-
-export function MacroCarousel({ totals }: MacroCarouselProps) {
+export function MacroCarousel({ totals, showGauge = true }: MacroCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
@@ -130,15 +65,21 @@ export function MacroCarousel({ totals }: MacroCarouselProps) {
       >
         {/* Slide 1: Macros */}
         <View style={{ width: CARD_WIDTH }}>
-          <Card className="bg-zinc-900 border border-zinc-800 p-5 h-80 justify-between mr-1">
+          <Card className={`bg-zinc-900 border border-zinc-800 p-5 ${showGauge ? 'h-80' : 'h-auto'} justify-between mr-1`}>
             <View>
               <Text className="text-white text-xl font-bold mb-2">Daily Summary</Text>
 
-              {/* Segmented Semicircle Chart */}
-              <SegmentedGauge totals={totals} limit={2800} />
+              {/* Segmented Semicircle Chart with target markers */}
+              {showGauge && (
+                <CalorieGauge 
+                  totals={totals} 
+                  size="large"
+                  targets={{ calories: 2800, protein: 180, carbs: 300, fat: 80 }}
+                />
+              )}
 
               {/* Macros Row */}
-              <View className="flex-row gap-3 mt-4">
+              <View className={`flex-row gap-3 ${showGauge ? 'mt-4' : 'mt-2'}`}>
                 {/* Protein */}
                 <View className="flex-1 bg-blue-900/20 p-3 rounded-2xl items-center border border-blue-900/30">
                   <Text className="text-blue-400 font-bold text-xl">{totals.protein}g</Text>

@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Plus, Play, Dumbbell } from 'lucide-react-native';
 import { FlashList } from '@shopify/flash-list';
 

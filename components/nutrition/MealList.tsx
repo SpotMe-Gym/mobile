@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Card } from '../ui/Card';
 import { Meal, useNutritionStore } from '../../store/nutritionStore';
 import { Plus, Trash2 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 interface MealListProps {
   meals: Meal[];
@@ -10,6 +11,7 @@ interface MealListProps {
 
 export function MealList({ meals, date }: MealListProps) {
   const { removeFood } = useNutritionStore();
+  const router = useRouter();
 
   return (
     <View className="pb-10">
@@ -26,7 +28,10 @@ export function MealList({ meals, date }: MealListProps) {
             {meal.foods.length === 0 ? (
               <Card className="bg-zinc-900 border border-zinc-800 py-6 items-center border-dashed">
                 <Text className="text-zinc-600 mb-2">No food logged yet</Text>
-                <TouchableOpacity className="flex-row items-center">
+                <TouchableOpacity
+                  className="flex-row items-center"
+                  onPress={() => router.push('/nutrition/search')}
+                >
                   <Plus size={16} color="#3b82f6" />
                   <Text className="text-blue-500 font-bold ml-1">Add Food</Text>
                 </TouchableOpacity>
@@ -47,7 +52,10 @@ export function MealList({ meals, date }: MealListProps) {
                     </TouchableOpacity>
                   </Card>
                 ))}
-                <TouchableOpacity className="flex-row items-center justify-center mt-2 py-2 bg-zinc-800/50 rounded-lg border border-zinc-800 border-dashed">
+                <TouchableOpacity
+                  className="flex-row items-center justify-center mt-2 py-2 bg-zinc-800/50 rounded-lg border border-zinc-800 border-dashed"
+                  onPress={() => router.push('/nutrition/search')}
+                >
                   <Plus size={16} color="#3b82f6" />
                   <Text className="text-blue-500 font-bold ml-1 text-sm bg-transparent">Add item to {meal.name}</Text>
                 </TouchableOpacity>

@@ -1,15 +1,17 @@
 import { View, Text, Image, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUserStore } from '../../store/userStore';
-import { Card } from '../../components/ui/Card';
+import { useUserStore } from '../store/userStore';
+import { Card } from '../components/ui/Card';
 import { Settings, ChevronRight, User, Hash, Ruler, Weight, Languages } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useUnitConverter } from '@/hooks/useUnitConverter';
 
 export default function Profile() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { name, weight, height, units } = useUserStore();
+  const { name } = useUserStore();
+  const { currentWeight, currentHeight } = useUnitConverter();
 
   const settingsItems = [
     { icon: User, label: t('settings.accountDetails'), path: null },
@@ -44,13 +46,13 @@ export default function Profile() {
         <View className="flex-row gap-3 mb-8">
           <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
             <Weight color="#3b82f6" size={24} />
-            <Text className="text-white text-xl font-bold mt-2">{weight || '--'}</Text>
-            <Text className="text-zinc-500 text-xs">{units.weight}</Text>
+            <Text className="text-white text-xl font-bold mt-2">{currentWeight.formatted}</Text>
+            <Text className="text-zinc-500 text-xs">{currentWeight.unit}</Text>
           </Card>
           <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
             <Ruler color="#f97316" size={24} />
-            <Text className="text-white text-xl font-bold mt-2">{height || '--'}</Text>
-            <Text className="text-zinc-500 text-xs">{units.height}</Text>
+            <Text className="text-white text-xl font-bold mt-2">{currentHeight.formatted}</Text>
+            <Text className="text-zinc-500 text-xs">{currentHeight.unit}</Text>
           </Card>
           <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
             <Hash color="#22c55e" size={24} />
