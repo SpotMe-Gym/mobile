@@ -32,7 +32,7 @@ export default function RootLayout() {
     if (!hasCompletedOnboarding && !inOnboarding) {
       router.replace('/onboarding');
     } else if (hasCompletedOnboarding && inOnboarding) {
-      router.replace('/(tabs)');
+      router.replace('/');
     }
   }, [hasCompletedOnboarding, segments, isMounted]);
 
@@ -45,7 +45,7 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <StatusBar style="light" />
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A0A0A' } }}>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="onboarding" options={{ headerShown: false }} />
               <Stack.Screen name="profile" options={{ headerShown: false }} />
               <Stack.Screen name="workouts" options={{ headerShown: false }} />

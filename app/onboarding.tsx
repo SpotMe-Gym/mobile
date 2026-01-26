@@ -147,7 +147,7 @@ export default function Onboarding() {
     completeOnboarding();
 
     setTimeout(() => {
-      router.replace('/(tabs)');
+      router.replace('/');
     }, 100);
   };
 

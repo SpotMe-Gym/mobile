@@ -106,7 +106,7 @@ function WeightDetailContent() {
         <View className="w-10 h-1 bg-zinc-600 rounded-full" />
       </View>
 
-      <View className="px-4 flex-row justify-between items-center">
+      <View className="px-4">
         <ScreenHeader
           title="Body Weight"
           onBack={handleClose}
@@ -116,13 +116,6 @@ function WeightDetailContent() {
             </TouchableOpacity>
           }
         />
-        {/* Add Entry Button */}
-        <Pressable
-          className="h-10 w-10 bg-blue-600 rounded-full items-center justify-center -mb-2"
-          onPress={() => setModalVisible(true)}
-        >
-          <Plus size={24} color="white" />
-        </Pressable>
       </View>
 
       <ScrollView
@@ -198,6 +191,15 @@ function WeightDetailContent() {
         onSave={(w, d) => addWeightEntry(toStorageWeight(w), d)}
         currentWeight={currentWeight.formatted}
       />
+
+      {/* Floating Add Button */}
+      <Pressable
+        className="absolute right-6 h-14 w-14 bg-blue-600 rounded-full items-center justify-center shadow-lg shadow-black/50 z-50"
+        style={{ bottom: insets.bottom + 24 }}
+        onPress={() => setModalVisible(true)}
+      >
+        <Plus size={32} color="white" />
+      </Pressable>
     </View>
   );
 }
