@@ -18,11 +18,21 @@ interface MacroCarouselProps {
     carbs: number;
     fat: number;
   };
+  targets?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
   micros?: { [key: string]: number }; // Placeholder for now
   showGauge?: boolean; // Whether to show the gauge (false when shown separately)
 }
 
-export function MacroCarousel({ totals, showGauge = true }: MacroCarouselProps) {
+export function MacroCarousel({
+  totals,
+  targets = { calories: 2800, protein: 180, carbs: 300, fat: 80 },
+  showGauge = true
+}: MacroCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
@@ -54,6 +64,11 @@ export function MacroCarousel({ totals, showGauge = true }: MacroCarouselProps) 
 
   const displayedMicros = expanded ? microsData : microsData.slice(0, 4);
 
+  // Calculate percentages
+  const pPct = Math.min((totals.protein / targets.protein) * 100, 100);
+  const cPct = Math.min((totals.carbs / targets.carbs) * 100, 100);
+  const fPct = Math.min((totals.fat / targets.fat) * 100, 100);
+
   return (
     <View className="mb-6">
       <ScrollView
@@ -65,45 +80,45 @@ export function MacroCarousel({ totals, showGauge = true }: MacroCarouselProps) 
       >
         {/* Slide 1: Macros */}
         <View style={{ width: CARD_WIDTH }}>
-          <Card className={`bg-zinc-900 border border-zinc-800 p-5 ${showGauge ? 'h-80' : 'h-auto'} justify-between mr-1`}>
+          <Card className={`bg-zinc-900 border border-zinc-800 p-4 ${showGauge ? 'h-auto' : 'h-auto'} justify-between mr-1`}>
             <View>
               <Text className="text-white text-xl font-bold mb-2">Daily Summary</Text>
 
               {/* Segmented Semicircle Chart with target markers */}
               {showGauge && (
-                <CalorieGauge 
-                  totals={totals} 
+                <CalorieGauge
+                  totals={totals}
+                  targets={targets}
                   size="large"
-                  targets={{ calories: 2800, protein: 180, carbs: 300, fat: 80 }}
                 />
               )}
 
               {/* Macros Row */}
-              <View className={`flex-row gap-3 ${showGauge ? 'mt-4' : 'mt-2'}`}>
+              <View className={`flex-row gap-2 ${showGauge ? 'mt-4 mb-2' : 'mt-2 mb-2'}`}>
                 {/* Protein */}
-                <View className="flex-1 bg-blue-900/20 p-3 rounded-2xl items-center border border-blue-900/30">
-                  <Text className="text-blue-400 font-bold text-xl">{totals.protein}g</Text>
-                  <Text className="text-blue-200/50 text-xs font-medium uppercase">Protein</Text>
-                  <View className="w-full h-1 bg-blue-900/30 rounded-full mt-2">
-                    <View className="h-full bg-blue-500 rounded-full" style={{ width: '40%' }} />
+                <View className="flex-1 bg-blue-900/20 p-2 rounded-xl items-center border border-blue-900/30">
+                  <Text className="text-blue-400 font-bold text-lg">{Math.round(totals.protein)}g</Text>
+                  <Text className="text-blue-200/50 text-[10px] font-medium uppercase">Protein</Text>
+                  <View className="w-full h-1 bg-blue-900/30 rounded-full mt-1.5 overflow-hidden">
+                    <View className="h-full bg-blue-500 rounded-full" style={{ width: `${pPct}%` }} />
                   </View>
                 </View>
 
                 {/* Carbs */}
-                <View className="flex-1 bg-orange-900/20 p-3 rounded-2xl items-center border border-orange-900/30">
-                  <Text className="text-orange-400 font-bold text-xl">{totals.carbs}g</Text>
-                  <Text className="text-orange-200/50 text-xs font-medium uppercase">Carbs</Text>
-                  <View className="w-full h-1 bg-orange-900/30 rounded-full mt-2">
-                    <View className="h-full bg-orange-500 rounded-full" style={{ width: '50%' }} />
+                <View className="flex-1 bg-orange-900/20 p-2 rounded-xl items-center border border-orange-900/30">
+                  <Text className="text-orange-400 font-bold text-lg">{Math.round(totals.carbs)}g</Text>
+                  <Text className="text-orange-200/50 text-[10px] font-medium uppercase">Carbs</Text>
+                  <View className="w-full h-1 bg-orange-900/30 rounded-full mt-1.5 overflow-hidden">
+                    <View className="h-full bg-orange-500 rounded-full" style={{ width: `${cPct}%` }} />
                   </View>
                 </View>
 
                 {/* Fat */}
-                <View className="flex-1 bg-yellow-900/20 p-3 rounded-2xl items-center border border-yellow-900/30">
-                  <Text className="text-yellow-400 font-bold text-xl">{totals.fat}g</Text>
-                  <Text className="text-yellow-200/50 text-xs font-medium uppercase">Fat</Text>
-                  <View className="w-full h-1 bg-yellow-900/30 rounded-full mt-2">
-                    <View className="h-full bg-yellow-500 rounded-full" style={{ width: '30%' }} />
+                <View className="flex-1 bg-yellow-900/20 p-2 rounded-xl items-center border border-yellow-900/30">
+                  <Text className="text-yellow-400 font-bold text-lg">{Math.round(totals.fat)}g</Text>
+                  <Text className="text-yellow-200/50 text-[10px] font-medium uppercase">Fat</Text>
+                  <View className="w-full h-1 bg-yellow-900/30 rounded-full mt-1.5 overflow-hidden">
+                    <View className="h-full bg-yellow-500 rounded-full" style={{ width: `${fPct}%` }} />
                   </View>
                 </View>
               </View>

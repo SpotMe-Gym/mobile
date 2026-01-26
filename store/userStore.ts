@@ -32,6 +32,16 @@ export interface UserState {
     height: 'cm' | 'ft';
   };
 
+  // New Nutrition Fields
+  activityLevel: 'Sedentary' | 'Lightly Active' | 'Moderately Active' | 'Very Active' | 'Super Active' | null;
+  goal: 'Lose Weight' | 'Maintain Weight' | 'Gain Muscle' | null;
+  targets: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
+
   setName: (name: string) => void;
   setGender: (gender: 'Male' | 'Female' | 'Other') => void;
   setHeight: (height: string) => void;
@@ -41,6 +51,11 @@ export interface UserState {
   setAge: (age: string) => void;
   setWeightUnit: (unit: 'kg' | 'lbs') => void;
   setHeightUnit: (unit: 'cm' | 'ft') => void;
+
+  setActivityLevel: (level: 'Sedentary' | 'Lightly Active' | 'Moderately Active' | 'Very Active' | 'Super Active') => void;
+  setGoal: (goal: 'Lose Weight' | 'Maintain Weight' | 'Gain Muscle') => void;
+  setTargets: (targets: { calories: number; protein: number; carbs: number; fat: number }) => void;
+
   completeOnboarding: () => void;
   resetUser: () => void;
 }
@@ -59,6 +74,10 @@ export const useUserStore = create<UserState>()(
         weight: 'kg',
         height: 'cm',
       },
+
+      activityLevel: null,
+      goal: null,
+      targets: { calories: 2800, protein: 180, carbs: 300, fat: 80 },
 
       setName: (name) => set({ name }),
       setGender: (gender) => set({ gender }),
@@ -112,8 +131,25 @@ export const useUserStore = create<UserState>()(
       setAge: (age) => set({ age }),
       setWeightUnit: (unit) => set((state) => ({ units: { ...state.units, weight: unit } })),
       setHeightUnit: (unit) => set((state) => ({ units: { ...state.units, height: unit } })),
+
+      setActivityLevel: (level) => set({ activityLevel: level }),
+      setGoal: (goal) => set({ goal }),
+      setTargets: (targets) => set({ targets }),
+
       completeOnboarding: () => set({ hasCompletedOnboarding: true }),
-      resetUser: () => set({ name: '', gender: null, height: '', weight: '', age: '', hasCompletedOnboarding: false, weightHistory: [], units: { weight: 'kg', height: 'cm' } }),
+      resetUser: () => set({
+        name: '',
+        gender: null,
+        height: '',
+        weight: '',
+        age: '',
+        hasCompletedOnboarding: false,
+        weightHistory: [],
+        units: { weight: 'kg', height: 'cm' },
+        activityLevel: null,
+        goal: null,
+        targets: { calories: 2800, protein: 180, carbs: 300, fat: 80 }
+      }),
     }),
     {
       name: 'user-storage',

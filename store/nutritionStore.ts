@@ -10,6 +10,8 @@ export interface FoodItem {
   protein: number;
   carbs: number;
   fat: number;
+  brand?: string;
+  image_url?: string;
   micros?: { [key: string]: number };
 }
 
@@ -23,8 +25,14 @@ export interface DailyLog {
   meals: Meal[];
 }
 
+export interface HistoryItem extends FoodItem {
+  tags: string[];
+  lastUsed: string;
+}
+
 export interface NutritionState {
   logs: { [date: string]: DailyLog }; // Keyed by date for O(1) access
+  knownFoods: Record<string, HistoryItem>; // Local database of used foods
 
   // Actions
   addFood: (date: string, mealName: Meal['name'], food: FoodItem) => void;
@@ -43,8 +51,10 @@ export const useNutritionStore = create<NutritionState>()(
   persist(
     (set, get) => ({
       logs: {},
+      knownFoods: {},
 
       addFood: (date, mealName, food) => set((state) => {
+        // 1. Update Daily Log
         const currentLog = state.logs[date] || { date, meals: JSON.parse(JSON.stringify(INITIAL_MEALS)) };
         const updatedMeals = currentLog.meals.map(meal => {
           if (meal.name === mealName) {
@@ -53,10 +63,29 @@ export const useNutritionStore = create<NutritionState>()(
           return meal;
         });
 
+        // 2. Update History (Smart Suggestions)
+        // Use food ID (barcode) or hash of name as key
+        const historyKey = food.id || food.name + (food.brand || '');
+        const existingEntry = state.knownFoods[historyKey];
+        const currentTags = existingEntry ? existingEntry.tags : [];
+        if (!currentTags.includes(mealName)) {
+          currentTags.push(mealName);
+        }
+
+        const newHistoryEntry: HistoryItem = {
+          ...food,
+          tags: currentTags,
+          lastUsed: new Date().toISOString(),
+        };
+
         return {
           logs: {
             ...state.logs,
             [date]: { ...currentLog, meals: updatedMeals }
+          },
+          knownFoods: {
+            ...state.knownFoods,
+            [historyKey]: newHistoryEntry
           }
         };
       }),

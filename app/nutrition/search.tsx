@@ -1,15 +1,33 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal } from 'react-native';
+import { useState, useEffect, useMemo } from 'react';
+import { View, Text, TextInput, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { searchFood, getFoodByBarcode, FoodProduct } from '../../services/foodService';
-import { Search, Scan, X, ChevronLeft, MapPin } from 'lucide-react-native';
+import { Search, Scan, X, ChevronLeft, MapPin, History, Sparkles } from 'lucide-react-native';
 import { Card } from '../../components/ui/Card';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useNutritionStore, HistoryItem } from '../../store/nutritionStore';
+
+// Helper to map HistoryItem to FoodProduct shape for consistent rendering
+const historyToProduct = (item: HistoryItem): FoodProduct => ({
+  code: item.id,
+  product_name: item.name,
+  brands: item.brand || '',
+  image_url: item.image_url || '',
+  nutriments: {
+    "energy-kcal_100g": item.calories,
+    proteins_100g: item.protein,
+    carbohydrates_100g: item.carbs,
+    fat_100g: item.fat,
+  }
+});
 
 export default function NutritionSearch() {
   const router = useRouter();
+  const { meal } = useLocalSearchParams<{ meal: string }>(); // e.g. "Breakfast"
+  const { knownFoods } = useNutritionStore();
+
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodProduct[]>([]);
   const [loading, setLoading] = useState(false);
@@ -20,14 +38,23 @@ export default function NutritionSearch() {
 
   const [permission, requestPermission] = useCameraPermissions();
 
+  // Get Smart Suggestions (Local history)
+  const suggestions = useMemo(() => {
+    const allHistory = Object.values(knownFoods);
+    // Sort by: 1. Matching meal context, 2. Recently used
+    return allHistory.sort((a, b) => {
+      const aMatch = meal && a.tags.includes(meal) ? 1 : 0;
+      const bMatch = meal && b.tags.includes(meal) ? 1 : 0;
+      if (aMatch !== bMatch) return bMatch - aMatch;
+      return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
+    }).slice(0, 10).map(historyToProduct);
+  }, [knownFoods, meal]);
+
   useEffect(() => {
     (async () => {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          console.log('Permission to access location was denied');
-          return;
-        }
+        if (status !== 'granted') return;
 
         let location = await Location.getCurrentPositionAsync({});
         let reverseGeocoded = await Location.reverseGeocodeAsync({
@@ -46,20 +73,47 @@ export default function NutritionSearch() {
     })();
   }, []);
 
+  // Initialize results with suggestions when query is empty
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults(suggestions);
+    }
+  }, [query, suggestions]);
+
   const handleSearch = async () => {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      setResults(suggestions);
+      return;
+    }
     setLoading(true);
-    const products = await searchFood(query, countryCode);
-    setResults(products);
+    Keyboard.dismiss();
+
+    // 1. Local Search
+    const lowerQuery = query.toLowerCase();
+    const localMatches = Object.values(knownFoods)
+      .filter(item => item.name.toLowerCase().includes(lowerQuery) || (item.brand && item.brand.toLowerCase().includes(lowerQuery)))
+      .map(historyToProduct);
+
+    // 2. API Search
+    const apiMatches = await searchFood(query, countryCode);
+
+    // Merge (Local first, then API, avoiding duplicates by code)
+    const combined = [...localMatches];
+    const seenCodes = new Set(localMatches.map(p => p.code));
+
+    apiMatches.forEach(p => {
+      if (!seenCodes.has(p.code)) {
+        combined.push(p);
+      }
+    });
+
+    setResults(combined);
     setLoading(false);
   };
 
   const handleScanToggle = async () => {
     try {
-      if (!permission) {
-        // Permission not loaded yet
-        return;
-      }
+      if (!permission) return;
       if (!permission.granted) {
         const result = await requestPermission();
         if (!result.granted) {
@@ -81,7 +135,14 @@ export default function NutritionSearch() {
     setIsScanning(false);
     setLoading(true);
 
-    // Search the barcode
+    // Check local first
+    if (knownFoods[data]) {
+      setResults([historyToProduct(knownFoods[data])]);
+      setLoading(false);
+      return;
+    }
+
+    // API
     const product = await getFoodByBarcode(data);
     setLoading(false);
 
@@ -92,33 +153,51 @@ export default function NutritionSearch() {
     }
   };
 
+  const navigateToProduct = (item: FoodProduct) => {
+    // Pass essential data via params
+    router.push({
+      pathname: '/nutrition/product/[code]',
+      params: {
+        code: item.code,
+        meal: meal || 'Snack',
+        initialData: JSON.stringify(item)
+      }
+    });
+  };
+
   const renderItem = ({ item }: { item: FoodProduct }) => (
-    <Card className="mb-3 bg-zinc-900 border border-zinc-800">
-      <View className="flex-row items-center">
-        {item.image_url ? (
-          <Image
-            source={{ uri: item.image_url }}
-            className="w-16 h-16 rounded-lg bg-zinc-800"
-            resizeMode="cover"
-          />
-        ) : (
-          <View className="w-16 h-16 rounded-lg bg-zinc-800 items-center justify-center">
-            <Text className="text-zinc-600 text-xs">No Img</Text>
+    <TouchableOpacity onPress={() => navigateToProduct(item)} activeOpacity={0.7} className="mb-3">
+      <Card className="bg-zinc-900 border border-zinc-800 pointer-events-none">
+        <View className="flex-row items-center">
+          {item.image_url ? (
+            <Image
+              source={{ uri: item.image_url }}
+              className="w-16 h-16 rounded-lg bg-zinc-800"
+              resizeMode="cover"
+            />
+          ) : (
+            <View className="w-16 h-16 rounded-lg bg-zinc-800 items-center justify-center">
+              <Text className="text-zinc-600 text-xs">No Img</Text>
+            </View>
+          )}
+          <View className="flex-1 ml-4">
+            <Text className="text-white font-bold text-base" numberOfLines={1}>{item.product_name}</Text>
+            <Text className="text-zinc-400 text-sm">{item.brands}</Text>
+            <View className="flex-row mt-2 gap-3">
+              <Text className="text-zinc-300 text-xs font-medium bg-zinc-800 px-2 py-0.5 rounded mr-1">
+                {Math.round(item.nutriments["energy-kcal_100g"] || 0)} kcal
+              </Text>
+              <Text className="text-blue-400 text-xs font-medium">P: {Math.round(item.nutriments.proteins_100g || 0)}</Text>
+              <Text className="text-yellow-400 text-xs font-medium">C: {Math.round(item.nutriments.carbohydrates_100g || 0)}</Text>
+              <Text className="text-red-400 text-xs font-medium">F: {Math.round(item.nutriments.fat_100g || 0)}</Text>
+            </View>
           </View>
-        )}
-        <View className="flex-1 ml-4">
-          <Text className="text-white font-bold text-base" numberOfLines={1}>{item.product_name}</Text>
-          <Text className="text-zinc-400 text-sm">{item.brands}</Text>
-          <View className="flex-row mt-1 gap-3">
-            <Text className="text-orange-400 text-xs font-medium">{Math.round(item.nutriments["energy-kcal_100g"] || 0)} kcal</Text>
-            <Text className="text-blue-400 text-xs font-medium">P: {Math.round(item.nutriments.proteins_100g || 0)}g</Text>
+          <View className="h-8 w-8 bg-blue-600 rounded-full items-center justify-center">
+            <Text className="text-white font-bold">+</Text>
           </View>
         </View>
-        <TouchableOpacity className="p-2 bg-blue-600 rounded-full">
-          <Text className="text-white text-xs font-bold">+</Text>
-        </TouchableOpacity>
-      </View>
-    </Card>
+      </Card>
+    </TouchableOpacity>
   );
 
   return (
@@ -130,7 +209,10 @@ export default function NutritionSearch() {
             <TouchableOpacity onPress={() => router.back()} className="mr-4 p-1 bg-zinc-800 rounded-full">
               <ChevronLeft size={24} color="white" />
             </TouchableOpacity>
-            <Text className="text-3xl font-bold text-white">Add Food</Text>
+            <View>
+              <Text className="text-3xl font-bold text-white">Add Food</Text>
+              {meal && <Text className="text-blue-400 font-medium text-sm">to {meal}</Text>}
+            </View>
           </View>
         </View>
 
@@ -147,7 +229,7 @@ export default function NutritionSearch() {
             <Search size={20} color="#A1A1AA" />
             <TextInput
               className="flex-1 ml-3 text-white h-full"
-              placeholder="Search food..."
+              placeholder={meal ? `Search ${meal} foods...` : "Search food..."}
               placeholderTextColor="#52525B"
               value={query}
               onChangeText={setQuery}
@@ -174,9 +256,30 @@ export default function NutritionSearch() {
             renderItem={renderItem}
             contentContainerStyle={{ paddingBottom: 20 }}
             ListEmptyComponent={
-              <View className="items-center mt-10">
-                <Text className="text-zinc-600">Search for products or scan a barcode</Text>
+              <View className="items-center mt-10 opacity-70">
+                {!query.trim() ? (
+                  <>
+                    <Sparkles size={48} color="#3b82f6" style={{ marginBottom: 16, opacity: 0.5 }} />
+                    <Text className="text-zinc-500 font-medium text-lg">Suggestions</Text>
+                    <Text className="text-zinc-600 text-center mt-2 px-10">
+                      Foods you add to {meal || 'your meals'} will appear here automatically.
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Search size={48} color="#71717a" style={{ marginBottom: 16 }} />
+                    <Text className="text-zinc-500">No results found</Text>
+                  </>
+                )}
               </View>
+            }
+            ListHeaderComponent={
+              !query.trim() && results.length > 0 ? (
+                <View className="flex-row items-center mb-3 ml-1">
+                  <History size={14} color="#a1a1aa" />
+                  <Text className="text-zinc-400 text-xs ml-2 font-medium uppercase tracking-wider">Suggested History</Text>
+                </View>
+              ) : null
             }
           />
         )}

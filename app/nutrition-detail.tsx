@@ -1,7 +1,8 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { useNutritionStore } from '../store/nutritionStore';
+import { useUserStore } from '../store/userStore';
 import { MacroCarousel } from '../components/nutrition/MacroCarousel';
 import { MealList } from '../components/nutrition/MealList';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -9,12 +10,13 @@ import { CalorieGauge } from '../components/nutrition/CalorieGauge';
 import { Card } from '../components/ui/Card';
 import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../components/ExpandableCardLayout';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'expo-router';
+import { Sparkles } from 'lucide-react-native';
 
 // Preview content - matches the home card appearance exactly
-// Preview content - matches the home card appearance exactly AND size exactly
-// Preview content - matches the home card appearance exactly AND size exactly
 function NutritionCardPreview() {
   const { getDailyTotals } = useNutritionStore();
+  const { targets } = useUserStore();
   const { cardDimensions } = useExpandableCardContext();
   const today = new Date().toISOString().split('T')[0];
   const nutrition = getDailyTotals(today);
@@ -28,7 +30,7 @@ function NutritionCardPreview() {
             <CalorieGauge
               totals={nutrition}
               size="small"
-              targets={{ calories: 2800, protein: 180, carbs: 300, fat: 80 }}
+              targets={targets}
             />
           </View>
         </Card>
@@ -39,9 +41,11 @@ function NutritionCardPreview() {
 
 // Detail content - full page with all nutrition info
 function NutritionDetailContent() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { handleClose } = useExpandableCardContext();
   const { logs, getDailyTotals } = useNutritionStore();
+  const { targets } = useUserStore();
 
   const today = new Date().toISOString().split('T')[0];
   const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -64,7 +68,15 @@ function NutritionDetailContent() {
       </View>
 
       <View className="px-4">
-        <ScreenHeader title="Nutrition" onBack={handleClose} />
+        <ScreenHeader
+          title="Nutrition"
+          onBack={handleClose}
+          rightAction={
+            <TouchableOpacity onPress={() => router.push('/chat')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Sparkles size={24} color="#3b82f6" />
+            </TouchableOpacity>
+          }
+        />
         <Text className="text-zinc-500 text-sm -mt-5 mb-4 ml-1">{dateLabel}</Text>
       </View>
 
@@ -73,7 +85,7 @@ function NutritionDetailContent() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
-        <MacroCarousel totals={totals} showGauge={true} />
+        <MacroCarousel totals={totals} targets={targets} showGauge={true} />
         <MealList meals={currentLog.meals} date={today} />
       </ScrollView>
     </View>

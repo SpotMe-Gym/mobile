@@ -25,6 +25,17 @@
     "nutrition": "Nutrition",
     "profile": "Profile"
   },
+  "food": {
+    "quantity": "Quantity",
+    "addTo": "Add to",
+    "grams": "Grams",
+    "oz": "oz",
+    "serving": "Serving",
+    "protein": "Protein",
+    "carbs": "Carbs",
+    "fat": "Fat",
+    "totalEnergy": "Total Energy"
+  },
   "settings": {
     "units": "Units & Measurements",
     "language": "Language",

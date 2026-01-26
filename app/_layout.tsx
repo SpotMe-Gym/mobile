@@ -50,8 +50,6 @@ export default function RootLayout() {
               <Stack.Screen name="profile" options={{ headerShown: false }} />
               <Stack.Screen name="workouts" options={{ headerShown: false }} />
               <Stack.Screen name="nutrition/search" options={{ headerShown: false }} />
-
-              <Stack.Screen name="nutrition-modal" options={{ headerShown: false, presentation: 'modal' }} />
               <Stack.Screen
                 name="nutrition-detail"
                 options={{
@@ -71,6 +69,14 @@ export default function RootLayout() {
                   animationDuration: 250,
                   gestureEnabled: false,
                   contentStyle: { backgroundColor: 'transparent' },
+                }}
+              />
+              <Stack.Screen
+                name="chat"
+                options={{
+                  headerShown: false,
+                  presentation: 'modal',
+                  contentStyle: { backgroundColor: '#09090b' },
                 }}
               />
             </Stack>

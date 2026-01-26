@@ -2,7 +2,7 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { TrendingUp, TrendingDown, Minus, Play } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Minus, Play, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
@@ -18,7 +18,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function Dashboard() {
   const router = useRouter();
-  const { name, weightHistory } = useUserStore();
+  const { name, weightHistory, targets } = useUserStore();
   const { currentWeight, convertWeight } = useUnitConverter();
   const { getDailyTotals } = useNutritionStore();
   const { t } = useTranslation();
@@ -38,17 +38,33 @@ export default function Dashboard() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView className="flex-1 px-4 pt-2" contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
-        <View className="mb-6 flex-row justify-between items-center">
-          <View>
-            <Text className="text-textSecondary text-sm font-medium">{t('common.monday')}, {t('common.jan')} 19</Text>
-            <Text className="text-white text-3xl font-bold">{t('common.hello')}, {name || 'User'}</Text>
-          </View>
+        <View className="mb-6 flex-row justify-between items-center relative">
+          {/* Left: Profile */}
           <Pressable
             onPress={() => router.push('/profile')}
-            className="h-10 w-10 bg-zinc-800 rounded-full items-center justify-center border border-zinc-700"
+            className="h-10 w-10 bg-zinc-800 rounded-full items-center justify-center border border-zinc-700 z-10"
           >
             <Text className="text-white font-bold">{name ? name[0].toUpperCase() : 'U'}</Text>
           </Pressable>
+
+          {/* Center: Title */}
+          <View className="absolute left-0 right-0 items-center">
+            <Text className="text-white text-xl font-black italic tracking-tighter">SPOTME</Text>
+          </View>
+
+          {/* Right: AI Chat */}
+          <Pressable
+            onPress={() => router.push('/chat')}
+            className="h-10 w-10 bg-blue-600/20 rounded-full items-center justify-center border border-blue-500/30 z-10"
+          >
+            <Sparkles size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
+          </Pressable>
+        </View>
+
+        {/* Greeting Sub-header (Optional but nice to keep context) */}
+        <View className="mb-6">
+          <Text className="text-textSecondary text-sm font-medium">{t('common.monday')}, {t('common.jan')} 19</Text>
+          <Text className="text-white text-3xl font-bold">{t('common.hello')}, {name || 'User'}</Text>
         </View>
 
         {/* Bento Grid */}
@@ -146,7 +162,7 @@ export default function Dashboard() {
                   <CalorieGauge
                     totals={nutrition}
                     size="small"
-                    targets={{ calories: 2800, protein: 180, carbs: 300, fat: 80 }}
+                    targets={targets}
                   />
                 </View>
               </Card>

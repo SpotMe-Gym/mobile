@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import Animated, { useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
@@ -9,8 +9,9 @@ import { useTranslation } from 'react-i18next';
 import { useUserStore } from '../store/userStore';
 import { WeightChart } from '../components/body-weight/WeightChart';
 import { AddWeightModal } from '../components/body-weight/AddWeightModal';
-import { TrendingUp, TrendingDown, Minus, Plus, Trash2 } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Minus, Plus, Trash2, Sparkles } from 'lucide-react-native';
 import { useUnitConverter } from '../hooks/useUnitConverter';
+import { useRouter } from 'expo-router';
 
 // Preview content - matches the home card appearance including the Gauge Fix
 function WeightCardPreview() {
@@ -64,6 +65,7 @@ function WeightCardPreview() {
 
 // Detail content
 function WeightDetailContent() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { handleClose } = useExpandableCardContext();
   const { weightHistory, addWeightEntry, removeWeightEntry } = useUserStore();
@@ -105,7 +107,15 @@ function WeightDetailContent() {
       </View>
 
       <View className="px-4 flex-row justify-between items-center">
-        <ScreenHeader title="Body Weight" onBack={handleClose} />
+        <ScreenHeader
+          title="Body Weight"
+          onBack={handleClose}
+          rightAction={
+            <TouchableOpacity onPress={() => router.push('/chat')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Sparkles size={24} color="#3b82f6" />
+            </TouchableOpacity>
+          }
+        />
         {/* Add Entry Button */}
         <Pressable
           className="h-10 w-10 bg-blue-600 rounded-full items-center justify-center -mb-2"

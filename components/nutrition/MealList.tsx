@@ -30,7 +30,7 @@ export function MealList({ meals, date }: MealListProps) {
                 <Text className="text-zinc-600 mb-2">No food logged yet</Text>
                 <TouchableOpacity
                   className="flex-row items-center"
-                  onPress={() => router.push('/nutrition/search')}
+                  onPress={() => router.push({ pathname: '/nutrition/search', params: { meal: meal.name } })}
                 >
                   <Plus size={16} color="#3b82f6" />
                   <Text className="text-blue-500 font-bold ml-1">Add Food</Text>
@@ -54,7 +54,7 @@ export function MealList({ meals, date }: MealListProps) {
                 ))}
                 <TouchableOpacity
                   className="flex-row items-center justify-center mt-2 py-2 bg-zinc-800/50 rounded-lg border border-zinc-800 border-dashed"
-                  onPress={() => router.push('/nutrition/search')}
+                  onPress={() => router.push({ pathname: '/nutrition/search', params: { meal: meal.name } })}
                 >
                   <Plus size={16} color="#3b82f6" />
                   <Text className="text-blue-500 font-bold ml-1 text-sm bg-transparent">Add item to {meal.name}</Text>
