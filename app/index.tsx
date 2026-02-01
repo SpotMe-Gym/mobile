@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useMemo, useState } from 'react';
 
-import { useWorkoutStore, Workout } from '@/store/workoutStore';
+import { Exercise, useWorkoutStore, Workout } from '@/store/workoutStore';
 import { Calendar } from 'lucide-react-native';
 
 import { useUserStore } from '@/store/userStore';
@@ -181,7 +181,7 @@ export default function Dashboard() {
                             >
                               <View>
                                 <Text className="text-white/80 font-medium text-lg mt-1" numberOfLines={1}>{workout.name}</Text>
-                                <Text className="text-white/60 text-xs mt-1">{workout.duration} min • {workout.exercises.length} Ex</Text>
+                                <Text className="text-white/60 text-xs mt-1">{workout.duration} min • {workout.exercises.filter((ex: Exercise) => ex.type !== 'rest').length} Ex</Text>
                               </View>
                             </Pressable>
 

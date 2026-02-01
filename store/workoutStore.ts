@@ -16,6 +16,7 @@ export interface Exercise {
   executionTime2?: number; // seconds (optional second phase)
   executionName2?: string;
   notes?: string;
+  type?: 'exercise' | 'rest';
 }
 
 export interface Workout {

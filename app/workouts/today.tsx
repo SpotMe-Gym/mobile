@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, Dimensions, FlatList } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Play, Sparkles, Calendar, Plus, ArrowRightLeft } from 'lucide-react-native';
+import { Play, Sparkles, Calendar, Plus, ArrowRightLeft, Armchair, Clock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../../components/ExpandableCardLayout';
@@ -232,7 +232,7 @@ function WorkoutDetailContent() {
               {/* Header for the list */}
               <View className="flex-row justify-between items-center mb-4 px-4">
                 <Text className="text-white text-lg font-bold">
-                  Exercises ({workouts[activeIndex]?.exercises.length || 0})
+                  Exercises ({workouts[activeIndex]?.exercises.filter((ex: Exercise) => ex.type !== 'rest').length || 0})
                 </Text>
                 <Text className="text-zinc-500 text-xs font-medium">
                   Showing: {workouts[activeIndex]?.name}
@@ -250,29 +250,47 @@ function WorkoutDetailContent() {
                 renderItem={({ item: workout }) => (
                   <View style={{ width: width }} className="px-1">
                     <View className="gap-3">
-                      {workout.exercises.map((ex: Exercise, i: number) => (
-                        <View key={ex.id || i} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex-row justify-between items-center">
-                          <View className="flex-row items-center gap-4">
-                            <View className="h-10 w-10 bg-zinc-800 rounded-full items-center justify-center">
-                              <Text className="text-zinc-500 font-bold">{i + 1}</Text>
+                      {workout.exercises.map((ex: Exercise, i: number) => {
+                        if (ex.type === 'rest') {
+                          return (
+                            <View key={ex.id || i} className="bg-amber-950/20 p-3 rounded-xl border border-amber-900/30 flex-row justify-between items-center mb-3">
+                              <View className="flex-row items-center gap-4">
+                                <View className="h-8 w-8 bg-amber-900/20 rounded-full items-center justify-center">
+                                  <Icon icon={Armchair} size={14} color="#d97706" />
+                                </View>
+                                <View>
+                                  <Text className="text-zinc-300 font-bold text-sm">Rest Period</Text>
+                                  <Text className="text-zinc-500 text-xs">{Math.floor(ex.restTime / 60)}m {ex.restTime % 60}s</Text>
+                                </View>
+                              </View>
                             </View>
-                            <View>
-                              <Text className="text-white font-bold">{ex.name}</Text>
-                              <View className="flex-row gap-2 mt-1 flex-wrap">
-                                <Text className="text-zinc-500 text-xs">{ex.sets} Sets • {ex.reps} Reps</Text>
-                                {(ex.executionTime || ex.executionTime2) && (
-                                  <Text className="text-zinc-500 text-xs text-blue-400">
-                                    {ex.executionTime ? `${ex.executionName || 'Exec'}: ${ex.executionTime}s` : ''}
-                                    {ex.executionTime2 ? ` + ${ex.executionName2 || 'Alt'}: ${ex.executionTime2}s` : ''}
-                                    {(ex.executionTime || ex.executionTime2) && ex.restTime ? ' • ' : ''}
-                                    {ex.restTime ? `Rest: ${ex.restTime}s` : ''}
-                                  </Text>
-                                )}
+                          );
+                        }
+
+                        return (
+                          <View key={ex.id || i} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex-row justify-between items-center mb-3">
+                            <View className="flex-row items-center gap-4">
+                              <View className="h-10 w-10 bg-zinc-800 rounded-full items-center justify-center">
+                                <Text className="text-zinc-500 font-bold">{i + 1}</Text>
+                              </View>
+                              <View>
+                                <Text className="text-white font-bold">{ex.name}</Text>
+                                <View className="flex-row gap-2 mt-1 flex-wrap">
+                                  <Text className="text-zinc-500 text-xs">{ex.sets} Sets • {ex.reps} Reps</Text>
+                                  {(ex.executionTime || ex.executionTime2) && (
+                                    <Text className="text-zinc-500 text-xs text-blue-400">
+                                      {ex.executionTime ? `${ex.executionName || 'Exec'}: ${ex.executionTime}s` : ''}
+                                      {ex.executionTime2 ? ` + ${ex.executionName2 || 'Alt'}: ${ex.executionTime2}s` : ''}
+                                      {(ex.executionTime || ex.executionTime2) && ex.restTime ? ' • ' : ''}
+                                      {ex.restTime ? `Rest: ${ex.restTime}s` : ''}
+                                    </Text>
+                                  )}
+                                </View>
                               </View>
                             </View>
                           </View>
-                        </View>
-                      ))}
+                        );
+                      })}
                     </View>
                   </View>
                 )}

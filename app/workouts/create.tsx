@@ -6,7 +6,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Plus, Trash2, GripVertical, Clock, Dumbbell, SignalHigh, Minus, ChevronUp, ChevronDown } from 'lucide-react-native';
+import { Plus, Trash2, GripVertical, Clock, Dumbbell, SignalHigh, Minus, ChevronUp, ChevronDown, Armchair, Pause } from 'lucide-react-native';
 import { useWorkoutStore, Workout, Exercise } from '../../store/workoutStore';
 import { v4 as uuidv4 } from 'uuid';
 import { Icon } from '@/components/ui/Icon';
@@ -49,6 +49,61 @@ const ExerciseCard = ({
 
   const getMin = (seconds?: number) => seconds ? Math.floor(seconds / 60).toString() : '';
   const getSec = (seconds?: number) => seconds ? (seconds % 60).toString().padStart(2, '0') : '';
+
+  // --- REST CARD VARIANT ---
+  if (ex.type === 'rest') {
+    return (
+      <View className="bg-zinc-900/50 border border-zinc-800/80 rounded-2xl p-3 mb-4 flex-row items-center">
+        {/* Left Controls (Mini version) */}
+        <View className="items-center justify-center mr-3 gap-1">
+          <TouchableOpacity onPress={() => moveExercise(index, 'up')} disabled={index === 0}
+            className={`p-1 ${index === 0 ? 'opacity-20' : ''}`}>
+            <Icon icon={ChevronUp} size={14} color="#71717a" />
+          </TouchableOpacity>
+          <Text className="text-zinc-600 text-[9px] font-bold">{index + 1}</Text>
+          <TouchableOpacity onPress={() => moveExercise(index, 'down')} disabled={index === totalCount - 1}
+            className={`p-1 ${index === totalCount - 1 ? 'opacity-20' : ''}`}>
+            <Icon icon={ChevronDown} size={14} color="#71717a" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Rest Content */}
+        <View className="flex-1 flex-row items-center gap-3">
+          <View className="bg-amber-900/10 p-2 rounded-xl border border-amber-900/20">
+            <Icon icon={Armchair} size={16} color="#d97706" />
+          </View>
+          <Text className="text-zinc-400 font-bold text-sm mr-auto">Rest Period</Text>
+
+          <View className="flex-row items-center gap-1 bg-zinc-950/30 px-3 py-2 rounded-xl border border-zinc-800/30">
+            <TextInput
+              placeholder="0"
+              placeholderTextColor="#3f3f46"
+              className="text-white font-bold text-base text-right min-w-[20px] p-0"
+              keyboardType="numeric"
+              defaultValue={getMin(ex.restTime)}
+              onChangeText={(t) => updateTime('restTime', t, getSec(ex.restTime))}
+              selectTextOnFocus
+            />
+            <Text className="text-zinc-600 text-xs font-medium pt-1">m</Text>
+            <TextInput
+              placeholder="00"
+              placeholderTextColor="#3f3f46"
+              className="text-white font-bold text-base text-right min-w-[28px] p-0"
+              keyboardType="numeric"
+              defaultValue={getSec(ex.restTime)}
+              onChangeText={(t) => updateTime('restTime', getMin(ex.restTime), t)}
+              selectTextOnFocus
+            />
+            <Text className="text-zinc-600 text-xs font-medium pt-1">s</Text>
+          </View>
+
+          <TouchableOpacity onPress={() => removeExercise(ex.id)} className="p-2 ml-1">
+            <Icon icon={Trash2} size={16} color="#ef4444" opacity={0.8} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 mb-4 flex-row">
@@ -295,7 +350,7 @@ export default function CreateWorkout() {
   }, [existing, editId, schedule]);
 
   const [exercises, setExercises] = useState<Exercise[]>(
-    existing?.exercises || [{ id: uuidv4(), name: '', sets: 3, reps: '10', restTime: 60, executionTime: 45 }]
+    existing?.exercises || [{ id: uuidv4(), name: '', sets: 3, reps: '10', restTime: 60, executionTime: 45, type: 'exercise' }]
   );
 
   // Animation Refs
@@ -338,15 +393,18 @@ export default function CreateWorkout() {
       alert("Please enter a workout name");
       return;
     }
-    const validExercises = exercises.filter(e => e.name.trim());
+    const validExercises = exercises.filter(e => e.type === 'rest' || e.name.trim());
     if (validExercises.length === 0) {
-      alert("Please add at least one exercise");
+      alert("Please add at least one exercise or rest period");
       return;
     }
 
     // Auto-calculate duration: Sum of (Sets * (Execution + Rest))
     // Converted to Minutes roughly
     const totalSeconds = validExercises.reduce((acc, ex) => {
+      if (ex.type === 'rest') {
+        return acc + (ex.restTime || 0);
+      }
       const setDuration = (ex.executionTime || 0) + (ex.executionTime2 || 0) + (ex.restTime || 0);
       return acc + (setDuration * (ex.sets || 1));
     }, 0);
@@ -387,7 +445,12 @@ export default function CreateWorkout() {
   };
 
   const addExercise = () => {
-    setExercises([...exercises, { id: uuidv4(), name: '', sets: 3, reps: '10', restTime: 60, executionTime: 45 }]);
+    setExercises([...exercises, { id: uuidv4(), name: '', sets: 3, reps: '10', restTime: 60, executionTime: 45, type: 'exercise' }]);
+    onInteraction();
+  };
+
+  const addRest = () => {
+    setExercises([...exercises, { id: uuidv4(), name: 'Rest', sets: 0, reps: '', restTime: 120, executionTime: 0, type: 'rest' }]);
     onInteraction();
   };
 
@@ -495,14 +558,24 @@ export default function CreateWorkout() {
             ))}
           </View>
 
-          {/* Always show Add Button, even if list is empty */}
-          <Button
-            label="Add Exercise"
-            variant="secondary"
-            className="bg-zinc-800 border-dashed border border-zinc-700 h-16 mb-20"
-            onPress={addExercise}
-            icon={<Icon icon={Plus} size={22} color="white" />}
-          />
+          {/* Minimalist Add Buttons */}
+          <View className="flex-row gap-4 mb-20">
+            <TouchableOpacity
+              onPress={addExercise}
+              className="flex-1 flex-row items-center justify-center py-4 rounded-2xl bg-zinc-900 border border-zinc-800 active:bg-zinc-800"
+            >
+              <Icon icon={Plus} size={18} color="#9ca3af" className="mr-2" />
+              <Text className="text-zinc-400 font-bold">Add Exercise</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={addRest}
+              className="flex-1 flex-row items-center justify-center py-4 rounded-2xl bg-zinc-900 border border-zinc-800 active:bg-zinc-800"
+            >
+              <Icon icon={Armchair} size={18} color="#d97706" className="mr-2 opacity-80" />
+              <Text className="text-zinc-400 font-bold">Add Rest</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
 
         <Animated.View
