@@ -1,10 +1,11 @@
-import { TouchableOpacity, Text, TouchableOpacityProps, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, TouchableOpacityProps, ActivityIndicator, View } from 'react-native';
 
 interface ButtonProps extends TouchableOpacityProps {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'white';
   size?: 'sm' | 'md' | 'lg';
   label: string;
   loading?: boolean;
+  icon?: React.ReactNode;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ export function Button({
   loading,
   className,
   disabled,
+  icon,
   ...props
 }: ButtonProps) {
 
@@ -58,7 +60,10 @@ export function Button({
       {loading ? (
         <ActivityIndicator color="white" size="small" />
       ) : (
-        <Text className={`${textStyles[variant]} ${textSize[size]}`}>{label}</Text>
+        <View className="flex-row items-center gap-2">
+          {icon}
+          <Text className={`${textStyles[variant]} ${textSize[size]}`}>{label}</Text>
+        </View>
       )}
     </TouchableOpacity>
   );

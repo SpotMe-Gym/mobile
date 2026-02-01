@@ -47,11 +47,12 @@ export default function RootLayout() {
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A0A0A' } }}>
               <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-              <Stack.Screen name="profile" options={{ headerShown: false }} />
-              <Stack.Screen name="workouts" options={{ headerShown: false }} />
-              <Stack.Screen name="nutrition/search" options={{ headerShown: false }} />
+              <Stack.Screen name="profile/index" options={{ headerShown: false }} />
+              <Stack.Screen name="workouts/index" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="nutrition/search" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="workouts/create" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
               <Stack.Screen
-                name="nutrition-detail"
+                name="nutrition/detail"
                 options={{
                   headerShown: false,
                   presentation: 'transparentModal',
@@ -62,8 +63,19 @@ export default function RootLayout() {
                 }}
               />
               <Stack.Screen
-                name="body-weight-detail"
+                name="body-weight/index"
                 options={{
+                  presentation: 'transparentModal',
+                  animation: 'none',
+                  animationDuration: 250,
+                  gestureEnabled: false,
+                  contentStyle: { backgroundColor: 'transparent' },
+                }}
+              />
+              <Stack.Screen
+                name="workouts/today"
+                options={{
+                  headerShown: false,
                   presentation: 'transparentModal',
                   animation: 'none',
                   animationDuration: 250,

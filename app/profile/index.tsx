@@ -1,11 +1,12 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUserStore } from '../store/userStore';
-import { Card } from '../components/ui/Card';
+import { useUserStore } from '../../store/userStore';
+import { Card } from '../../components/ui/Card';
 import { Settings, ChevronRight, ChevronLeft, User, Hash, Ruler, Weight, Languages } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useUnitConverter } from '@/hooks/useUnitConverter';
+import { Icon } from '@/components/ui/Icon';
 
 export default function Profile() {
   const router = useRouter();
@@ -26,12 +27,12 @@ export default function Profile() {
         <View className="flex-row justify-between items-center mb-6 mt-2">
           <View className="flex-row items-center">
             <TouchableOpacity onPress={() => router.back()} className="mr-3 bg-zinc-800 p-1.5 rounded-full">
-              <ChevronLeft color="white" size={24} />
+              <Icon icon={ChevronLeft} color="white" size={24} />
             </TouchableOpacity>
             <Text className="text-3xl font-bold text-white">{t('tabs.profile')}</Text>
           </View>
           <TouchableOpacity>
-            <Settings color="white" size={24} />
+            <Icon icon={Settings} color="white" size={24} />
           </TouchableOpacity>
         </View>
 

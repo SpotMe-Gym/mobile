@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/Button';
 import { TrendingUp, TrendingDown, Minus, Play, Sparkles } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useMemo, useState } from 'react';
+
+import { useWorkoutStore, Workout } from '@/store/workoutStore';
+import { Calendar } from 'lucide-react-native';
 
 import { useUserStore } from '@/store/userStore';
 import { useNutritionStore } from '@/store/nutritionStore';
@@ -16,12 +20,25 @@ import { useTranslation } from 'react-i18next';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 export default function Dashboard() {
   const router = useRouter();
   const { name, weightHistory, targets } = useUserStore();
   const { currentWeight, convertWeight } = useUnitConverter();
   const { getDailyTotals } = useNutritionStore();
   const { t } = useTranslation();
+
+  const dayName = DAYS[new Date().getDay()];
+  // Optimize selector to avoid infinite re-renders
+  const schedule = useWorkoutStore(state => state.schedule);
+  const allWorkouts = useWorkoutStore(state => state.workouts);
+  const [layoutWidth, setLayoutWidth] = useState(0);
+
+  const todaysWorkouts = useMemo(() => {
+    const workoutIds = schedule[dayName] || [];
+    return workoutIds.map(id => allWorkouts.find(w => w.id === id)).filter(Boolean) as Workout[];
+  }, [schedule, allWorkouts, dayName]);
 
   // Expandable card navigation for nutrition
   const nutritionCard = useExpandableNavigation();
@@ -31,8 +48,12 @@ export default function Dashboard() {
   const weightCard = useExpandableNavigation();
   const weightCardScale = weightCard.cardScale;
 
-  const today = new Date().toISOString().split('T')[0];
-  const nutrition = getDailyTotals(today);
+  // Expandable card navigation for workout
+  const workoutCard = useExpandableNavigation();
+  const workoutCardScale = workoutCard.cardScale;
+
+  const todayDate = new Date().toISOString().split('T')[0];
+  const nutrition = getDailyTotals(todayDate);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -61,7 +82,7 @@ export default function Dashboard() {
           </Pressable>
         </View>
 
-        {/* Greeting Sub-header (Optional but nice to keep context) */}
+        {/* Greeting Sub-header */}
         <View className="mb-6">
           <Text className="text-textSecondary text-sm font-medium">{t('common.monday')}, {t('common.jan')} 19</Text>
           <Text className="text-white text-3xl font-bold">{t('common.hello')}, {name || 'User'}</Text>
@@ -76,7 +97,7 @@ export default function Dashboard() {
             className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"
             onPressIn={weightCard.handlePressIn}
             onPressOut={weightCard.handlePressOut}
-            onPress={() => weightCard.navigateToDetail('/body-weight-detail')}
+            onPress={() => weightCard.navigateToDetail('/body-weight')}
             onLayout={weightCard.onLayout}
             style={useAnimatedStyle(() => ({
               transform: [{ scale: weightCardScale.value }],
@@ -97,7 +118,6 @@ export default function Dashboard() {
 
                     const diff = latestVal - prevVal;
                     const isGain = diff > 0;
-                    const isLoss = diff < 0;
 
                     if (history.length < 2 || diff === 0) {
                       return (
@@ -123,24 +143,97 @@ export default function Dashboard() {
           </AnimatedPressable>
 
           {/* Active Workout (Half Width) */}
-          <Card
-            className="w-[48%] h-44 justify-between bg-blue-600 border-none"
-            title={t('dashboard.todaysPlan')}
+          <Animated.View
+            ref={workoutCard.cardRef}
+            className="w-[48%] h-44"
+            onLayout={workoutCard.onLayout}
+            style={useAnimatedStyle(() => ({
+              transform: [{ scale: workoutCardScale.value }],
+            }))}
           >
-            <View>
-              <Text className="text-white/80 font-medium">Push Day A</Text>
-              <Text className="text-white/60 text-xs mt-1">45 min • 6 Exercises</Text>
-            </View>
-            <Button
-              label={t('dashboard.start')}
-              variant="ghost"
-              className="bg-white/20 mt-2"
-              onPress={() => router.push('/workouts')}
-            />
-            <View className="absolute right-2 bottom-2 opacity-20">
-              <Play size={64} color="white" />
-            </View>
-          </Card>
+            <Animated.View style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#27272a' }}>
+              {/* Header Overlay - Visual only, touches pass through */}
+              <View className="absolute top-0 left-0 right-0 px-4 pt-4 z-10" pointerEvents="none">
+                <Text className="text-white text-lg font-bold">{t('dashboard.todaysPlan')}</Text>
+              </View>
+
+              {/* Content Area - Full Bleed */}
+              <View
+                className="flex-1"
+                onLayout={(e) => setLayoutWidth(e.nativeEvent.layout.width)}
+              >
+                {layoutWidth > 0 && (
+                  todaysWorkouts.length > 0 ? (
+                    <View className="flex-1">
+                      <ScrollView
+                        horizontal
+                        pagingEnabled
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ flexGrow: 1 }}
+                      >
+                        {todaysWorkouts.map((workout, index) => (
+                          <View key={workout.id} style={{ width: layoutWidth }} className="justify-between pb-4">
+                            <Pressable
+                              className="flex-1 px-4 pt-14 justify-center"
+                              onPress={() => workoutCard.navigateToDetail('/workouts/today')}
+                              onPressIn={workoutCard.handlePressIn}
+                              onPressOut={workoutCard.handlePressOut}
+                            >
+                              <View>
+                                <Text className="text-white/80 font-medium text-lg mt-1" numberOfLines={1}>{workout.name}</Text>
+                                <Text className="text-white/60 text-xs mt-1">{workout.duration} min • {workout.exercises.length} Ex</Text>
+                              </View>
+                            </Pressable>
+
+                            <View className="px-4 pointer-events-auto">
+                              <Button
+                                label={t('dashboard.start')}
+                                variant="ghost"
+                                className="bg-white/10 mt-2"
+                                onPress={() => router.push('/workouts')}
+                              />
+                            </View>
+                          </View>
+                        ))}
+                      </ScrollView>
+
+                      {todaysWorkouts.length > 1 && (
+                        <View className="flex-row justify-center mt-1 gap-1 absolute bottom-2 right-0 left-0 pointer-events-none">
+                          {todaysWorkouts.map((_, i) => (
+                            <View key={i} className="h-1 w-1 rounded-full bg-white/30" />
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  ) : (
+                    <Pressable
+                      className="flex-1 justify-between px-4 pb-4 pt-14"
+                      onPress={() => workoutCard.navigateToDetail('/workouts/today')}
+                      onPressIn={workoutCard.handlePressIn}
+                      onPressOut={workoutCard.handlePressOut}
+                    >
+                      <View className="justify-center flex-1">
+                        <Text className="text-white/80 font-medium text-lg mt-1">Rest Day</Text>
+                        <Text className="text-white/60 text-xs mt-1">No workout set</Text>
+                      </View>
+                      <View>
+                        <Button
+                          label="Assign"
+                          variant="ghost"
+                          className="bg-white/10 mt-2"
+                          onPress={() => router.push('/workouts')}
+                        />
+                      </View>
+                    </Pressable>
+                  )
+                )}
+
+                <View className="absolute right-[-4] bottom-[-4] opacity-5 pointer-events-none z-0">
+                  {todaysWorkouts.length > 0 ? <Play size={64} color="white" /> : <Calendar size={64} color="white" />}
+                </View>
+              </View>
+            </Animated.View>
+          </Animated.View>
 
           {/* Calories (Half Width) - Animated card that zooms into detail page */}
           <AnimatedPressable
@@ -148,7 +241,7 @@ export default function Dashboard() {
             className="w-[48%] h-44"
             onPressIn={nutritionCard.handlePressIn}
             onPressOut={nutritionCard.handlePressOut}
-            onPress={() => nutritionCard.navigateToDetail('/nutrition-detail')}
+            onPress={() => nutritionCard.navigateToDetail('/nutrition/detail')}
             onLayout={nutritionCard.onLayout}
             style={useAnimatedStyle(() => ({
               transform: [{ scale: nutritionCardScale.value }],
@@ -181,7 +274,7 @@ export default function Dashboard() {
               label={t('dashboard.addWeight')}
               className="flex-1 bg-zinc-800"
               variant="secondary"
-              onPress={() => router.push('/body-weight-detail')}
+              onPress={() => router.push('/body-weight')}
             />
           </View>
 
@@ -203,9 +296,9 @@ export default function Dashboard() {
               </View>
             ))}
           </Card>
-        </View>
+        </View >
 
-      </ScrollView>
-    </SafeAreaView>
+      </ScrollView >
+    </SafeAreaView >
   );
 }

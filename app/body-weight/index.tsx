@@ -2,15 +2,15 @@ import { View, Text, ScrollView, Pressable, Alert, TouchableOpacity } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import Animated, { useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/ui/Card';
-import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../components/ExpandableCardLayout';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { Card } from '../../components/ui/Card';
+import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../../components/ExpandableCardLayout';
 import { useTranslation } from 'react-i18next';
-import { useUserStore } from '../store/userStore';
-import { WeightChart } from '../components/body-weight/WeightChart';
-import { AddWeightModal } from '../components/body-weight/AddWeightModal';
+import { useUserStore } from '../../store/userStore';
+import { WeightChart } from '../../components/body-weight/WeightChart';
+import { AddWeightModal } from '../../components/body-weight/AddWeightModal';
 import { TrendingUp, TrendingDown, Minus, Plus, Trash2, Sparkles } from 'lucide-react-native';
-import { useUnitConverter } from '../hooks/useUnitConverter';
+import { useUnitConverter } from '../../hooks/useUnitConverter';
 import { useRouter } from 'expo-router';
 
 // Preview content - matches the home card appearance including the Gauge Fix

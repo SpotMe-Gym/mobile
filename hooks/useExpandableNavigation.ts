@@ -20,6 +20,9 @@ const DEFAULT_OPTIONS: Required<UseExpandableNavigationOptions> = {
   },
 };
 
+/* Global lock to prevent multiple cards from opening simultaneously */
+let isGlobalNavigationLocked = false;
+
 /**
  * Hook for creating expandable card navigation with press animations.
  * Use this on home screen cards that expand into detail pages.
@@ -61,11 +64,21 @@ export function useExpandableNavigation(options: UseExpandableNavigationOptions 
     layoutRef.current = { width, height };
   }, []);
 
+
+
   /**
    * Navigate to a detail page, passing the card's position and dimensions.
    * The detail page should use ExpandableCardLayout to animate from this position.
    */
   const navigateToDetail = useCallback((pathname: string, additionalParams?: Record<string, string | number>) => {
+    if (isGlobalNavigationLocked) return;
+
+    isGlobalNavigationLocked = true;
+    // Reset lock after sufficient time for transition to complete
+    setTimeout(() => {
+      isGlobalNavigationLocked = false;
+    }, 150);
+
     cardRef.current?.measureInWindow((x, y, width, height) => {
       // If we have layout dims, use them to calculate the "Unscaled" position
       // This prevents the animation from jumping if the card is currently scaled down (pressed)

@@ -4,9 +4,9 @@
 
 ### 1. Workout Section
 The primary goal is to build out the Workout features.
-- [ ] Create Workout Plan UI
-- [ ] Implement exercise tracking
-- [ ] Add workout schedule management
+- [x] Create Workout Plan UI
+- [x] Implement exercise tracking
+- [x] Add workout schedule management
 
 ### 2. Body Measurements & 3D Visualization
 Enhance the Body Weight Details screen.
@@ -21,3 +21,7 @@ Enhance the Body Weight Details screen.
 ### 4. AI Integration
 - [ ] Gradually introduce AI features throughout the app.
 - [ ] Start with simple recommendations and expand to full coaching.
+
+### 5. Future Enhancements
+- [ ] Implement local search for exercises using **ExerciseDB API** (https://www.exercisedb.io/).
+    - Allow users to search and add exercises from the database.
