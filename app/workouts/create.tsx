@@ -6,7 +6,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import { Plus, Trash2, GripVertical, Clock, Dumbbell, SignalHigh, Minus } from 'lucide-react-native';
+import { Plus, Trash2, GripVertical, Clock, Dumbbell, SignalHigh, Minus, ChevronUp, ChevronDown } from 'lucide-react-native';
 import { useWorkoutStore, Workout, Exercise } from '../../store/workoutStore';
 import { v4 as uuidv4 } from 'uuid';
 import { Icon } from '@/components/ui/Icon';
@@ -15,13 +15,17 @@ import { Icon } from '@/components/ui/Icon';
 const ExerciseCard = ({
   ex,
   index,
+  totalCount,
   updateExercise,
-  removeExercise
+  removeExercise,
+  moveExercise
 }: {
   ex: Exercise,
   index: number,
+  totalCount: number,
   updateExercise: (id: string, field: keyof Exercise, value: any) => void,
-  removeExercise: (id: string) => void
+  removeExercise: (id: string) => void,
+  moveExercise: (index: number, direction: 'up' | 'down') => void
 }) => {
   const hasExecution = (ex.executionTime !== undefined && ex.executionTime > 0) || (ex.executionTime2 !== undefined && ex.executionTime2 > 0);
   const hasExecution2 = (ex.executionTime2 !== undefined && ex.executionTime2 > 0);
@@ -47,24 +51,46 @@ const ExerciseCard = ({
   const getSec = (seconds?: number) => seconds ? (seconds % 60).toString().padStart(2, '0') : '';
 
   return (
-    <View className="bg-zinc-900 border border-zinc-800 rounded-3xl p-5 mb-4">
-      <View className="flex-row items-center gap-4 mb-5">
-        <View className="bg-zinc-800 h-7 w-7 rounded-full items-center justify-center border border-zinc-700">
-          <Text className="text-zinc-400 text-xs font-bold">{index + 1}</Text>
+    <View className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 mb-4 flex-row">
+      {/* Left Column: Reordering Controls */}
+      <View className="items-center justify-center mr-3 gap-1">
+        <TouchableOpacity
+          onPress={() => moveExercise(index, 'up')}
+          disabled={index === 0}
+          className={`p-1 rounded-full ${index === 0 ? 'opacity-20' : 'bg-zinc-800 border border-zinc-700'}`}
+        >
+          <Icon icon={ChevronUp} size={14} color="#a1a1aa" />
+        </TouchableOpacity>
+
+        <View className="bg-zinc-800 h-6 w-6 rounded-full items-center justify-center border border-zinc-700 my-1">
+          <Text className="text-zinc-400 text-[10px] font-bold">{index + 1}</Text>
         </View>
-        <TextInput
-          className="flex-1 text-white font-bold text-lg"
-          placeholder="Exercise Name"
-          placeholderTextColor="#52525b"
-          value={ex.name}
-          onChangeText={(t) => updateExercise(ex.id, 'name', t)}
-        />
-        <TouchableOpacity onPress={() => removeExercise(ex.id)} className="p-2 bg-zinc-950/30 rounded-full">
-          <Icon icon={Trash2} size={18} color="#ef4444" opacity={0.8} />
+
+        <TouchableOpacity
+          onPress={() => moveExercise(index, 'down')}
+          disabled={index === totalCount - 1}
+          className={`p-1 rounded-full ${index === totalCount - 1 ? 'opacity-20' : 'bg-zinc-800 border border-zinc-700'}`}
+        >
+          <Icon icon={ChevronDown} size={14} color="#a1a1aa" />
         </TouchableOpacity>
       </View>
 
-      <View className="pl-2 gap-4">
+      {/* Right Column: Content */}
+      <View className="flex-1 gap-4">
+        {/* Header: Name & Trash */}
+        <View className="flex-row items-center gap-3">
+          <TextInput
+            className="flex-1 text-white font-bold text-lg"
+            placeholder="Exercise Name"
+            placeholderTextColor="#52525b"
+            value={ex.name}
+            onChangeText={(t) => updateExercise(ex.id, 'name', t)}
+          />
+          <TouchableOpacity onPress={() => removeExercise(ex.id)} className="p-2 bg-zinc-950/30 rounded-full">
+            <Icon icon={Trash2} size={18} color="#ef4444" opacity={0.8} />
+          </TouchableOpacity>
+        </View>
+
         {/* Sets / Reps Row */}
         <View className="flex-row gap-3">
           <View className="flex-1 bg-zinc-950/40 rounded-2xl p-4 flex-row items-center justify-between border border-zinc-800/50">
@@ -125,7 +151,7 @@ const ExerciseCard = ({
             <View className="flex-1 bg-blue-950/10 rounded-2xl p-4 flex-row items-center border border-blue-900/20 gap-3">
               <Dumbbell size={16} color="#60a5fa" />
               <TextInput
-                className="text-blue-500/70 text-[10px] font-bold tracking-widest mr-auto mt-0.5 min-w-[60px]"
+                className="text-blue-500 text-xs font-bold tracking-widest mr-auto min-w-[60px] p-0"
                 placeholder="EXECUTION"
                 placeholderTextColor="rgba(96, 165, 250, 0.5)"
                 value={ex.executionName || ''}
@@ -135,7 +161,7 @@ const ExerciseCard = ({
                 <TextInput
                   placeholder="0"
                   placeholderTextColor="#1e3a8a"
-                  className="text-white font-bold text-lg text-right min-w-[20px]"
+                  className="text-white font-bold text-lg text-right min-w-[20px] p-0"
                   keyboardType="numeric"
                   defaultValue={getMin(ex.executionTime)}
                   onChangeText={(t) => updateTime('executionTime', t, getSec(ex.executionTime))}
@@ -145,7 +171,7 @@ const ExerciseCard = ({
                 <TextInput
                   placeholder="00"
                   placeholderTextColor="#1e3a8a"
-                  className="text-white font-bold text-lg text-right min-w-[28px]"
+                  className="text-white font-bold text-lg text-right min-w-[28px] p-0"
                   keyboardType="numeric"
                   defaultValue={getSec(ex.executionTime)}
                   onChangeText={(t) => updateTime('executionTime', getMin(ex.executionTime), t)}
@@ -154,7 +180,6 @@ const ExerciseCard = ({
                 <Text className="text-blue-500/50 text-xs font-medium pt-1">s</Text>
               </View>
             </View>
-
             <TouchableOpacity
               onPress={() => {
                 // Phase Shift Logic
@@ -185,7 +210,7 @@ const ExerciseCard = ({
             <View className="flex-1 bg-purple-950/10 rounded-2xl p-4 flex-row items-center border border-purple-900/20 gap-3">
               <Dumbbell size={16} color="#c084fc" />
               <TextInput
-                className="text-purple-500/70 text-[10px] font-bold tracking-widest mr-auto mt-0.5 min-w-[60px]"
+                className="text-purple-500 text-xs font-bold tracking-widest mr-auto min-w-[60px] p-0"
                 placeholder="ALT. EXECUTION"
                 placeholderTextColor="rgba(192, 132, 252, 0.5)"
                 value={ex.executionName2 || ''}
@@ -195,7 +220,7 @@ const ExerciseCard = ({
                 <TextInput
                   placeholder="0"
                   placeholderTextColor="#4c1d95"
-                  className="text-white font-bold text-lg text-right min-w-[20px]"
+                  className="text-white font-bold text-lg text-right min-w-[20px] p-0"
                   keyboardType="numeric"
                   defaultValue={getMin(ex.executionTime2)}
                   onChangeText={(t) => updateTime('executionTime2', t, getSec(ex.executionTime2))}
@@ -205,7 +230,7 @@ const ExerciseCard = ({
                 <TextInput
                   placeholder="00"
                   placeholderTextColor="#4c1d95"
-                  className="text-white font-bold text-lg text-right min-w-[28px]"
+                  className="text-white font-bold text-lg text-right min-w-[28px] p-0"
                   keyboardType="numeric"
                   defaultValue={getSec(ex.executionTime2)}
                   onChangeText={(t) => updateTime('executionTime2', getMin(ex.executionTime2), t)}
@@ -242,7 +267,7 @@ const ExerciseCard = ({
         )}
 
       </View>
-    </View>
+    </View >
   );
 };
 
@@ -376,6 +401,20 @@ export default function CreateWorkout() {
     onInteraction();
   };
 
+  const moveExercise = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === exercises.length - 1) return;
+
+    const newExercises = [...exercises];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    // Swap
+    [newExercises[index], newExercises[targetIndex]] = [newExercises[targetIndex], newExercises[index]];
+
+    setExercises(newExercises);
+    onInteraction();
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
@@ -448,8 +487,10 @@ export default function CreateWorkout() {
                 key={ex.id}
                 ex={ex}
                 index={index}
+                totalCount={exercises.length}
                 updateExercise={updateExercise}
                 removeExercise={removeExercise}
+                moveExercise={moveExercise}
               />
             ))}
           </View>
