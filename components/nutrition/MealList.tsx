@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Card } from '../ui/Card';
 import { Meal, useNutritionStore } from '../../store/nutritionStore';
@@ -9,7 +10,7 @@ interface MealListProps {
   date: string;
 }
 
-export function MealList({ meals, date }: MealListProps) {
+export const MealList = React.memo(function MealList({ meals, date }: MealListProps) {
   const { removeFood } = useNutritionStore();
   const router = useRouter();
 
@@ -66,4 +67,4 @@ export function MealList({ meals, date }: MealListProps) {
       })}
     </View>
   );
-}
+});

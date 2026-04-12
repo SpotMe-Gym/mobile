@@ -54,8 +54,10 @@ export const useNutritionStore = create<NutritionState>()(
       knownFoods: {},
 
       addFood: (date, mealName, food) => set((state) => {
-        // 1. Update Daily Log
-        const currentLog = state.logs[date] || { date, meals: JSON.parse(JSON.stringify(INITIAL_MEALS)) };
+        const currentLog = state.logs[date] || {
+          date,
+          meals: INITIAL_MEALS.map(m => ({ ...m, foods: [] })),
+        };
         const updatedMeals = currentLog.meals.map(meal => {
           if (meal.name === mealName) {
             return { ...meal, foods: [...meal.foods, food] };
@@ -63,11 +65,9 @@ export const useNutritionStore = create<NutritionState>()(
           return meal;
         });
 
-        // 2. Update History (Smart Suggestions)
-        // Use food ID (barcode) or hash of name as key
         const historyKey = food.id || food.name + (food.brand || '');
         const existingEntry = state.knownFoods[historyKey];
-        const currentTags = existingEntry ? existingEntry.tags : [];
+        const currentTags = existingEntry ? [...existingEntry.tags] : [];
         if (!currentTags.includes(mealName)) {
           currentTags.push(mealName);
         }

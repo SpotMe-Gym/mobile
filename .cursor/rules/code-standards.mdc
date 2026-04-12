@@ -1,0 +1,157 @@
+---
+description: TypeScript code quality standards, memoization rules, and component patterns
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Code Standards
+
+## TypeScript
+
+- Strict mode is enabled — never use `any` unless absolutely necessary (prefer `unknown` + type guards)
+- Always define interfaces for component props
+- Export types alongside their implementations from the same file
+- Use `as const` for literal arrays and objects that shouldn't be mutated
+
+## Component Structure
+
+### File Organization
+```tsx
+// 1. Imports (React, RN, third-party, local)
+// 2. Constants/types
+// 3. Sub-components (if small and tightly coupled)
+// 4. Main component
+// 5. Styles (StyleSheet.create at bottom)
+```
+
+### Naming
+- Components: PascalCase (`CalorieGauge`, `MealList`)
+- Hooks: camelCase with `use` prefix (`useExpandableCard`)
+- Stores: camelCase with `use` prefix + `Store` suffix (`useWorkoutStore`)
+- Utils: camelCase (`convertKgToLbs`)
+
+## Memoization Rules
+
+### React.memo
+Wrap components with `React.memo` when:
+- They receive callbacks as props (especially from parent lists)
+- They are rendered in lists/maps
+- They are expensive to render (many children, complex layouts)
+
+```tsx
+// GOOD — list item component
+const ExerciseCard = React.memo(function ExerciseCard({ ... }) {
+  // ...
+});
+
+// Named function expression preserves display name in DevTools
+```
+
+### useCallback
+Wrap functions with `useCallback` when:
+- They are passed as props to memoized children
+- They are used in `useEffect` dependency arrays
+- They are event handlers that reference shared values
+
+```tsx
+// GOOD
+const handlePress = useCallback(() => {
+  // ...
+}, [dependency]);
+
+// BAD — recreated every render, defeats React.memo in children
+const handlePress = () => { ... };
+```
+
+### useMemo
+Use `useMemo` for:
+- Expensive computations (filtering, sorting, mapping large arrays)
+- Objects/arrays passed as props to memoized children
+- Derived state that depends on multiple values
+
+```tsx
+const todaysWorkouts = useMemo(() => {
+  const ids = schedule[dayName] || [];
+  return ids.map(id => workouts.find(w => w.id === id)).filter(Boolean);
+}, [schedule, workouts, dayName]);
+```
+
+### When NOT to Memoize
+- Simple primitive values or string concatenations
+- Functions only used within the same component (no child prop passing)
+- Components that are always re-rendered by parent state changes anyway
+
+## State Management
+
+### Zustand Selectors
+ALWAYS use atomic selectors to minimize re-renders:
+```tsx
+// GOOD — only re-renders when 'name' changes
+const name = useUserStore(s => s.name);
+
+// BAD — re-renders on ANY store change
+const { name } = useUserStore();
+```
+
+### Immutability in Store Updates
+- Never mutate state directly in Zustand setters
+- Use spread operator for shallow cloning: `{ ...state, field: newValue }`
+- For arrays: `[...arr, newItem]`, `arr.filter(...)`, `arr.map(...)`
+- NEVER use `JSON.parse(JSON.stringify())` for deep cloning — use spread operators or `structuredClone`
+
+```tsx
+// GOOD
+const currentLog = state.logs[date] || {
+  date,
+  meals: INITIAL_MEALS.map(m => ({ ...m, foods: [] })),
+};
+
+// BAD
+const currentLog = state.logs[date] || { date, meals: JSON.parse(JSON.stringify(INITIAL_MEALS)) };
+```
+
+### State Updater Functions
+Use the function form of `setState` to avoid stale closures:
+```tsx
+// GOOD — always reads latest state
+setExercises(prev => prev.filter(e => e.id !== id));
+
+// BAD — captures exercises at render time, may be stale
+setExercises(exercises.filter(e => e.id !== id));
+```
+
+## Error Handling
+
+- Use `try/catch` in all async operations (API calls, storage)
+- Log errors with `console.error` in development
+- Never swallow errors silently — at minimum, log them
+- For user-facing errors, use `Alert.alert()` on mobile
+
+## Imports
+
+### Path Aliases
+- Use `@/` alias for imports from the project root
+- Prefer relative imports for files in the same directory or one level up
+
+```tsx
+// From app/ screens — use alias
+import { Card } from '@/components/ui/Card';
+import { useWorkoutStore } from '@/store/workoutStore';
+
+// From components/ or hooks/ — relative is fine
+import { CalorieGauge } from './CalorieGauge';
+import { useExpandableCard } from '../hooks/useExpandableCard';
+```
+
+### Import Ordering
+1. React and React Native
+2. Third-party libraries (expo-router, zustand, react-i18next, etc.)
+3. Local components, hooks, stores, utils
+4. Types (if separate)
+
+## Comments
+
+- Do NOT add comments that merely describe what the code does
+- DO add comments explaining WHY non-obvious decisions were made
+- DO add comments for complex algorithms, magic numbers, or workarounds
+- Use JSDoc for public hook APIs and component props when the name alone isn't clear enough

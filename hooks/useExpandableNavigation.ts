@@ -104,10 +104,10 @@ export function useExpandableNavigation(options: UseExpandableNavigationOptions 
       router.push({
         pathname: pathname as Href<string>,
         params: {
-          cardX: Math.round(finalX),
-          cardY: Math.round(finalY),
-          cardWidth: Math.round(finalWidth),
-          cardHeight: Math.round(finalHeight),
+          cardX: finalX.toFixed(1),
+          cardY: finalY.toFixed(1),
+          cardWidth: finalWidth.toFixed(1),
+          cardHeight: finalHeight.toFixed(1),
           ...additionalParams,
         },
       } as any);

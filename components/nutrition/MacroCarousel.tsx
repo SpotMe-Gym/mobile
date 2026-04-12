@@ -1,3 +1,4 @@
+import React, { useMemo, useCallback } from 'react';
 import { View, Text, ScrollView, Dimensions, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { Card } from '../ui/Card';
 import { useState } from 'react';
@@ -28,7 +29,19 @@ interface MacroCarouselProps {
   showGauge?: boolean; // Whether to show the gauge (false when shown separately)
 }
 
-export function MacroCarousel({
+const MICROS_DATA = [
+  { label: "Vitamin C", val: "45%" },
+  { label: "Iron", val: "20%" },
+  { label: "Calcium", val: "15%" },
+  { label: "Sodium", val: "1200mg" },
+  { label: "Potassium", val: "3500mg" },
+  { label: "Vitamin A", val: "60%" },
+  { label: "Vitamin D", val: "30%" },
+  { label: "Magnesium", val: "40%" },
+  { label: "Zinc", val: "10%" },
+];
+
+export const MacroCarousel = React.memo(function MacroCarousel({
   totals,
   targets = { calories: 2800, protein: 180, carbs: 300, fat: 80 },
   showGauge = true
@@ -36,38 +49,24 @@ export function MacroCarousel({
   const [activeIndex, setActiveIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
-  const handleScroll = (event: any) => {
+  const handleScroll = useCallback((event: any) => {
     const slideSize = event.nativeEvent.layoutMeasurement.width;
-    const index = event.nativeEvent.contentOffset.x / slideSize;
-    const roundIndex = Math.round(index);
-    if (roundIndex !== activeIndex) {
-      setActiveIndex(roundIndex);
-    }
-  };
+    const roundIndex = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+    setActiveIndex(prev => prev !== roundIndex ? roundIndex : prev);
+  }, []);
 
-  const toggleExpand = () => {
+  const toggleExpand = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded(!expanded);
-  };
+    setExpanded(prev => !prev);
+  }, []);
 
-  const microsData = [
-    { label: "Vitamin C", val: "45%" },
-    { label: "Iron", val: "20%" },
-    { label: "Calcium", val: "15%" },
-    { label: "Sodium", val: "1200mg" },
-    { label: "Potassium", val: "3500mg" },
-    { label: "Vitamin A", val: "60%" },
-    { label: "Vitamin D", val: "30%" },
-    { label: "Magnesium", val: "40%" },
-    { label: "Zinc", val: "10%" },
-  ];
+  const displayedMicros = expanded ? MICROS_DATA : MICROS_DATA.slice(0, 4);
 
-  const displayedMicros = expanded ? microsData : microsData.slice(0, 4);
-
-  // Calculate percentages
-  const pPct = Math.min((totals.protein / targets.protein) * 100, 100);
-  const cPct = Math.min((totals.carbs / targets.carbs) * 100, 100);
-  const fPct = Math.min((totals.fat / targets.fat) * 100, 100);
+  const { pPct, cPct, fPct } = useMemo(() => ({
+    pPct: Math.min((totals.protein / targets.protein) * 100, 100),
+    cPct: Math.min((totals.carbs / targets.carbs) * 100, 100),
+    fPct: Math.min((totals.fat / targets.fat) * 100, 100),
+  }), [totals.protein, totals.carbs, totals.fat, targets.protein, targets.carbs, targets.fat]);
 
   return (
     <View className="mb-6">
@@ -165,4 +164,4 @@ export function MacroCarousel({
       </View>
     </View>
   );
-}
+});

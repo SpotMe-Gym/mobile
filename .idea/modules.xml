@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.direnv/flake-inputs/fky7wjvjv3dwrivwjssk4mxgcvkhlxir-source/pkgs/development/tools/build-managers/gradle/tests/java-application/java-application.iml" filepath="$PROJECT_DIR$/.direnv/flake-inputs/fky7wjvjv3dwrivwjssk4mxgcvkhlxir-source/pkgs/development/tools/build-managers/gradle/tests/java-application/java-application.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/mobile.iml" filepath="$PROJECT_DIR$/.idea/mobile.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.direnv/flake-inputs/fky7wjvjv3dwrivwjssk4mxgcvkhlxir-source/nixos/nixos.iml" filepath="$PROJECT_DIR$/.direnv/flake-inputs/fky7wjvjv3dwrivwjssk4mxgcvkhlxir-source/nixos/nixos.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.direnv/flake-inputs/fky7wjvjv3dwrivwjssk4mxgcvkhlxir-source/pkgs/pkgs-lib/pkgs-lib.iml" filepath="$PROJECT_DIR$/.direnv/flake-inputs/fky7wjvjv3dwrivwjssk4mxgcvkhlxir-source/pkgs/pkgs-lib/pkgs-lib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.direnv/flake-inputs/fky7wjvjv3dwrivwjssk4mxgcvkhlxir-source/pkgs/development/tools/build-managers/gradle/tests/toolchains/toolchains.iml" filepath="$PROJECT_DIR$/.direnv/flake-inputs/fky7wjvjv3dwrivwjssk4mxgcvkhlxir-source/pkgs/development/tools/build-managers/gradle/tests/toolchains/toolchains.iml" />
+    </modules>
+  </component>
+</project>

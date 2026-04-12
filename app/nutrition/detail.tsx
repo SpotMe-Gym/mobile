@@ -24,7 +24,13 @@ function NutritionCardPreview() {
 
   return (
     <View className="flex-1 w-full items-center justify-center">
-      <View style={{ width: cardDimensions.cardWidth, height: cardDimensions.cardHeight }}>
+      <View style={{
+        width: cardDimensions.cardWidth,
+        height: cardDimensions.cardHeight,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#18181b',
+      }}>
         <Card className="h-full bg-transparent justify-between" title={t('dashboard.nutrition')}>
           <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, marginTop: -8 }}>
             <CalorieGauge

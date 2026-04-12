@@ -1,0 +1,145 @@
+---
+description: Animation patterns and performance rules using React Native Reanimated
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Animation Rules
+
+## Core Principle
+
+ALL animations MUST run on the native UI thread using React Native Reanimated. Never use React Native's built-in `Animated` API — it runs on the JS thread and causes jank on Android.
+
+## Mandatory API Usage
+
+### Use Reanimated
+```tsx
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  interpolate,
+  runOnJS,
+  useReducedMotion,
+} from 'react-native-reanimated';
+```
+
+### Never Import
+```tsx
+// FORBIDDEN — JS-thread animations
+import { Animated } from 'react-native';
+```
+
+## Rules of Hooks for Animations
+
+### useAnimatedStyle Must Be at Component Top Level
+```tsx
+// GOOD
+function MyComponent() {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  return <Animated.View style={animatedStyle} />;
+}
+
+// BAD — hook inside JSX
+function MyComponent() {
+  const scale = useSharedValue(1);
+  return (
+    <Animated.View
+      style={useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+      }))}
+    />
+  );
+}
+```
+
+## Android Performance
+
+### Transform Ordering
+- Keep transforms simple: prefer a single `scale` over separate `scaleX` + `scaleY` when possible
+- Avoid counter-scaling children to compensate for parent transforms — use opacity transitions instead
+- Order: `translateX` → `translateY` → `scale` (or `scaleX`/`scaleY`)
+
+### collapsable={false}
+ALWAYS add `collapsable={false}` to `Animated.View` components that have animated styles. Android's view flattening optimization removes "unnecessary" views, which breaks Reanimated's native driver:
+```tsx
+<Animated.View collapsable={false} style={animatedStyle}>
+```
+
+### Reduced Motion
+Use `useReducedMotion()` to respect system accessibility settings. On low-end devices or when the user has reduced motion enabled, skip animations:
+```tsx
+const shouldReduceMotion = useReducedMotion();
+
+useEffect(() => {
+  if (shouldReduceMotion) {
+    progress.value = 1; // Skip to final state
+    return;
+  }
+  progress.value = withTiming(1, { duration: 350 });
+}, []);
+```
+
+### Avoid GPU Overdraw
+- Minimize the number of simultaneously animating layers
+- Prefer opacity fades over complex transform chains
+- Use `overflow: 'hidden'` on containers to let the GPU clip rather than render off-screen content
+
+## Timing and Easing
+
+### Standard Durations
+| Animation Type | Duration | Easing |
+|---|---|---|
+| Card open | 350ms | `Easing.out(Easing.cubic)` |
+| Card close | 250ms | `Easing.inOut(Easing.cubic)` |
+| Button press | spring | `damping: 15, stiffness: 400` |
+| Fade in | 200ms | `withTiming` default |
+| Fade out | 300ms | `withTiming` default |
+
+### Spring vs Timing
+- Use `withSpring` for interactive gestures (press, drag, swipe)
+- Use `withTiming` for state transitions (open/close, show/hide)
+
+## Expandable Card Animation System
+
+The app's signature animation: cards on the home screen expand to fill the screen.
+
+### Architecture
+1. `useExpandableNavigation` — attached to home screen cards, measures position, navigates with params
+2. `useExpandableCard` — on detail screens, reads position params, animates from card → fullscreen
+3. `ExpandableCardLayout` — wrapper component that manages backdrop, preview, and detail layers
+
+### How It Works
+- Card position is measured with `measureInWindow` and passed as route params
+- Detail screen renders at full screen size, then applies scale+translate transforms to shrink to card position
+- Animation progress goes from 0 (card) to 1 (fullscreen)
+- Preview content (card appearance) fades out at 0→0.15
+- Detail content fades in at 0.6→1.0
+- This creates a "blank slate" expanding effect between the two states
+
+### Key Constraints
+- Animation math and card container MUST use `Dimensions.get('window')` — this matches `measureInWindow` coordinates
+- On Android, the backdrop extends to `Dimensions.get('screen').height` to cover the nav bar, but the card container itself stays at window dimensions
+- Preview content MUST use counter-scale transforms (`1/scaleX`, `1/scaleY`) to maintain correct size while the container is scaled. Without this, the preview appears as a tiny doubly-scaled square.
+- Navigation lock prevents double-tap opening multiple cards
+
+## runOnJS Safety
+
+When calling JS functions from worklets (animation callbacks):
+```tsx
+// GOOD — wrap the function reference
+const goBack = useCallback(() => router.back(), [router]);
+
+progress.value = withTiming(0, config, (finished) => {
+  if (finished) runOnJS(goBack)();
+});
+
+// BAD — calling methods directly
+progress.value = withTiming(0, config, (finished) => {
+  if (finished) runOnJS(router.back)(); // May lose 'this' binding
+});
+```

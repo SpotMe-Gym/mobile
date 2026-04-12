@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { useUserStore } from '../store/userStore';
 import {
   convertKgToLbs,
@@ -7,10 +8,11 @@ import {
 } from '../utils/unitConversion';
 
 export function useUnitConverter() {
-  const { units, weight, height } = useUserStore();
+  const units = useUserStore(s => s.units);
+  const weight = useUserStore(s => s.weight);
+  const height = useUserStore(s => s.height);
 
-  // Helper to convert arbitrary weight (for lists/history)
-  const convertWeight = (valInKg: number | string) => {
+  const convertWeight = useCallback((valInKg: number | string) => {
     const val = typeof valInKg === 'string' ? parseFloat(valInKg) : valInKg;
     if (isNaN(val)) return { value: 0, unit: units.weight, formatted: '--' };
 
@@ -20,42 +22,28 @@ export function useUnitConverter() {
       unit: units.weight,
       formatted: formatWeightValue(converted)
     };
-  };
+  }, [units.weight]);
 
-  // Helper to convert arbitrary height
-  const convertHeight = (valInCm: number | string) => {
+  const convertHeight = useCallback((valInCm: number | string) => {
     const val = typeof valInCm === 'string' ? parseFloat(valInCm) : valInCm;
     if (isNaN(val)) return { value: 0, unit: units.height, formatted: '--' };
 
     if (units.height === 'cm') {
-      return {
-        value: val,
-        unit: 'cm',
-        formatted: val.toFixed(0)
-      };
-    } else {
-      const { text, feet } = convertCmToFeet(val);
-      return {
-        value: feet, // Approximate for graphing if needed
-        unit: 'ft',
-        formatted: text
-      };
+      return { value: val, unit: 'cm' as const, formatted: val.toFixed(0) };
     }
-  };
+    const { text, feet } = convertCmToFeet(val);
+    return { value: feet, unit: 'ft' as const, formatted: text };
+  }, [units.height]);
 
-  // Pre-calculated values for current user
-  const currentWeight = convertWeight(weight);
-  const currentHeight = convertHeight(height);
+  const currentWeight = useMemo(() => convertWeight(weight), [convertWeight, weight]);
+  const currentHeight = useMemo(() => convertHeight(height), [convertHeight, height]);
 
-  // Input conversion (Display -> Storage)
-  const toStorageWeight = (displayVal: number | string): string => {
+  const toStorageWeight = useCallback((displayVal: number | string): string => {
     const val = typeof displayVal === 'string' ? parseFloat(displayVal) : displayVal;
     if (isNaN(val)) return '0';
-
-    // If user is in Lbs, input is Lbs, convert to Kg
-    const valInKg = units.weight === 'lbs' ? convertLbsToKg(val) : val;
-    return valInKg.toString(); // Store expects string
-  };
+    const stored = units.weight === 'lbs' ? convertLbsToKg(val) : val;
+    return stored.toString();
+  }, [units.weight]);
 
   return {
     currentWeight,

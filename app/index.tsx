@@ -55,6 +55,18 @@ export default function Dashboard() {
   const todayDate = new Date().toISOString().split('T')[0];
   const nutrition = getDailyTotals(todayDate);
 
+  const weightCardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: weightCardScale.value }],
+  }));
+
+  const workoutCardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: workoutCardScale.value }],
+  }));
+
+  const nutritionCardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: nutritionCardScale.value }],
+  }));
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView className="flex-1 px-4 pt-2" contentContainerStyle={{ paddingBottom: 100 }}>
@@ -99,9 +111,7 @@ export default function Dashboard() {
             onPressOut={weightCard.handlePressOut}
             onPress={() => weightCard.navigateToDetail('/body-weight')}
             onLayout={weightCard.onLayout}
-            style={useAnimatedStyle(() => ({
-              transform: [{ scale: weightCardScale.value }],
-            }))}
+            style={weightCardAnimatedStyle}
           >
             <Animated.View style={{ flex: 1, backgroundColor: '#18181b' }}>
               <Card className="w-full bg-transparent border-none" title={t('dashboard.bodyWeight')}>
@@ -147,9 +157,7 @@ export default function Dashboard() {
             ref={workoutCard.cardRef}
             className="w-[48%] h-44"
             onLayout={workoutCard.onLayout}
-            style={useAnimatedStyle(() => ({
-              transform: [{ scale: workoutCardScale.value }],
-            }))}
+            style={workoutCardAnimatedStyle}
           >
             <Animated.View style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#27272a' }}>
               {/* Header Overlay - Visual only, touches pass through */}
@@ -243,9 +251,7 @@ export default function Dashboard() {
             onPressOut={nutritionCard.handlePressOut}
             onPress={() => nutritionCard.navigateToDetail('/nutrition/detail')}
             onLayout={nutritionCard.onLayout}
-            style={useAnimatedStyle(() => ({
-              transform: [{ scale: nutritionCardScale.value }],
-            }))}
+            style={nutritionCardAnimatedStyle}
           >
             <Animated.View
               style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden' }}

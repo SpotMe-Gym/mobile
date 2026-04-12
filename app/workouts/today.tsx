@@ -34,7 +34,13 @@ function WorkoutCardPreview() {
 
   return (
     <View className="flex-1 w-full items-center justify-center">
-      <View style={{ width: cardDimensions.cardWidth, height: cardDimensions.cardHeight }}>
+      <View style={{
+        width: cardDimensions.cardWidth,
+        height: cardDimensions.cardHeight,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#18181b',
+      }}>
         <Card
           className="h-full justify-between bg-zinc-900 border border-zinc-800"
           title={t('dashboard.todaysPlan')}

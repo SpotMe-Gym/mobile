@@ -1,18 +1,17 @@
-// Consolidated imports at the top
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Animated } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { Plus, Trash2, GripVertical, Clock, Dumbbell, SignalHigh, Minus, ChevronUp, ChevronDown, Armchair, Pause } from 'lucide-react-native';
-import { useWorkoutStore, Workout, Exercise } from '../../store/workoutStore';
+import { Plus, Trash2, Clock, Dumbbell, Minus, ChevronUp, ChevronDown, Armchair } from 'lucide-react-native';
+import { useWorkoutStore, Exercise } from '../../store/workoutStore';
 import { v4 as uuidv4 } from 'uuid';
 import { Icon } from '@/components/ui/Icon';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, cancelAnimation } from 'react-native-reanimated';
 
-// Extracted ExerciseCard Component to fix Hook Rules
-const ExerciseCard = ({
+const ExerciseCard = React.memo(({
   ex,
   index,
   totalCount,
@@ -322,11 +321,9 @@ const ExerciseCard = ({
         )}
 
       </View>
-    </View >
+    </View>
   );
-};
-
-
+});
 
 export default function CreateWorkout() {
   const router = useRouter();
@@ -353,32 +350,25 @@ export default function CreateWorkout() {
     existing?.exercises || [{ id: uuidv4(), name: '', sets: 3, reps: '10', restTime: 60, executionTime: 45, type: 'exercise' }]
   );
 
-  // Animation Refs
-  const fadeAnim = useRef(new Animated.Value(0)).current; // Start hidden
+  const fadeProgress = useSharedValue(0);
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const showSaveButton = useCallback(() => {
-    // Clear any pending hide
-    if (hideTimer.current) clearTimeout(hideTimer.current);
+  const saveButtonStyle = useAnimatedStyle(() => ({
+    opacity: fadeProgress.value,
+  }));
 
-    // Animate In
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [fadeAnim]);
+  const showSaveButton = useCallback(() => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    cancelAnimation(fadeProgress);
+    fadeProgress.value = withTiming(1, { duration: 200 });
+  }, []);
 
   const scheduleHide = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }, 3500); // 3.5 seconds
-  }, [fadeAnim]);
+      fadeProgress.value = withTiming(0, { duration: 300 });
+    }, 3500);
+  }, []);
 
   const onInteraction = useCallback(() => {
     showSaveButton();
@@ -444,39 +434,37 @@ export default function CreateWorkout() {
     router.back();
   };
 
-  const addExercise = () => {
-    setExercises([...exercises, { id: uuidv4(), name: '', sets: 3, reps: '10', restTime: 60, executionTime: 45, type: 'exercise' }]);
+  const addExercise = useCallback(() => {
+    setExercises(prev => [...prev, { id: uuidv4(), name: '', sets: 3, reps: '10', restTime: 60, executionTime: 45, type: 'exercise' }]);
     onInteraction();
-  };
+  }, [onInteraction]);
 
-  const addRest = () => {
-    setExercises([...exercises, { id: uuidv4(), name: 'Rest', sets: 0, reps: '', restTime: 120, executionTime: 0, type: 'rest' }]);
+  const addRest = useCallback(() => {
+    setExercises(prev => [...prev, { id: uuidv4(), name: 'Rest', sets: 0, reps: '', restTime: 120, executionTime: 0, type: 'rest' }]);
     onInteraction();
-  };
+  }, [onInteraction]);
 
-  const updateExercise = (id: string, field: keyof Exercise, value: any) => {
-    setExercises(exercises.map(e => e.id === id ? { ...e, [field]: value } : e));
-    onInteraction(); // Keep button visible while typing
-  };
-
-  const removeExercise = (id: string) => {
-    setExercises(exercises.filter(e => e.id !== id));
+  const updateExercise = useCallback((id: string, field: keyof Exercise, value: any) => {
+    setExercises(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
     onInteraction();
-  };
+  }, [onInteraction]);
 
-  const moveExercise = (index: number, direction: 'up' | 'down') => {
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === exercises.length - 1) return;
-
-    const newExercises = [...exercises];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-
-    // Swap
-    [newExercises[index], newExercises[targetIndex]] = [newExercises[targetIndex], newExercises[index]];
-
-    setExercises(newExercises);
+  const removeExercise = useCallback((id: string) => {
+    setExercises(prev => prev.filter(e => e.id !== id));
     onInteraction();
-  };
+  }, [onInteraction]);
+
+  const moveExercise = useCallback((index: number, direction: 'up' | 'down') => {
+    setExercises(prev => {
+      if (direction === 'up' && index === 0) return prev;
+      if (direction === 'down' && index === prev.length - 1) return prev;
+      const next = [...prev];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
+    onInteraction();
+  }, [onInteraction]);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -580,11 +568,8 @@ export default function CreateWorkout() {
 
         <Animated.View
           className="absolute bottom-10 left-4 right-4"
-          style={{ opacity: fadeAnim }}
-          pointerEvents="box-none" // Allow touches through to map? No, we want button to capture. But if valid, stick to 'auto' or default. 
-        // If opacity 0, we might want to disable. But React Native doesn't support conditional pointerEvents easily without rerender.
-        // However, fading out is rare enough. We can use state 'visible' for pointerEvents if critical.
-        // For now let's assume standard opacity fade is acceptable.
+          style={saveButtonStyle}
+          pointerEvents="box-none"
         >
           <Button
             label="Save Workout"

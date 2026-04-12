@@ -1,10 +1,36 @@
-import React, { ReactNode } from 'react';
-import { View, Pressable, Dimensions, StyleSheet } from 'react-native';
+import React, { ReactNode, useRef, useCallback } from 'react';
+import { View, Pressable, Dimensions, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { SharedValue } from 'react-native-reanimated';
+import Animated, { SharedValue, useSharedValue } from 'react-native-reanimated';
 import { useExpandableCard, ExpandableCardConfig } from '../hooks/useExpandableCard';
 
+// Card container + animation math uses window dims (matches measureInWindow)
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// On Android edge-to-edge, extend backdrop below window to cover nav bar
+const BACKDROP_HEIGHT = Platform.OS === 'android'
+  ? Math.max(Dimensions.get('screen').height, SCREEN_HEIGHT)
+  : SCREEN_HEIGHT;
+
+/**
+ * On Android with new arch + edge-to-edge, measureInWindow (on the home screen)
+ * and the modal container can live in different coordinate spaces. This hook
+ * measures the modal container's actual window-Y via a SharedValue so the
+ * correction is applied on the UI thread without waiting for a React re-render.
+ */
+function useContainerOffset() {
+  const ref = useRef<View>(null);
+  const offsetY = useSharedValue(0);
+
+  const onContainerLayout = useCallback(() => {
+    if (Platform.OS !== 'android') return;
+    ref.current?.measureInWindow((_x, y) => {
+      offsetY.value = y;
+    });
+  }, []);
+
+  return { ref, offsetY, onContainerLayout };
+}
 
 interface ExpandableCardLayoutProps {
   /** Content shown when closing (should match home card appearance) */
@@ -24,36 +50,40 @@ export function ExpandableCardLayout({
   backgroundColor = '#18181b',
 }: ExpandableCardLayoutProps) {
   const insets = useSafeAreaInsets();
+  const { ref: containerRef, offsetY, onContainerLayout } = useContainerOffset();
   const {
     handleClose,
     containerStyle,
     backdropStyle,
     detailContentStyle,
     previewContentStyle,
-  } = useExpandableCard(config);
+  } = useExpandableCard({ ...config, containerOffsetY: offsetY });
 
   return (
-    <View style={styles.container}>
-      {/* Backdrop that dismisses on tap */}
-      <Animated.View style={[styles.backdrop, backdropStyle]}>
+    <View ref={containerRef} onLayout={onContainerLayout} style={styles.container}>
+      <Animated.View collapsable={false} style={[styles.backdrop, backdropStyle]}>
         <Pressable style={styles.backdropPressable} onPress={handleClose} />
       </Animated.View>
 
-      {/* Card container - transforms from card size to fullscreen */}
-      <Animated.View style={[styles.cardContainer, { backgroundColor }, containerStyle]}>
+      <Animated.View collapsable={false} style={[styles.cardContainer, { backgroundColor }, containerStyle]}>
         <View style={[styles.content, { backgroundColor }]}>
-
-          {/* Preview content - shows when closing (home card appearance) */}
-          <Animated.View style={[styles.previewWrapper, previewContentStyle]}>
+          <Animated.View collapsable={false} style={[styles.previewWrapper, previewContentStyle]}>
             {previewContent}
           </Animated.View>
 
-          {/* Detail content - shows when expanded */}
-          <Animated.View style={[styles.detailWrapper, { paddingTop: insets.top }, detailContentStyle]}>
+          <Animated.View collapsable={false} style={[styles.detailWrapper, { paddingTop: insets.top }, detailContentStyle]}>
             {children}
           </Animated.View>
         </View>
       </Animated.View>
+
+      {BACKDROP_HEIGHT > SCREEN_HEIGHT && (
+        <Animated.View
+          collapsable={false}
+          style={[styles.bottomFill, { backgroundColor }, backdropStyle]}
+          pointerEvents="none"
+        />
+      )}
     </View>
   );
 }
@@ -92,6 +122,7 @@ export function ExpandableCardLayoutWithContext({
   backgroundColor = '#18181b',
 }: ExpandableCardLayoutProps) {
   const insets = useSafeAreaInsets();
+  const { ref: containerRef, offsetY, onContainerLayout } = useContainerOffset();
   const {
     handleClose,
     containerStyle,
@@ -100,31 +131,34 @@ export function ExpandableCardLayoutWithContext({
     previewContentStyle,
     cardDimensions,
     progress,
-  } = useExpandableCard(config);
+  } = useExpandableCard({ ...config, containerOffsetY: offsetY });
 
   return (
     <ExpandableCardContext.Provider value={{ handleClose, cardDimensions, progress }}>
-      <View style={styles.container}>
-        {/* Backdrop that dismisses on tap */}
-        <Animated.View style={[styles.backdrop, backdropStyle]}>
+      <View ref={containerRef} onLayout={onContainerLayout} style={styles.container}>
+        <Animated.View collapsable={false} style={[styles.backdrop, backdropStyle]}>
           <Pressable style={styles.backdropPressable} onPress={handleClose} />
         </Animated.View>
 
-        {/* Card container - transforms from card size to fullscreen */}
-        <Animated.View style={[styles.cardContainer, { backgroundColor }, containerStyle]}>
+        <Animated.View collapsable={false} style={[styles.cardContainer, { backgroundColor }, containerStyle]}>
           <View style={[styles.content, { backgroundColor, paddingTop: insets.top }]}>
-
-            {/* Preview content - shows when closing (home card appearance) */}
-            <Animated.View style={[styles.previewWrapper, previewContentStyle]}>
+            <Animated.View collapsable={false} style={[styles.previewWrapper, previewContentStyle]}>
               {previewContent}
             </Animated.View>
 
-            {/* Detail content - shows when expanded */}
-            <Animated.View style={[styles.detailWrapper, detailContentStyle]}>
+            <Animated.View collapsable={false} style={[styles.detailWrapper, detailContentStyle]}>
               {children}
             </Animated.View>
           </View>
         </Animated.View>
+
+        {BACKDROP_HEIGHT > SCREEN_HEIGHT && (
+          <Animated.View
+            collapsable={false}
+            style={[styles.bottomFill, { backgroundColor }, backdropStyle]}
+            pointerEvents="none"
+          />
+        )}
       </View>
     </ExpandableCardContext.Provider>
   );
@@ -136,7 +170,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: BACKDROP_HEIGHT,
     backgroundColor: '#000',
   },
   backdropPressable: {
@@ -158,5 +196,12 @@ const styles = StyleSheet.create({
   },
   detailWrapper: {
     flex: 1,
+  },
+  bottomFill: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: SCREEN_HEIGHT,
+    height: BACKDROP_HEIGHT - SCREEN_HEIGHT,
   },
 });

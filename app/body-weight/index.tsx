@@ -22,7 +22,15 @@ function WeightCardPreview() {
 
   return (
     <View className="flex-1 w-full items-center justify-center">
-      <View style={{ width: cardDimensions.cardWidth, height: cardDimensions.cardHeight }}>
+      <View style={{
+        width: cardDimensions.cardWidth,
+        height: cardDimensions.cardHeight,
+        borderWidth: 1,
+        borderColor: '#27272a',
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#18181b',
+      }}>
         <Card className="h-full bg-transparent border-none" title={t('dashboard.bodyWeight')}>
           <View className="flex-row items-baseline mt-2">
             <Text className="text-5xl font-bold text-white">{currentWeight.formatted}</Text>
