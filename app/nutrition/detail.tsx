@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { useNutritionStore } from '../../store/nutritionStore';
@@ -8,6 +8,8 @@ import { MealList } from '../../components/nutrition/MealList';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { CalorieGauge } from '../../components/nutrition/CalorieGauge';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Icon } from '../../components/ui/Icon';
 import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../../components/ExpandableCardLayout';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -78,9 +80,12 @@ function NutritionDetailContent() {
           title="Nutrition"
           onBack={handleClose}
           rightAction={
-            <TouchableOpacity onPress={() => router.push('/chat')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Sparkles size={24} color="#3b82f6" />
-            </TouchableOpacity>
+            <Button
+              size="icon"
+              variant="ai"
+              icon={<Icon icon={Sparkles} size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />}
+              onPress={() => router.push('/chat')}
+            />
           }
         />
         <Text className="text-zinc-500 text-sm -mt-5 mb-4 ml-1">{dateLabel}</Text>

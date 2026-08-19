@@ -3,48 +3,67 @@ PATH=${PATH:-}
 nix_saved_PATH="$PATH"
 XDG_DATA_DIRS=${XDG_DATA_DIRS:-}
 nix_saved_XDG_DATA_DIRS="$XDG_DATA_DIRS"
-BASH='/nix/store/lw117lsr8d585xs63kx5k233impyrq7q-bash-5.3p3/bin/bash'
+BASH='/nix/store/yi3x6xpilh0bq0bgb61imy6gpv8b1la4-bash-5.3p3/bin/bash'
 CLASSPATH=''
 export CLASSPATH
-CONFIG_SHELL='/nix/store/lw117lsr8d585xs63kx5k233impyrq7q-bash-5.3p3/bin/bash'
+CONFIG_SHELL='/nix/store/yi3x6xpilh0bq0bgb61imy6gpv8b1la4-bash-5.3p3/bin/bash'
 export CONFIG_SHELL
-HOSTTYPE='x86_64'
-HOST_PATH='/nix/store/d75200gb22v7p0703h5jrkgg8bqydk5q-coreutils-9.8/bin:/nix/store/wd99g2j010fdkry0ws1bhxzm52w82ssx-findutils-4.10.0/bin:/nix/store/20zvyjvxq9x2mkp7rbnvrwjjzq2n76hh-diffutils-3.12/bin:/nix/store/k06ssckzrzn9jjvvs4n62m6567zmbx6x-gnused-4.9/bin:/nix/store/qfmq7p42ak5yn389qvx7zpxkan5i4xiy-gnugrep-3.12/bin:/nix/store/nmxm04dhkaqg1q6hai70n9zmzb0q49a5-gawk-5.3.2/bin:/nix/store/k1lcfin159706lihwx5hhvl80dbij4jw-gnutar-1.35/bin:/nix/store/0hv4z5s3r1h4lmvn0427mlxjxgvg34nr-gzip-1.14/bin:/nix/store/p61ba9fdgx3358bpp18hv4rslf6n5bq6-bzip2-1.0.8-bin/bin:/nix/store/mkm3my2067305hdh7rzmi10npwr7y17f-gnumake-4.4.1/bin:/nix/store/lw117lsr8d585xs63kx5k233impyrq7q-bash-5.3p3/bin:/nix/store/clrf4mjwr8xcfpvway6w34wzvqc1hry4-patch-2.8/bin:/nix/store/j1zc5jh0vi9sbxj09ldj4xklgm6kpf8n-xz-5.8.1-bin/bin:/nix/store/s2k48fw3y698j4kcvmw0520m06ihv2z4-file-5.45/bin'
+HOSTTYPE='aarch64'
+HOST_PATH='/nix/store/l60153ymb6kdnavlpaghi7h5fz7gh7iw-coreutils-9.8/bin:/nix/store/9mq7iqjv8mwpx6pmk2frkcnb5fnaphna-findutils-4.10.0/bin:/nix/store/4qz030vyw95fyhg30sjakrn6xbr7gnnf-diffutils-3.12/bin:/nix/store/cqpmyipcm6s84na6fkvkzknmz87igljr-gnused-4.9/bin:/nix/store/k2y0040hinbk3a2jj5ppy2dp2bpy9nw3-gnugrep-3.12/bin:/nix/store/pgz4cmapj3nq9vg4fyjqgaa7bayfdrr3-gawk-5.3.2/bin:/nix/store/n8zq31kl0x63sg14yzi38wd15alk62lc-gnutar-1.35/bin:/nix/store/z3pv1x994s4i32jcd93fh3nxhxpf9b35-gzip-1.14/bin:/nix/store/8vr957c4bdyvzppa07205az7mm763lg5-bzip2-1.0.8-bin/bin:/nix/store/p15ia8pn2wxzdqaf07nrwdspfwsyrzyn-gnumake-4.4.1/bin:/nix/store/yi3x6xpilh0bq0bgb61imy6gpv8b1la4-bash-5.3p3/bin:/nix/store/fm2dw9pdvwgpx5kryqhbx8fqfjq8six0-patch-2.8/bin:/nix/store/g3ynv50p3sz2jgz2zv9gjbxs9alcknyx-xz-5.8.1-bin/bin:/nix/store/6cp9fznk8nfjy4iwjbc549dkgpdh2sb0-file-5.45/bin'
 export HOST_PATH
 IFS=' 	
 '
 IN_NIX_SHELL='impure'
 export IN_NIX_SHELL
-JAVA_HOME='/nix/store/4xlra07s99b60kj0md6drgh0qmrkdpby-openjdk-17.0.17+10/lib/openjdk'
+JAVA_HOME='/nix/store/s9nq23qm9animys49h7g7w660jz4ccwz-zulu-ca-jdk-17.0.12'
 export JAVA_HOME
-LINENO='79'
-MACHTYPE='x86_64-pc-linux-gnu'
-NIX_BUILD_CORES='6'
+LINENO='77'
+MACHTYPE='aarch64-apple-darwin24.6.0'
+MACOSX_DEPLOYMENT_TARGET='14.0'
+export MACOSX_DEPLOYMENT_TARGET
+NIX_BUILD_CORES='8'
 export NIX_BUILD_CORES
-NIX_CFLAGS_COMPILE=' -frandom-seed=m687m8gvwd'
+NIX_CFLAGS_COMPILE=' -frandom-seed=6w062rxb38'
 export NIX_CFLAGS_COMPILE
+NIX_DONT_SET_RPATH='1'
+export NIX_DONT_SET_RPATH
+NIX_DONT_SET_RPATH_FOR_BUILD='1'
+export NIX_DONT_SET_RPATH_FOR_BUILD
 NIX_ENFORCE_NO_NATIVE='1'
 export NIX_ENFORCE_NO_NATIVE
-NIX_LDFLAGS='-rpath /home/demis/git-repos/spotme/mobile/outputs/out/lib '
-export NIX_LDFLAGS
+NIX_IGNORE_LD_THROUGH_GCC='1'
+export NIX_IGNORE_LD_THROUGH_GCC
 NIX_NO_SELF_RPATH='1'
+export NIX_NO_SELF_RPATH
 NIX_STORE='/nix/store'
 export NIX_STORE
-NODE_PATH='/nix/store/jfar9wnj6kvr0gr6klh1gk7vgckkfr5j-nodejs-20.20.0/lib/node_modules'
+NODE_PATH='/nix/store/l5zcv2mlpz4vkfr8gaznjl4l09pw7qva-nodejs-20.20.0/lib/node_modules'
 export NODE_PATH
 OLDPWD=''
 export OLDPWD
 OPTERR='1'
-OSTYPE='linux-gnu'
-PATH='/nix/store/1xk3mgscq548ypyrgm2n5kwdii92w9ql-bun-1.3.6/bin:/nix/store/mha8cz3kq9pnnns2f4ygsdl911nnc9nn-nodejs-20.20.0-dev/bin:/nix/store/jfar9wnj6kvr0gr6klh1gk7vgckkfr5j-nodejs-20.20.0/bin:/nix/store/bp7qbpj3w3kjmz2254192xg4pddm8li1-watchman-2025.10.13.00/bin:/nix/store/4xlra07s99b60kj0md6drgh0qmrkdpby-openjdk-17.0.17+10/bin:/nix/store/80fgl9ffaxlxl9s4i1jb37krcljx669g-gradle-8.14.3/bin:/nix/store/avpn1qm92j6nxdc4jdj67hr1l9bgxw7w-androidsdk/bin:/nix/store/3vs2fr2mazafcdwyza15bfhpmccx1k7z-patchelf-0.15.2/bin:/nix/store/d75200gb22v7p0703h5jrkgg8bqydk5q-coreutils-9.8/bin:/nix/store/wd99g2j010fdkry0ws1bhxzm52w82ssx-findutils-4.10.0/bin:/nix/store/20zvyjvxq9x2mkp7rbnvrwjjzq2n76hh-diffutils-3.12/bin:/nix/store/k06ssckzrzn9jjvvs4n62m6567zmbx6x-gnused-4.9/bin:/nix/store/qfmq7p42ak5yn389qvx7zpxkan5i4xiy-gnugrep-3.12/bin:/nix/store/nmxm04dhkaqg1q6hai70n9zmzb0q49a5-gawk-5.3.2/bin:/nix/store/k1lcfin159706lihwx5hhvl80dbij4jw-gnutar-1.35/bin:/nix/store/0hv4z5s3r1h4lmvn0427mlxjxgvg34nr-gzip-1.14/bin:/nix/store/p61ba9fdgx3358bpp18hv4rslf6n5bq6-bzip2-1.0.8-bin/bin:/nix/store/mkm3my2067305hdh7rzmi10npwr7y17f-gnumake-4.4.1/bin:/nix/store/lw117lsr8d585xs63kx5k233impyrq7q-bash-5.3p3/bin:/nix/store/clrf4mjwr8xcfpvway6w34wzvqc1hry4-patch-2.8/bin:/nix/store/j1zc5jh0vi9sbxj09ldj4xklgm6kpf8n-xz-5.8.1-bin/bin:/nix/store/s2k48fw3y698j4kcvmw0520m06ihv2z4-file-5.45/bin'
+OSTYPE='darwin24.6.0'
+PATH='/nix/store/2dly5ksd2jcpxam3l8mjcnhra1ivjljg-bun-1.3.6/bin:/nix/store/fsrayxzszxaqcm5k849c33qncvr22rf1-nodejs-20.20.0-dev/bin:/nix/store/l5zcv2mlpz4vkfr8gaznjl4l09pw7qva-nodejs-20.20.0/bin:/nix/store/inih97qa7v5hfk4pv84zs8ybyn4yjiy3-watchman-2025.10.13.00/bin:/nix/store/s9nq23qm9animys49h7g7w660jz4ccwz-zulu-ca-jdk-17.0.12/bin:/nix/store/v2xbkgrvn0b4g4qq7j5x60va0d4gf0kw-gradle-8.14.3/bin:/nix/store/r4jfvvkzbwlz443qb2ablj8lg77sgxn4-androidsdk/bin:/nix/store/av5g6hfp0yiir3iavg72js70ian8hxyf-cocoapods-1.16.2/bin:/nix/store/l60153ymb6kdnavlpaghi7h5fz7gh7iw-coreutils-9.8/bin:/nix/store/9mq7iqjv8mwpx6pmk2frkcnb5fnaphna-findutils-4.10.0/bin:/nix/store/4qz030vyw95fyhg30sjakrn6xbr7gnnf-diffutils-3.12/bin:/nix/store/cqpmyipcm6s84na6fkvkzknmz87igljr-gnused-4.9/bin:/nix/store/k2y0040hinbk3a2jj5ppy2dp2bpy9nw3-gnugrep-3.12/bin:/nix/store/pgz4cmapj3nq9vg4fyjqgaa7bayfdrr3-gawk-5.3.2/bin:/nix/store/n8zq31kl0x63sg14yzi38wd15alk62lc-gnutar-1.35/bin:/nix/store/z3pv1x994s4i32jcd93fh3nxhxpf9b35-gzip-1.14/bin:/nix/store/8vr957c4bdyvzppa07205az7mm763lg5-bzip2-1.0.8-bin/bin:/nix/store/p15ia8pn2wxzdqaf07nrwdspfwsyrzyn-gnumake-4.4.1/bin:/nix/store/yi3x6xpilh0bq0bgb61imy6gpv8b1la4-bash-5.3p3/bin:/nix/store/fm2dw9pdvwgpx5kryqhbx8fqfjq8six0-patch-2.8/bin:/nix/store/g3ynv50p3sz2jgz2zv9gjbxs9alcknyx-xz-5.8.1-bin/bin:/nix/store/6cp9fznk8nfjy4iwjbc549dkgpdh2sb0-file-5.45/bin'
 export PATH
+PATH_LOCALE='/nix/store/f8am9q9vq078lylgwdvbih0iixl6anam-locale-118/share/locale'
+export PATH_LOCALE
 PS4='+ '
-SHELL='/nix/store/lw117lsr8d585xs63kx5k233impyrq7q-bash-5.3p3/bin/bash'
+SHELL='/nix/store/yi3x6xpilh0bq0bgb61imy6gpv8b1la4-bash-5.3p3/bin/bash'
 export SHELL
 SOURCE_DATE_EPOCH='315532800'
 export SOURCE_DATE_EPOCH
-XDG_DATA_DIRS='/nix/store/1xk3mgscq548ypyrgm2n5kwdii92w9ql-bun-1.3.6/share:/nix/store/jfar9wnj6kvr0gr6klh1gk7vgckkfr5j-nodejs-20.20.0/share:/nix/store/4xlra07s99b60kj0md6drgh0qmrkdpby-openjdk-17.0.17+10/share:/nix/store/3vs2fr2mazafcdwyza15bfhpmccx1k7z-patchelf-0.15.2/share'
+XDG_DATA_DIRS='/nix/store/2dly5ksd2jcpxam3l8mjcnhra1ivjljg-bun-1.3.6/share:/nix/store/l5zcv2mlpz4vkfr8gaznjl4l09pw7qva-nodejs-20.20.0/share:/nix/store/s9nq23qm9animys49h7g7w660jz4ccwz-zulu-ca-jdk-17.0.12/share'
 export XDG_DATA_DIRS
+__darwinAllowLocalNetworking=''
+export __darwinAllowLocalNetworking
+__impureHostDeps='/bin/sh /usr/lib/libSystem.B.dylib /usr/lib/system/libunc.dylib /dev/zero /dev/random /dev/urandom /bin/sh'
+export __impureHostDeps
+__propagatedImpureHostDeps=''
+export __propagatedImpureHostDeps
+__propagatedSandboxProfile=''
+export __propagatedSandboxProfile
+__sandboxProfile=''
+export __sandboxProfile
 __structuredAttrs=''
 export __structuredAttrs
 _substituteStream_has_warned_replace_deprecation='false'
@@ -60,7 +79,7 @@ buildPhase='{ echo "------------------------------------------------------------
 } >> "$out"
 '
 export buildPhase
-builder='/nix/store/lw117lsr8d585xs63kx5k233impyrq7q-bash-5.3p3/bin/bash'
+builder='/nix/store/yi3x6xpilh0bq0bgb61imy6gpv8b1la4-bash-5.3p3/bin/bash'
 export builder
 checkPhase='gradleCheckPhase'
 cmakeFlags=''
@@ -68,7 +87,7 @@ export cmakeFlags
 configureFlags=''
 export configureFlags
 defaultBuildInputs=''
-defaultNativeBuildInputs='/nix/store/3vs2fr2mazafcdwyza15bfhpmccx1k7z-patchelf-0.15.2 /nix/store/9k7h0vvpnb8w4xcaypff4i76n1bsmwzz-update-autotools-gnu-config-scripts-hook /nix/store/0y5xmdb7qfvimjwbq7ibg1xdgkgjwqng-no-broken-symlinks.sh /nix/store/cv1d7p48379km6a85h4zp6kr86brh32q-audit-tmpdir.sh /nix/store/85clx3b0xkdf58jn161iy80y5223ilbi-compress-man-pages.sh /nix/store/p3l1a5y7nllfyrjn2krlwgcc3z0cd3fq-make-symlinks-relative.sh /nix/store/5yzw0vhkyszf2d179m0qfkgxmp5wjjx4-move-docs.sh /nix/store/fyaryjvghbkpfnsyw97hb3lyb37s1pd6-move-lib64.sh /nix/store/kd4xwxjpjxi71jkm6ka0np72if9rm3y0-move-sbin.sh /nix/store/pag6l61paj1dc9sv15l7bm5c17xn5kyk-move-systemd-user-units.sh /nix/store/cmzya9irvxzlkh7lfy6i82gbp0saxqj3-multiple-outputs.sh /nix/store/x8c40nfigps493a07sdr2pm5s9j1cdc0-patch-shebangs.sh /nix/store/cickvswrvann041nqxb0rxilc46svw1n-prune-libtool-files.sh /nix/store/xyff06pkhki3qy1ls77w10s0v79c9il0-reproducible-builds.sh /nix/store/z7k98578dfzi6l3hsvbivzm7hfqlk0zc-set-source-date-epoch-to-latest.sh /nix/store/pilsssjjdxvdphlg2h19p0bfx5q0jzkn-strip.sh'
+defaultNativeBuildInputs='/nix/store/r6fzmnq27xy5lqzzcwjqxnb4izkjhry8-update-autotools-gnu-config-scripts-hook /nix/store/0y5xmdb7qfvimjwbq7ibg1xdgkgjwqng-no-broken-symlinks.sh /nix/store/cv1d7p48379km6a85h4zp6kr86brh32q-audit-tmpdir.sh /nix/store/85clx3b0xkdf58jn161iy80y5223ilbi-compress-man-pages.sh /nix/store/p3l1a5y7nllfyrjn2krlwgcc3z0cd3fq-make-symlinks-relative.sh /nix/store/5yzw0vhkyszf2d179m0qfkgxmp5wjjx4-move-docs.sh /nix/store/fyaryjvghbkpfnsyw97hb3lyb37s1pd6-move-lib64.sh /nix/store/kd4xwxjpjxi71jkm6ka0np72if9rm3y0-move-sbin.sh /nix/store/pag6l61paj1dc9sv15l7bm5c17xn5kyk-move-systemd-user-units.sh /nix/store/cmzya9irvxzlkh7lfy6i82gbp0saxqj3-multiple-outputs.sh /nix/store/x8c40nfigps493a07sdr2pm5s9j1cdc0-patch-shebangs.sh /nix/store/cickvswrvann041nqxb0rxilc46svw1n-prune-libtool-files.sh /nix/store/xyff06pkhki3qy1ls77w10s0v79c9il0-reproducible-builds.sh /nix/store/z7k98578dfzi6l3hsvbivzm7hfqlk0zc-set-source-date-epoch-to-latest.sh /nix/store/pilsssjjdxvdphlg2h19p0bfx5q0jzkn-strip.sh'
 depsBuildBuild=''
 export depsBuildBuild
 depsBuildBuildPropagated=''
@@ -97,15 +116,15 @@ declare -a envBuildTargetHooks=('addNodePath' )
 declare -a envHostHostHooks=('addPkgToClassPath' )
 declare -a envHostTargetHooks=('addPkgToClassPath' )
 declare -a envTargetTargetHooks=()
-declare -a fixupOutputHooks=('if [ -z "${dontPatchELF-}" ]; then patchELF "$prefix"; fi' 'if [[ -z "${noAuditTmpdir-}" && -e "$prefix" ]]; then auditTmpdir "$prefix"; fi' 'if [ -z "${dontGzipMan-}" ]; then compressManPages "$prefix"; fi' '_moveLib64' '_moveSbin' '_moveSystemdUserUnits' 'patchShebangsAuto' '_pruneLibtoolFiles' '_doStrip' )
-initialPath='/nix/store/d75200gb22v7p0703h5jrkgg8bqydk5q-coreutils-9.8 /nix/store/wd99g2j010fdkry0ws1bhxzm52w82ssx-findutils-4.10.0 /nix/store/20zvyjvxq9x2mkp7rbnvrwjjzq2n76hh-diffutils-3.12 /nix/store/k06ssckzrzn9jjvvs4n62m6567zmbx6x-gnused-4.9 /nix/store/qfmq7p42ak5yn389qvx7zpxkan5i4xiy-gnugrep-3.12 /nix/store/nmxm04dhkaqg1q6hai70n9zmzb0q49a5-gawk-5.3.2 /nix/store/k1lcfin159706lihwx5hhvl80dbij4jw-gnutar-1.35 /nix/store/0hv4z5s3r1h4lmvn0427mlxjxgvg34nr-gzip-1.14 /nix/store/p61ba9fdgx3358bpp18hv4rslf6n5bq6-bzip2-1.0.8-bin /nix/store/mkm3my2067305hdh7rzmi10npwr7y17f-gnumake-4.4.1 /nix/store/lw117lsr8d585xs63kx5k233impyrq7q-bash-5.3p3 /nix/store/clrf4mjwr8xcfpvway6w34wzvqc1hry4-patch-2.8 /nix/store/j1zc5jh0vi9sbxj09ldj4xklgm6kpf8n-xz-5.8.1-bin /nix/store/s2k48fw3y698j4kcvmw0520m06ihv2z4-file-5.45'
+declare -a fixupOutputHooks=('if [[ -z "${noAuditTmpdir-}" && -e "$prefix" ]]; then auditTmpdir "$prefix"; fi' 'if [ -z "${dontGzipMan-}" ]; then compressManPages "$prefix"; fi' '_moveLib64' '_moveSbin' '_moveSystemdUserUnits' 'patchShebangsAuto' '_pruneLibtoolFiles' '_doStrip' )
+initialPath='/nix/store/l60153ymb6kdnavlpaghi7h5fz7gh7iw-coreutils-9.8 /nix/store/9mq7iqjv8mwpx6pmk2frkcnb5fnaphna-findutils-4.10.0 /nix/store/4qz030vyw95fyhg30sjakrn6xbr7gnnf-diffutils-3.12 /nix/store/cqpmyipcm6s84na6fkvkzknmz87igljr-gnused-4.9 /nix/store/k2y0040hinbk3a2jj5ppy2dp2bpy9nw3-gnugrep-3.12 /nix/store/pgz4cmapj3nq9vg4fyjqgaa7bayfdrr3-gawk-5.3.2 /nix/store/n8zq31kl0x63sg14yzi38wd15alk62lc-gnutar-1.35 /nix/store/z3pv1x994s4i32jcd93fh3nxhxpf9b35-gzip-1.14 /nix/store/8vr957c4bdyvzppa07205az7mm763lg5-bzip2-1.0.8-bin /nix/store/p15ia8pn2wxzdqaf07nrwdspfwsyrzyn-gnumake-4.4.1 /nix/store/yi3x6xpilh0bq0bgb61imy6gpv8b1la4-bash-5.3p3 /nix/store/fm2dw9pdvwgpx5kryqhbx8fqfjq8six0-patch-2.8 /nix/store/g3ynv50p3sz2jgz2zv9gjbxs9alcknyx-xz-5.8.1-bin /nix/store/6cp9fznk8nfjy4iwjbc549dkgpdh2sb0-file-5.45'
 mesonFlags=''
 export mesonFlags
 name='nix-shell-env'
 export name
-nativeBuildInputs='/nix/store/1xk3mgscq548ypyrgm2n5kwdii92w9ql-bun-1.3.6 /nix/store/mha8cz3kq9pnnns2f4ygsdl911nnc9nn-nodejs-20.20.0-dev /nix/store/bp7qbpj3w3kjmz2254192xg4pddm8li1-watchman-2025.10.13.00 /nix/store/4xlra07s99b60kj0md6drgh0qmrkdpby-openjdk-17.0.17+10 /nix/store/80fgl9ffaxlxl9s4i1jb37krcljx669g-gradle-8.14.3 /nix/store/avpn1qm92j6nxdc4jdj67hr1l9bgxw7w-androidsdk'
+nativeBuildInputs='/nix/store/2dly5ksd2jcpxam3l8mjcnhra1ivjljg-bun-1.3.6 /nix/store/fsrayxzszxaqcm5k849c33qncvr22rf1-nodejs-20.20.0-dev /nix/store/inih97qa7v5hfk4pv84zs8ybyn4yjiy3-watchman-2025.10.13.00 /nix/store/s9nq23qm9animys49h7g7w660jz4ccwz-zulu-ca-jdk-17.0.12 /nix/store/v2xbkgrvn0b4g4qq7j5x60va0d4gf0kw-gradle-8.14.3 /nix/store/r4jfvvkzbwlz443qb2ablj8lg77sgxn4-androidsdk /nix/store/av5g6hfp0yiir3iavg72js70ian8hxyf-cocoapods-1.16.2'
 export nativeBuildInputs
-out='/home/demis/git-repos/spotme/mobile/outputs/out'
+out='/Users/demis/github-repos/SpotMe-Gym/mobile/outputs/out'
 export out
 outputBin='out'
 outputDev='out'
@@ -124,7 +143,7 @@ phases='buildPhase'
 export phases
 pkg='/nix/store/pilsssjjdxvdphlg2h19p0bfx5q0jzkn-strip.sh'
 declare -a pkgsBuildBuild=()
-declare -a pkgsBuildHost=('/nix/store/1xk3mgscq548ypyrgm2n5kwdii92w9ql-bun-1.3.6' '/nix/store/mha8cz3kq9pnnns2f4ygsdl911nnc9nn-nodejs-20.20.0-dev' '/nix/store/jfar9wnj6kvr0gr6klh1gk7vgckkfr5j-nodejs-20.20.0' '/nix/store/bp7qbpj3w3kjmz2254192xg4pddm8li1-watchman-2025.10.13.00' '/nix/store/4xlra07s99b60kj0md6drgh0qmrkdpby-openjdk-17.0.17+10' '/nix/store/sacpydlljp142ya5x0g7prsmsyh0p4sn-set-java-classpath-hook' '/nix/store/80fgl9ffaxlxl9s4i1jb37krcljx669g-gradle-8.14.3' '/nix/store/avpn1qm92j6nxdc4jdj67hr1l9bgxw7w-androidsdk' '/nix/store/3vs2fr2mazafcdwyza15bfhpmccx1k7z-patchelf-0.15.2' '/nix/store/9k7h0vvpnb8w4xcaypff4i76n1bsmwzz-update-autotools-gnu-config-scripts-hook' '/nix/store/0y5xmdb7qfvimjwbq7ibg1xdgkgjwqng-no-broken-symlinks.sh' '/nix/store/cv1d7p48379km6a85h4zp6kr86brh32q-audit-tmpdir.sh' '/nix/store/85clx3b0xkdf58jn161iy80y5223ilbi-compress-man-pages.sh' '/nix/store/p3l1a5y7nllfyrjn2krlwgcc3z0cd3fq-make-symlinks-relative.sh' '/nix/store/5yzw0vhkyszf2d179m0qfkgxmp5wjjx4-move-docs.sh' '/nix/store/fyaryjvghbkpfnsyw97hb3lyb37s1pd6-move-lib64.sh' '/nix/store/kd4xwxjpjxi71jkm6ka0np72if9rm3y0-move-sbin.sh' '/nix/store/pag6l61paj1dc9sv15l7bm5c17xn5kyk-move-systemd-user-units.sh' '/nix/store/cmzya9irvxzlkh7lfy6i82gbp0saxqj3-multiple-outputs.sh' '/nix/store/x8c40nfigps493a07sdr2pm5s9j1cdc0-patch-shebangs.sh' '/nix/store/cickvswrvann041nqxb0rxilc46svw1n-prune-libtool-files.sh' '/nix/store/xyff06pkhki3qy1ls77w10s0v79c9il0-reproducible-builds.sh' '/nix/store/z7k98578dfzi6l3hsvbivzm7hfqlk0zc-set-source-date-epoch-to-latest.sh' '/nix/store/pilsssjjdxvdphlg2h19p0bfx5q0jzkn-strip.sh' )
+declare -a pkgsBuildHost=('/nix/store/2dly5ksd2jcpxam3l8mjcnhra1ivjljg-bun-1.3.6' '/nix/store/fsrayxzszxaqcm5k849c33qncvr22rf1-nodejs-20.20.0-dev' '/nix/store/l5zcv2mlpz4vkfr8gaznjl4l09pw7qva-nodejs-20.20.0' '/nix/store/inih97qa7v5hfk4pv84zs8ybyn4yjiy3-watchman-2025.10.13.00' '/nix/store/s9nq23qm9animys49h7g7w660jz4ccwz-zulu-ca-jdk-17.0.12' '/nix/store/wamkhx6bq6skgxka918qkv1qkn77v1i3-set-java-classpath-hook' '/nix/store/v2xbkgrvn0b4g4qq7j5x60va0d4gf0kw-gradle-8.14.3' '/nix/store/r4jfvvkzbwlz443qb2ablj8lg77sgxn4-androidsdk' '/nix/store/av5g6hfp0yiir3iavg72js70ian8hxyf-cocoapods-1.16.2' '/nix/store/r6fzmnq27xy5lqzzcwjqxnb4izkjhry8-update-autotools-gnu-config-scripts-hook' '/nix/store/0y5xmdb7qfvimjwbq7ibg1xdgkgjwqng-no-broken-symlinks.sh' '/nix/store/cv1d7p48379km6a85h4zp6kr86brh32q-audit-tmpdir.sh' '/nix/store/85clx3b0xkdf58jn161iy80y5223ilbi-compress-man-pages.sh' '/nix/store/p3l1a5y7nllfyrjn2krlwgcc3z0cd3fq-make-symlinks-relative.sh' '/nix/store/5yzw0vhkyszf2d179m0qfkgxmp5wjjx4-move-docs.sh' '/nix/store/fyaryjvghbkpfnsyw97hb3lyb37s1pd6-move-lib64.sh' '/nix/store/kd4xwxjpjxi71jkm6ka0np72if9rm3y0-move-sbin.sh' '/nix/store/pag6l61paj1dc9sv15l7bm5c17xn5kyk-move-systemd-user-units.sh' '/nix/store/cmzya9irvxzlkh7lfy6i82gbp0saxqj3-multiple-outputs.sh' '/nix/store/x8c40nfigps493a07sdr2pm5s9j1cdc0-patch-shebangs.sh' '/nix/store/cickvswrvann041nqxb0rxilc46svw1n-prune-libtool-files.sh' '/nix/store/xyff06pkhki3qy1ls77w10s0v79c9il0-reproducible-builds.sh' '/nix/store/z7k98578dfzi6l3hsvbivzm7hfqlk0zc-set-source-date-epoch-to-latest.sh' '/nix/store/pilsssjjdxvdphlg2h19p0bfx5q0jzkn-strip.sh' )
 declare -a pkgsBuildTarget=()
 declare -a pkgsHostHost=()
 declare -a pkgsHostTarget=()
@@ -136,7 +155,7 @@ preConfigurePhases=' updateAutotoolsGnuConfigScriptsPhase'
 declare -a preFixupHooks=('_moveToShare' '_multioutDocs' '_multioutDevs' )
 preferLocalBuild='1'
 export preferLocalBuild
-prefix='/home/demis/git-repos/spotme/mobile/outputs/out'
+prefix='/Users/demis/github-repos/SpotMe-Gym/mobile/outputs/out'
 declare -a propagatedBuildDepFiles=('propagated-build-build-deps' 'propagated-native-build-inputs' 'propagated-build-target-deps' )
 propagatedBuildInputs=''
 export propagatedBuildInputs
@@ -144,30 +163,31 @@ declare -a propagatedHostDepFiles=('propagated-host-host-deps' 'propagated-build
 propagatedNativeBuildInputs=''
 export propagatedNativeBuildInputs
 declare -a propagatedTargetDepFiles=('propagated-target-target-deps' )
-shell='/nix/store/lw117lsr8d585xs63kx5k233impyrq7q-bash-5.3p3/bin/bash'
+shell='/nix/store/yi3x6xpilh0bq0bgb61imy6gpv8b1la4-bash-5.3p3/bin/bash'
 export shell
 shellHook='echo "🚀 SpotMe App Environment Loaded (Pure Nix)"
 echo "📦 Bun: $(bun --version) | Node: $(node --version)"
 echo "☕ Java: $(java -version 2>&1 | head -n 1)"
 
 # Lock Java and Android SDK paths strictly to the Nix store
-export JAVA_HOME="/nix/store/4xlra07s99b60kj0md6drgh0qmrkdpby-openjdk-17.0.17+10/lib/openjdk"
-export ANDROID_HOME="/nix/store/avpn1qm92j6nxdc4jdj67hr1l9bgxw7w-androidsdk/libexec/android-sdk"
-export ANDROID_SDK_ROOT="/nix/store/avpn1qm92j6nxdc4jdj67hr1l9bgxw7w-androidsdk/libexec/android-sdk"
+export JAVA_HOME="/nix/store/s9nq23qm9animys49h7g7w660jz4ccwz-zulu-ca-jdk-17.0.12"
+export ANDROID_HOME="/nix/store/r4jfvvkzbwlz443qb2ablj8lg77sgxn4-androidsdk/libexec/android-sdk"
+export ANDROID_SDK_ROOT="/nix/store/r4jfvvkzbwlz443qb2ablj8lg77sgxn4-androidsdk/libexec/android-sdk"
 
 # Explicitly tell React Native where the NDK is located
-export ANDROID_NDK_ROOT="/nix/store/avpn1qm92j6nxdc4jdj67hr1l9bgxw7w-androidsdk/libexec/android-sdk/ndk/27.1.12297006"
+export ANDROID_NDK_ROOT="/nix/store/r4jfvvkzbwlz443qb2ablj8lg77sgxn4-androidsdk/libexec/android-sdk/ndk/27.1.12297006"
 
 export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
 '
 export shellHook
-stdenv='/nix/store/wx5ivjgmzwl9222fpdy5h0c1ysa9cldn-stdenv-linux'
+stdenv='/nix/store/clv1pd90ggci9f92dqss3kyixfw70lh6-stdenv-darwin'
 export stdenv
 strictDeps=''
 export strictDeps
-system='x86_64-linux'
+stripDebugFlags='-S'
+system='aarch64-darwin'
 export system
 declare -a unpackCmdHooks=('_defaultUnpack' )
 _activatePkgs ()
@@ -1207,7 +1227,7 @@ gradleConfigureHook ()
         if [ -z "${MITM_CACHE_KEYSTORE-}" ]; then
             MITM_CACHE_KEYSTORE="$MITM_CACHE_CERT_DIR/keystore";
             MITM_CACHE_KS_PWD="$(head -c10 /dev/random | base32)";
-            echo y | /nix/store/imqrk5lxp6fv2xndnz7wndxn4f1mzni2-openjdk-21.0.9+10/bin/keytool -importcert -file "$MITM_CACHE_CA" -alias alias -keystore "$MITM_CACHE_KEYSTORE" -storepass "$MITM_CACHE_KS_PWD";
+            echo y | /nix/store/dqjjg2zpsnsbcms3lhxw0rfbv959mmq5-zulu-ca-jdk-21.0.8/bin/keytool -importcert -file "$MITM_CACHE_CA" -alias alias -keystore "$MITM_CACHE_KEYSTORE" -storepass "$MITM_CACHE_KS_PWD";
         fi;
         gradleFlagsArray+=(-Dhttp.proxyHost="$MITM_CACHE_HOST" -Dhttp.proxyPort="$MITM_CACHE_PORT");
         gradleFlagsArray+=(-Dhttps.proxyHost="$MITM_CACHE_HOST" -Dhttps.proxyPort="$MITM_CACHE_PORT");
@@ -1344,10 +1364,10 @@ mitmCacheConfigureHook ()
         MITM_CACHE_CERT_DIR="$(mktemp -d)";
         pushd "$MITM_CACHE_CERT_DIR";
         MITM_CACHE_CA="$MITM_CACHE_CERT_DIR/ca.cer";
-        /nix/store/827b5xq1ghbbdrp1faa4fw32xj1m2p51-openssl-3.6.0-bin/bin/openssl genrsa -out ca.key 2048;
-        /nix/store/827b5xq1ghbbdrp1faa4fw32xj1m2p51-openssl-3.6.0-bin/bin/openssl req -x509 -new -nodes -key ca.key -sha256 -days 1 -out ca.cer -subj "/C=AL/ST=a/L=a/O=a/OU=a/CN=example.org";
+        /nix/store/qjl9insn7qgdz4i8ijvc6j7w2pivny8f-openssl-3.6.0-bin/bin/openssl genrsa -out ca.key 2048;
+        /nix/store/qjl9insn7qgdz4i8ijvc6j7w2pivny8f-openssl-3.6.0-bin/bin/openssl req -x509 -new -nodes -key ca.key -sha256 -days 1 -out ca.cer -subj "/C=AL/ST=a/L=a/O=a/OU=a/CN=example.org";
         MITM_CACHE_HOST="127.0.0.1";
-        MITM_CACHE_PORT="${mitmCachePort:-$(/nix/store/mxxba6s5anala7886jmdig4nqkg81nx8-python3.13-ephemeral-port-reserve-1.1.4/bin/ephemeral-port-reserve "$MITM_CACHE_HOST")}";
+        MITM_CACHE_PORT="${mitmCachePort:-$(/nix/store/fzxln223hljdm0fy3f3yh3zxmlbjjpfx-python3.13-ephemeral-port-reserve-1.1.4/bin/ephemeral-port-reserve "$MITM_CACHE_HOST")}";
         MITM_CACHE_ADDRESS="$MITM_CACHE_HOST:$MITM_CACHE_PORT";
         export http_proxy="$MITM_CACHE_ADDRESS";
         export https_proxy="$MITM_CACHE_ADDRESS";
@@ -1512,24 +1532,6 @@ noBrokenSymlinksInAllOutputs ()
             noBrokenSymlinks "${!output}";
         done;
     fi
-}
-patchELF ()
-{
- 
-    local dir="$1";
-    [ -e "$dir" ] || return 0;
-    echo "shrinking RPATHs of ELF executables and libraries in $dir";
-    local i;
-    while IFS= read -r -d '' i; do
-        if [[ "$i" =~ .build-id ]]; then
-            continue;
-        fi;
-        if ! isELF "$i"; then
-            continue;
-        fi;
-        echo "shrinking $i";
-        patchelf --shrink-rpath "$i" || true;
-    done < <(find "$dir" -type f -print0)
 }
 patchPhase ()
 {
@@ -2094,7 +2096,7 @@ updateAutotoolsGnuConfigScriptsPhase ()
         for f in $(find . -type f -name "$script");
         do
             echo "Updating Autotools / GNU config script to a newer upstream version: $f";
-            cp -f "/nix/store/axmfg44mziw9bngfj937li7c7l39x6w1-gnu-config-2024-01-01/$script" "$f";
+            cp -f "/nix/store/2qwdi6ck5svyhn9z5p2dnas89myyghzq-gnu-config-2024-01-01/$script" "$f";
         done;
     done
 }

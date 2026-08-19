@@ -6,6 +6,8 @@ import * as Location from 'expo-location';
 import { searchFood, getFoodByBarcode, FoodProduct } from '../../services/foodService';
 import { Search, Scan, X, ChevronLeft, MapPin, History, Sparkles } from 'lucide-react-native';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Icon } from '../../components/ui/Icon';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useNutritionStore, HistoryItem } from '../../store/nutritionStore';
 
@@ -206,9 +208,13 @@ export default function NutritionSearch() {
         {/* Header */}
         <View className="flex-row items-center justify-between mb-6">
           <View className="flex-row items-center">
-            <TouchableOpacity onPress={() => router.back()} className="mr-4 p-1 bg-zinc-800 rounded-full">
-              <ChevronLeft size={24} color="white" />
-            </TouchableOpacity>
+            <Button
+              size="icon"
+              variant="secondary"
+              icon={<Icon icon={ChevronLeft} size={24} color="white" />}
+              onPress={() => router.back()}
+              className="mr-4"
+            />
             <View>
               <Text className="text-3xl font-bold text-white">Add Food</Text>
               {meal && <Text className="text-blue-400 font-medium text-sm">to {meal}</Text>}
@@ -238,12 +244,13 @@ export default function NutritionSearch() {
               autoFocus={!isScanning}
             />
           </View>
-          <TouchableOpacity
-            className="w-12 h-12 bg-zinc-800 rounded-xl items-center justify-center border border-zinc-700"
+          <Button
+            size="icon"
+            variant="outline"
+            icon={<Icon icon={Scan} size={20} color="white" />}
             onPress={handleScanToggle}
-          >
-            <Scan size={20} color="white" />
-          </TouchableOpacity>
+            className="w-12 h-12"
+          />
         </View>
 
         {/* Results */}
@@ -294,21 +301,22 @@ export default function NutritionSearch() {
                 barcodeTypes: ["qr", "ean13", "ean8", "upc_e", "upc_a"],
               }}
             >
-              <SafeAreaView className="flex-1">
-                <View className="flex-row justify-between p-4">
-                  <View></View>
-                  <TouchableOpacity
+              <View className="flex-1">
+                <View className="flex-row justify-end px-4 mt-16">
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    icon={<Icon icon={X} size={28} color="white" />}
                     onPress={() => setIsScanning(false)}
-                    className="h-10 w-10 bg-black/50 rounded-full items-center justify-center"
-                  >
-                    <X size={24} color="white" />
-                  </TouchableOpacity>
+                    className="bg-black/70 h-12 w-12"
+                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                  />
                 </View>
                 <View className="flex-1 justify-center items-center">
                   <View className="w-64 h-64 border-2 border-white/50 rounded-xl bg-transparent" />
                   <Text className="text-white mt-4 font-bold bg-black/50 px-3 py-1 rounded">Scan a barcode</Text>
                 </View>
-              </SafeAreaView>
+              </View>
             </CameraView>
           </View>
         </Modal>

@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 import { Meal, useNutritionStore } from '../../store/nutritionStore';
 import { Plus, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -29,13 +31,14 @@ export const MealList = React.memo(function MealList({ meals, date }: MealListPr
             {meal.foods.length === 0 ? (
               <Card className="bg-zinc-900 border border-zinc-800 py-6 items-center border-dashed">
                 <Text className="text-zinc-600 mb-2">No food logged yet</Text>
-                <TouchableOpacity
-                  className="flex-row items-center"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<Icon icon={Plus} size={16} color="#3b82f6" />}
+                  label="Add Food"
                   onPress={() => router.push({ pathname: '/nutrition/search', params: { meal: meal.name } })}
-                >
-                  <Plus size={16} color="#3b82f6" />
-                  <Text className="text-blue-500 font-bold ml-1">Add Food</Text>
-                </TouchableOpacity>
+                  className="text-blue-500"
+                />
               </Card>
             ) : (
               <View className="gap-2">
@@ -45,21 +48,22 @@ export const MealList = React.memo(function MealList({ meals, date }: MealListPr
                       <Text className="text-white font-medium">{food.name}</Text>
                       <Text className="text-zinc-500 text-xs">{food.calories} kcal • {food.protein}p • {food.carbs}c • {food.fat}f</Text>
                     </View>
-                    <TouchableOpacity
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      icon={<Icon icon={Trash2} size={16} color="#ef4444" />}
                       onPress={() => removeFood(date, meal.name, food.id)}
-                      className="p-2"
-                    >
-                      <Trash2 size={16} color="#ef4444" />
-                    </TouchableOpacity>
+                    />
                   </Card>
                 ))}
-                <TouchableOpacity
-                  className="flex-row items-center justify-center mt-2 py-2 bg-zinc-800/50 rounded-lg border border-zinc-800 border-dashed"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Icon icon={Plus} size={16} color="#3b82f6" />}
+                  label={`Add item to ${meal.name}`}
                   onPress={() => router.push({ pathname: '/nutrition/search', params: { meal: meal.name } })}
-                >
-                  <Plus size={16} color="#3b82f6" />
-                  <Text className="text-blue-500 font-bold ml-1 text-sm bg-transparent">Add item to {meal.name}</Text>
-                </TouchableOpacity>
+                  className="mt-2 bg-zinc-800/50 border-dashed"
+                />
               </View>
             )}
           </View>

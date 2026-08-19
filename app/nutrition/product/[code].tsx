@@ -2,7 +2,9 @@ import { View, Text, Image, ScrollView, TouchableOpacity, TextInput } from 'reac
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNutritionStore, FoodItem, Meal } from '../../../store/nutritionStore';
-import { ChevronLeft, Plus, Utensils } from 'lucide-react-native';
+import { ChevronLeft, Plus, Minus, Utensils } from 'lucide-react-native';
+import { Button } from '../../../components/ui/Button';
+import { Icon } from '../../../components/ui/Icon';
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUnitConverter } from '../../../hooks/useUnitConverter';
@@ -93,9 +95,13 @@ export default function ProductDetail() {
         <View className="flex-1 px-6 pt-2">
           {/* Header */}
           <View className="flex-row items-center mb-6 mt-2">
-            <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 bg-zinc-800/80 rounded-full items-center justify-center backdrop-blur-md">
-              <ChevronLeft size={24} color="white" />
-            </TouchableOpacity>
+            <Button
+              size="icon"
+              variant="secondary"
+              icon={<Icon icon={ChevronLeft} size={24} color="white" />}
+              onPress={() => router.back()}
+              className="bg-zinc-800/80"
+            />
             <View className="flex-1 ml-4 mr-10">
               <Text className="text-white font-bold text-center text-lg shadow-black shadow-lg" numberOfLines={1}>{product.product_name}</Text>
             </View>
@@ -140,9 +146,13 @@ export default function ProductDetail() {
 
               {/* Main Numeric Input */}
               <View className="flex-row items-center justify-between gap-4">
-                <TouchableOpacity onPress={() => adjustAmount(-1)} className="h-14 w-14 bg-zinc-800 rounded-2xl items-center justify-center border border-zinc-700 active:scale-95 transition-transform">
-                  <Text className="text-zinc-400 text-3xl font-light leading-none pb-1">-</Text>
-                </TouchableOpacity>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  icon={<Icon icon={Minus} size={24} color="#a1a1aa" />}
+                  onPress={() => adjustAmount(-1)}
+                  className="h-14 w-14 rounded-2xl"
+                />
 
                 <View className="flex-1 items-center">
                   <View className="flex-row items-baseline justify-center">
@@ -158,9 +168,13 @@ export default function ProductDetail() {
                   <Text className="text-zinc-600 text-xs font-bold tracking-widest uppercase mt-1">{t('food.quantity')}</Text>
                 </View>
 
-                <TouchableOpacity onPress={() => adjustAmount(1)} className="h-14 w-14 bg-zinc-800 rounded-2xl items-center justify-center border border-zinc-700 active:scale-95 transition-transform">
-                  <Text className="text-white text-3xl font-light leading-none pb-1">+</Text>
-                </TouchableOpacity>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  icon={<Icon icon={Plus} size={24} color="white" />}
+                  onPress={() => adjustAmount(1)}
+                  className="h-14 w-14 rounded-2xl"
+                />
               </View>
             </View>
 
@@ -183,13 +197,14 @@ export default function ProductDetail() {
 
           {/* Floating Action Button */}
           <View className="absolute bottom-8 left-6 right-6">
-            <TouchableOpacity
-              className="w-full bg-blue-600 h-16 rounded-[20px] flex-row items-center justify-center shadow-lg shadow-blue-500/30 active:opacity-90"
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<Icon icon={Plus} size={24} color="white" />}
+              label={`${t('food.addTo')} ${meal || 'Snack'}`}
               onPress={handleAdd}
-            >
-              <Plus size={24} color="white" className="mr-2" />
-              <Text className="text-white font-bold text-xl">{t('food.addTo')} {meal || 'Snack'}</Text>
-            </TouchableOpacity>
+              className="w-full h-16 rounded-[20px] shadow-lg shadow-blue-500/30"
+            />
           </View>
         </View>
       </View>

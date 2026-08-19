@@ -15,7 +15,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spotme.app"
+      "bundleIdentifier": "com.spotme.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow SpotMe to scan food barcodes.",
+        "NSLocationWhenInUseUsageDescription": "Allow SpotMe to find food products available in your region.",
+        "NSMicrophoneUsageDescription": "Allow SpotMe to access microphone for video."
+      },
+      "deploymentTarget": "15.1"
     },
     "android": {
       "adaptiveIcon": {

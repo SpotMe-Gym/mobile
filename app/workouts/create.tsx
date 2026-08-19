@@ -548,21 +548,21 @@ export default function CreateWorkout() {
 
           {/* Minimalist Add Buttons */}
           <View className="flex-row gap-4 mb-20">
-            <TouchableOpacity
+            <Button
+              variant="secondary"
+              icon={<Icon icon={Plus} size={18} color="#9ca3af" />}
+              label="Add Exercise"
               onPress={addExercise}
-              className="flex-1 flex-row items-center justify-center py-4 rounded-2xl bg-zinc-900 border border-zinc-800 active:bg-zinc-800"
-            >
-              <Icon icon={Plus} size={18} color="#9ca3af" className="mr-2" />
-              <Text className="text-zinc-400 font-bold">Add Exercise</Text>
-            </TouchableOpacity>
+              className="flex-1 py-4 rounded-2xl"
+            />
 
-            <TouchableOpacity
+            <Button
+              variant="secondary"
+              icon={<Icon icon={Armchair} size={18} color="#d97706" />}
+              label="Add Rest"
               onPress={addRest}
-              className="flex-1 flex-row items-center justify-center py-4 rounded-2xl bg-zinc-900 border border-zinc-800 active:bg-zinc-800"
-            >
-              <Icon icon={Armchair} size={18} color="#d97706" className="mr-2 opacity-80" />
-              <Text className="text-zinc-400 font-bold">Add Rest</Text>
-            </TouchableOpacity>
+              className="flex-1 py-4 rounded-2xl"
+            />
           </View>
         </ScrollView>
 

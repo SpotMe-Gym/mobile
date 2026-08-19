@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { Plus, Play, Dumbbell, Sparkles } from 'lucide-react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useWorkoutStore, Workout } from '../../store/workoutStore';
@@ -34,9 +35,11 @@ const WorkoutItem = ({ item, scheduledDays, onPress }: { item: Workout, schedule
           </View>
         </View>
       </TouchableOpacity>
-      <TouchableOpacity className="h-10 w-10 bg-zinc-800 rounded-full items-center justify-center active:bg-zinc-700">
-        <Play size={20} color="white" fill="white" />
-      </TouchableOpacity>
+      <Button
+        size="icon"
+        variant="secondary"
+        icon={<Icon icon={Play} size={20} color="white" fill="white" />}
+      />
     </View>
   </Card>
 );
@@ -52,12 +55,12 @@ export default function Workouts() {
           title="My Workouts"
           className="mt-8"
           rightAction={
-            <TouchableOpacity
-              className="h-10 w-10 bg-zinc-800 rounded-full items-center justify-center"
-              onPress={() => console.log('AI Chat')}
-            >
-              <Icon icon={Sparkles} size={20} color="#3b82f6" />
-            </TouchableOpacity>
+            <Button
+              size="icon"
+              variant="ai"
+              icon={<Icon icon={Sparkles} size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />}
+              onPress={() => router.push('/chat')}
+            />
           }
         />
 
@@ -84,12 +87,13 @@ export default function Workouts() {
           />
         </View>
 
-        <TouchableOpacity
-          className="absolute bottom-6 right-6 h-14 w-14 bg-blue-600 rounded-full items-center justify-center shadow-lg active:bg-blue-500"
+        <Button
+          size="icon"
+          variant="primary"
+          icon={<Icon icon={Plus} color="white" size={28} />}
           onPress={() => router.push('/workouts/create')}
-        >
-          <Icon icon={Plus} color="white" size={28} />
-        </TouchableOpacity>
+          className="absolute bottom-6 right-6 h-14 w-14 shadow-lg"
+        />
       </View>
     </SafeAreaView>
   );

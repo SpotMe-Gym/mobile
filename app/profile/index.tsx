@@ -2,6 +2,7 @@ import { View, Text, Image, ScrollView, TouchableOpacity, Alert } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserStore } from '../../store/userStore';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { Settings, ChevronRight, ChevronLeft, User, Hash, Ruler, Weight, Languages } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -26,14 +27,20 @@ export default function Profile() {
         {/* Header */}
         <View className="flex-row justify-between items-center mb-6 mt-2">
           <View className="flex-row items-center">
-            <TouchableOpacity onPress={() => router.back()} className="mr-3 bg-zinc-800 p-1.5 rounded-full">
-              <Icon icon={ChevronLeft} color="white" size={24} />
-            </TouchableOpacity>
+            <Button
+              size="icon"
+              variant="secondary"
+              icon={<Icon icon={ChevronLeft} color="white" size={24} />}
+              onPress={() => router.back()}
+              className="mr-3"
+            />
             <Text className="text-3xl font-bold text-white">{t('tabs.profile')}</Text>
           </View>
-          <TouchableOpacity>
-            <Icon icon={Settings} color="white" size={24} />
-          </TouchableOpacity>
+          <Button
+            size="icon"
+            variant="ghost"
+            icon={<Icon icon={Settings} color="white" size={24} />}
+          />
         </View>
 
         {/* User Card */}
@@ -86,7 +93,9 @@ export default function Profile() {
         </View>
 
         {/* Reset Data Button */}
-        <TouchableOpacity
+        <Button
+          variant="danger"
+          label="Reset All Data"
           onPress={() => {
             const { resetUser } = useUserStore.getState();
             Alert.alert(
@@ -105,10 +114,8 @@ export default function Profile() {
               ]
             );
           }}
-          className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl items-center mb-10"
-        >
-          <Text className="text-red-500 font-bold">Reset All Data</Text>
-        </TouchableOpacity>
+          className="mb-10"
+        />
 
       </ScrollView>
     </SafeAreaView>

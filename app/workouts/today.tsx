@@ -147,11 +147,12 @@ function WorkoutDetailContent() {
           title="Today's Plan"
           onBack={handleClose}
           rightAction={
-            <View className="flex-row items-center gap-4">
-              <TouchableOpacity onPress={() => router.push('/chat')} hitSlop={10}>
-                <Sparkles size={24} color="#3b82f6" />
-              </TouchableOpacity>
-            </View>
+            <Button
+              size="icon"
+              variant="ai"
+              icon={<Icon icon={Sparkles} size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />}
+              onPress={() => router.push('/chat')}
+            />
           }
         />
       </View>
@@ -306,13 +307,13 @@ function WorkoutDetailContent() {
               />
 
               {/* Add another workout button aligned with the end of list */}
-              <TouchableOpacity
-                className="mt-8 mx-4 border-2 border-dashed border-zinc-700 rounded-2xl p-4 items-center justify-center flex-row gap-2"
+              <Button
+                variant="outline"
+                icon={<Icon icon={Plus} size={20} color="#71717a" />}
+                label="Add Another Workout"
                 onPress={() => router.push('/workouts')}
-              >
-                <Plus size={20} color="#71717a" />
-                <Text className="text-zinc-500 font-bold">Add Another Workout</Text>
-              </TouchableOpacity>
+                className="mt-8 mx-4 border-2 border-dashed border-zinc-700 rounded-2xl p-4"
+              />
             </View>
           </>
         ) : (

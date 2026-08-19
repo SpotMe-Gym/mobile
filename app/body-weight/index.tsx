@@ -1,9 +1,11 @@
-import { View, Text, ScrollView, Pressable, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import Animated, { useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Icon } from '../../components/ui/Icon';
 import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../../components/ExpandableCardLayout';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '../../store/userStore';
@@ -119,9 +121,12 @@ function WeightDetailContent() {
           title="Body Weight"
           onBack={handleClose}
           rightAction={
-            <TouchableOpacity onPress={() => router.push('/chat')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Sparkles size={24} color="#3b82f6" />
-            </TouchableOpacity>
+            <Button
+              size="icon"
+              variant="ai"
+              icon={<Icon icon={Sparkles} size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />}
+              onPress={() => router.push('/chat')}
+            />
           }
         />
       </View>
@@ -172,12 +177,16 @@ function WeightDetailContent() {
                   <View>
                     <Text className="text-zinc-400">{new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
                   </View>
-                  <View className="flex-row items-center gap-4">
+                    <View className="flex-row items-center gap-4">
                     <Text className="text-white font-bold text-lg">{dw.formatted} <Text className="text-xs font-normal text-zinc-600">{dw.unit}</Text></Text>
                     {entry.id && (
-                      <Pressable onPress={() => handleDelete(entry.id)} hitSlop={10}>
-                        <Trash2 size={18} color="#ef4444" />
-                      </Pressable>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        icon={<Icon icon={Trash2} size={18} color="#ef4444" />}
+                        onPress={() => handleDelete(entry.id)}
+                        className="h-8 w-8"
+                      />
                     )}
                   </View>
                 </View>
@@ -201,13 +210,14 @@ function WeightDetailContent() {
       />
 
       {/* Floating Add Button */}
-      <Pressable
-        className="absolute right-6 h-14 w-14 bg-blue-600 rounded-full items-center justify-center shadow-lg shadow-black/50 z-50"
-        style={{ bottom: insets.bottom + 24 }}
+      <Button
+        size="icon"
+        variant="primary"
+        icon={<Icon icon={Plus} size={32} color="white" />}
         onPress={() => setModalVisible(true)}
-      >
-        <Plus size={32} color="white" />
-      </Pressable>
+        className="absolute right-6 h-14 w-14 shadow-lg shadow-black/50 z-50"
+        style={{ bottom: insets.bottom + 24 }}
+      />
     </View>
   );
 }

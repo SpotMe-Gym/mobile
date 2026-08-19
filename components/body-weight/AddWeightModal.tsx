@@ -1,7 +1,8 @@
-import { View, Text, TextInput, Modal, Pressable } from 'react-native';
+import { View, Text, TextInput, Modal } from 'react-native';
 import { useState } from 'react';
 import { X } from 'lucide-react-native';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 
 interface AddWeightModalProps {
   visible: boolean;
@@ -31,9 +32,13 @@ export function AddWeightModal({ visible, onClose, onSave, currentWeight }: AddW
         <View className="w-full max-w-sm bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
           <View className="flex-row justify-between items-center mb-6">
             <Text className="text-white text-xl font-bold">Log Weight</Text>
-            <Pressable onPress={onClose} className="p-2 -mr-2">
-              <X color="#a1a1aa" size={24} />
-            </Pressable>
+            <Button
+              size="icon"
+              variant="ghost"
+              icon={<Icon icon={X} size={24} color="#a1a1aa" />}
+              onPress={onClose}
+              className="-mr-2"
+            />
           </View>
 
           <View className="mb-6">

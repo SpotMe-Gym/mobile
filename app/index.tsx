@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { TrendingUp, TrendingDown, Minus, Play, Sparkles } from 'lucide-react-native';
+import { Icon } from '@/components/ui/Icon';
 import { useRouter } from 'expo-router';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useMemo, useState } from 'react';
@@ -86,12 +87,13 @@ export default function Dashboard() {
           </View>
 
           {/* Right: AI Chat */}
-          <Pressable
+          <Button
+            size="icon"
+            variant="ai"
+            icon={<Icon icon={Sparkles} size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />}
             onPress={() => router.push('/chat')}
-            className="h-10 w-10 bg-blue-600/20 rounded-full items-center justify-center border border-blue-500/30 z-10"
-          >
-            <Sparkles size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
-          </Pressable>
+            className="z-10"
+          />
         </View>
 
         {/* Greeting Sub-header */}
