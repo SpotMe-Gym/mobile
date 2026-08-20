@@ -1,0 +1,44 @@
+---
+description: Internationalization (i18n), localization, and copywriting standards
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Language & Internationalization Rules
+
+## Core Principles
+- ZERO hardcoded user-facing strings in JSX.
+- ALL text must be routed through `react-i18next`.
+
+## Implementation Standards
+
+### The `useTranslation` Hook
+- Always initialize translations at the top of the component:
+  ```tsx
+  const { t } = useTranslation('workouts');
+  ```
+- Use descriptive, hierarchical keys for translations:
+  ```tsx
+  // GOOD
+  <Text>{t('card.durationLabel')}</Text>
+  
+  // BAD
+  <Text>Duration</Text>
+  <Text>{t('duration')}</Text> // Too generic
+  ```
+
+### Variables and Pluralization
+- When text requires dynamic data, use i18next interpolation instead of concatenating strings:
+  ```tsx
+  // GOOD
+  // JSON: "completedExercises": "Completed {{count}} exercises"
+  <Text>{t('completedExercises', { count: 5 })}</Text>
+
+  // BAD
+  <Text>{`Completed ${count} exercises`}</Text>
+  ```
+- Use i18next's built-in pluralization keys (`_zero`, `_one`, `_other`) for grammatically correct dynamic text.
+
+### Copywriting Tone
+- The tone of SpotMe should be encouraging, concise, and professional.
+- Avoid overly dramatic or technical error messages. Instead of "Network Request Failed", use "Unable to connect. Please check your internet."

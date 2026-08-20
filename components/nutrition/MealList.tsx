@@ -13,7 +13,7 @@ interface MealListProps {
 }
 
 export const MealList = React.memo(function MealList({ meals, date }: MealListProps) {
-  const { removeFood } = useNutritionStore();
+  const removeFood = useNutritionStore(s => s.removeFood);
   const router = useRouter();
 
   return (

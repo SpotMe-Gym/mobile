@@ -22,7 +22,7 @@ const ExerciseCard = React.memo(({
   ex: Exercise,
   index: number,
   totalCount: number,
-  updateExercise: (id: string, field: keyof Exercise, value: any) => void,
+  updateExercise: (id: string, field: keyof Exercise, value: Exercise[keyof Exercise]) => void,
   removeExercise: (id: string) => void,
   moveExercise: (index: number, direction: 'up' | 'down') => void
 }) => {
@@ -339,7 +339,11 @@ export default function CreateWorkout() {
   const params = useLocalSearchParams();
   const editId = typeof params.id === 'string' ? params.id : undefined;
 
-  const { workouts, addWorkout, updateWorkout, schedule, toggleWorkoutForDay } = useWorkoutStore();
+  const workouts = useWorkoutStore(s => s.workouts);
+  const addWorkout = useWorkoutStore(s => s.addWorkout);
+  const updateWorkout = useWorkoutStore(s => s.updateWorkout);
+  const schedule = useWorkoutStore(s => s.schedule);
+  const toggleWorkoutForDay = useWorkoutStore(s => s.toggleWorkoutForDay);
   const existing = editId ? workouts.find(w => w.id === editId) : undefined;
 
   const [name, setName] = useState(existing?.name || '');
@@ -453,7 +457,7 @@ export default function CreateWorkout() {
     onInteraction();
   }, [onInteraction]);
 
-  const updateExercise = useCallback((id: string, field: keyof Exercise, value: any) => {
+  const updateExercise = useCallback((id: string, field: keyof Exercise, value: Exercise[keyof Exercise]) => {
     setExercises(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e));
     onInteraction();
   }, [onInteraction]);
@@ -577,6 +581,7 @@ export default function CreateWorkout() {
         </ScrollView>
 
         <Animated.View
+          collapsable={false}
           className="absolute left-4 right-4"
           style={[saveButtonStyle, { bottom: insets.bottom + 16 }]}
           pointerEvents="box-none"

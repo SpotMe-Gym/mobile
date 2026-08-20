@@ -26,9 +26,11 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 export default function Dashboard() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { name, weightHistory, targets } = useUserStore();
+  const name = useUserStore(s => s.name);
+  const weightHistory = useUserStore(s => s.weightHistory);
+  const targets = useUserStore(s => s.targets);
   const { currentWeight, convertWeight } = useUnitConverter();
-  const { getDailyTotals } = useNutritionStore();
+  const getDailyTotals = useNutritionStore(s => s.getDailyTotals);
   const { t } = useTranslation();
 
   const dayName = DAYS[new Date().getDay()];
@@ -117,7 +119,7 @@ export default function Dashboard() {
             onLayout={weightCard.onLayout}
             style={weightCardAnimatedStyle}
           >
-            <Animated.View style={{ flex: 1, backgroundColor: '#18181b' }}>
+            <Animated.View collapsable={false} style={{ flex: 1, backgroundColor: '#18181b' }}>
               <Card className="w-full bg-transparent border-none" title={t('dashboard.bodyWeight')}>
                 <View className="flex-row items-baseline mt-2">
                   <Text className="text-5xl font-bold text-white">{currentWeight.formatted}</Text>
@@ -158,12 +160,13 @@ export default function Dashboard() {
 
           {/* Active Workout (Half Width) */}
           <Animated.View
+            collapsable={false}
             ref={workoutCard.cardRef}
             className="w-[48%] h-44"
             onLayout={workoutCard.onLayout}
             style={workoutCardAnimatedStyle}
           >
-            <Animated.View style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#27272a' }}>
+            <Animated.View collapsable={false} style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#27272a' }}>
               {/* Header Overlay - Visual only, touches pass through */}
               <View className="absolute top-0 left-0 right-0 px-4 pt-4 z-10" pointerEvents="none">
                 <Text className="text-white text-lg font-bold">{t('dashboard.todaysPlan')}</Text>
@@ -258,6 +261,7 @@ export default function Dashboard() {
             style={nutritionCardAnimatedStyle}
           >
             <Animated.View
+              collapsable={false}
               style={{ flex: 1, backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden' }}
             >
               <Card className="h-full bg-transparent" title={t('dashboard.nutrition')}>

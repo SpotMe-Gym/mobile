@@ -12,7 +12,15 @@ import { Step3Nutrition } from '../components/onboarding/Step3Nutrition';
 
 export default function Onboarding() {
   const router = useRouter();
-  const { setName, setGender, setHeight, setWeight, setAge, setActivityLevel, setGoal, setTargets, completeOnboarding } = useUserStore();
+  const setName = useUserStore(s => s.setName);
+  const setGender = useUserStore(s => s.setGender);
+  const setHeight = useUserStore(s => s.setHeight);
+  const setWeight = useUserStore(s => s.setWeight);
+  const setAge = useUserStore(s => s.setAge);
+  const setActivityLevel = useUserStore(s => s.setActivityLevel);
+  const setGoal = useUserStore(s => s.setGoal);
+  const setTargets = useUserStore(s => s.setTargets);
+  const completeOnboarding = useUserStore(s => s.completeOnboarding);
 
   const [step, setStep] = useState(1);
 
@@ -129,13 +137,13 @@ export default function Onboarding() {
 
   const handleFinish = async () => {
     setName(form.name);
-    setGender(form.gender as any);
+    if (form.gender) setGender(form.gender);
     setHeight(form.height);
     setWeight(form.weight);
     setAge(form.age);
 
-    if (activityIndex !== null) setActivityLevel(ACTIVITY_LEVELS[activityIndex].label as any);
-    if (goalIndex !== null) setGoal(GOALS[goalIndex].label as any);
+    if (activityIndex !== null) setActivityLevel(ACTIVITY_LEVELS[activityIndex].label);
+    if (goalIndex !== null) setGoal(GOALS[goalIndex].label);
 
     setTargets({
       calories,

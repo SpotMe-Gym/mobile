@@ -17,8 +17,8 @@ import { Sparkles } from 'lucide-react-native';
 
 // Preview content - matches the home card appearance exactly
 function NutritionCardPreview() {
-  const { getDailyTotals } = useNutritionStore();
-  const { targets } = useUserStore();
+  const getDailyTotals = useNutritionStore(s => s.getDailyTotals);
+  const targets = useUserStore(s => s.targets);
   const { cardDimensions } = useExpandableCardContext();
   const today = new Date().toISOString().split('T')[0];
   const nutrition = getDailyTotals(today);
@@ -52,8 +52,9 @@ function NutritionDetailContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { handleClose } = useExpandableCardContext();
-  const { logs, getDailyTotals } = useNutritionStore();
-  const { targets } = useUserStore();
+  const logs = useNutritionStore(s => s.logs);
+  const getDailyTotals = useNutritionStore(s => s.getDailyTotals);
+  const targets = useUserStore(s => s.targets);
 
   const today = new Date().toISOString().split('T')[0];
   const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });

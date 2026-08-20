@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStore } from '../../store/userStore';
 import { Card } from '../../components/ui/Card';
@@ -13,7 +13,8 @@ export default function Profile() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { name, age } = useUserStore();
+  const name = useUserStore(s => s.name);
+  const age = useUserStore(s => s.age);
   const { currentWeight, currentHeight } = useUnitConverter();
 
   const settingsItems = [

@@ -1,0 +1,25 @@
+---
+description: Local storage, data persistence, and offline-first architecture standards
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Storage & Persistence Rules
+
+## Storage Engine Allocation
+- **`react-native-mmkv`**: Use ONLY for small, synchronous key-value pairs (e.g., user preferences, theme setting, session tokens, feature flags). MMKV is synchronous and blocks the JS thread; never use it for large datasets.
+- **`AsyncStorage` / SQLite**: Use for unbounded or large datasets (e.g., historical nutrition logs, workout history, offline caches).
+
+## Data Modeling & Limits
+- **Never serialize massive arrays**: Do not store unbounded lists (like a year's worth of workouts) in a single JSON array under one storage key. 
+- **Pagination in Storage**: Break large datasets into chunks (e.g., storing by month `workouts_2026_08`) or use a proper local database (SQLite/WatermelonDB) if the data requires complex querying.
+
+## State Rehydration & Migrations
+- When using Zustand's `persist` middleware, ALWAYS define a `version` number.
+- ALWAYS provide a `migrate` function to handle state shape changes between versions to prevent app crashes for updating users.
+- Handle the rehydration lifecycle: Do not render data-dependent UI until `useHasHydrated()` (or equivalent hydration check) returns true.
+
+## Offline-First Resiliency
+- Assume the user might be in a gym with no cellular connection.
+- Cache remote queries (via TanStack Query) aggressively.
+- For mutations (like saving a workout), update the local Zustand/Query cache immediately (Optimistic Update) and queue the network request to sync when the connection is restored.

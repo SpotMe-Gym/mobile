@@ -1,0 +1,32 @@
+---
+description: Advanced React Native performance optimizations, thread management, and lifecycle deferral
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Advanced Performance Rules
+
+## The InteractionManager Pattern
+- When a user initiates a heavy animation (like the expandable card system), NEVER trigger heavy JS computations, state updates, or API fetches simultaneously.
+- Defer non-critical work until after the animation completes using `InteractionManager`:
+  ```tsx
+  // GOOD
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      fetchDetailedWorkoutData();
+    });
+    return () => task.cancel();
+  }, []);
+  ```
+
+## Memory Leak Prevention
+- ALWAYS clean up listeners, intervals, and timeouts in the `useEffect` return function.
+- Be extremely careful with closures inside `setInterval` or Reanimated worklets.
+
+## Heavy Libraries & Alternatives
+- **Dates**: NEVER import `moment`. Use `date-fns` or `dayjs` for localized date formatting.
+- **Deep Cloning**: NEVER use `JSON.parse(JSON.stringify())`. Use `structuredClone` (available in modern RN/Hermes) or explicit spread operators.
+
+## Profiler Mindset
+- When generating complex screens, proactively identify components that will frequently re-render (e.g., a timer ticking every second, a heart rate monitor updating).
+- Isolate high-frequency state updates into the smallest possible leaf components. Do not let a ticking heart rate sensor re-render the entire screen layout.

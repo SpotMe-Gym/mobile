@@ -1,4 +1,5 @@
-import { View, Text, Image, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNutritionStore, FoodItem, Meal } from '../../../store/nutritionStore';
@@ -23,7 +24,7 @@ export default function ProductDetail() {
   const meal = Array.isArray(params.meal) ? params.meal[0] : params.meal;
   const initialData = Array.isArray(params.initialData) ? params.initialData[0] : params.initialData;
 
-  const { addFood } = useNutritionStore();
+  const addFood = useNutritionStore(s => s.addFood);
 
   const product = initialData ? JSON.parse(initialData) : null;
   const nutriments = product?.nutriments || {};
@@ -88,7 +89,7 @@ export default function ProductDetail() {
         {/* Background Blur */}
         <View className="absolute top-0 w-full h-96 opacity-30">
           {product.image_url && (
-            <Image source={{ uri: product.image_url }} className="w-full h-full" blurRadius={30} />
+            <Image source={{ uri: product.image_url }} className="w-full h-full" blurRadius={30} contentFit="cover" />
           )}
           <View className="absolute inset-0 bg-gradient-to-b from-transparent to-black" />
         </View>
@@ -116,7 +117,8 @@ export default function ProductDetail() {
                   <Image
                     source={{ uri: product.image_url }}
                     className="w-48 h-48 rounded-[40px] bg-zinc-900 border-4 border-zinc-800"
-                    resizeMode="contain"
+                    contentFit="contain"
+                    transition={200}
                   />
                 ) : (
                   <View className="w-48 h-48 rounded-[40px] bg-zinc-900 items-center justify-center border-4 border-zinc-800">
@@ -213,7 +215,15 @@ export default function ProductDetail() {
   );
 }
 
-function MacroStat({ label, value, color, bg, border }: any) {
+interface MacroStatProps {
+  label: string;
+  value: number;
+  color: string;
+  bg: string;
+  border: string;
+}
+
+function MacroStat({ label, value, color, bg, border }: MacroStatProps) {
   return (
     <View className={`flex-1 ${bg} border ${border} rounded-2xl p-3 items-center justify-center min-h-[90px]`}>
       <Text className={`text-2xl font-black ${color}`}>{value}g</Text>

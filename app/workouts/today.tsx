@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, FlatList, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -24,7 +25,8 @@ function WorkoutCardPreview() {
   const { cardDimensions } = useExpandableCardContext();
   const { t } = useTranslation();
   const today = getCurrentDayName();
-  const { schedule, workouts: allWorkouts } = useWorkoutStore();
+  const schedule = useWorkoutStore(s => s.schedule);
+  const allWorkouts = useWorkoutStore(s => s.workouts);
   const [layoutWidth, setLayoutWidth] = useState(0);
 
   const workouts = useMemo(() => {
@@ -114,7 +116,8 @@ function WorkoutDetailContent() {
   const { width: windowWidth } = useWindowDimensions();
   const { handleClose } = useExpandableCardContext();
   const today = getCurrentDayName();
-  const { schedule, workouts: allWorkouts } = useWorkoutStore();
+  const schedule = useWorkoutStore(s => s.schedule);
+  const allWorkouts = useWorkoutStore(s => s.workouts);
   const workouts = useMemo(() => {
     const workoutIds = schedule[today] || [];
     return workoutIds.map(id => allWorkouts.find(w => w.id === id)).filter(Boolean) as Workout[];
@@ -123,10 +126,10 @@ function WorkoutDetailContent() {
   // Carousel state
   const [activeIndex, setActiveIndex] = useState(0);
   const width = windowWidth - 32; // Screen width minus padding
-  const exerciseListRef = useRef<FlatList>(null);
+  const exerciseListRef = useRef<FlashList<Workout>>(null);
 
   // Sync scroll handler
-  const handleScroll = (event: any) => {
+  const handleScroll = (event: { nativeEvent: { contentOffset: { x: number } } }) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     // Sync bottom list
     exerciseListRef.current?.scrollToOffset({ offset: offsetX, animated: false });
@@ -166,15 +169,14 @@ function WorkoutDetailContent() {
         {workouts.length > 0 ? (
           <>
             {/* Horizontal Carousel for Workout Cards */}
-            <View className="mt-2">
-              <FlatList
+            <View className="mt-2" style={{ height: 230 }}>
+              <FlashList
                 data={workouts}
                 horizontal
-                pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(item) => item.id}
                 onScroll={handleScroll}
-                scrollEventThrottle={16}
+                estimatedItemSize={width}
                 onMomentumScrollEnd={(event) => {
                   const index = Math.round(event.nativeEvent.contentOffset.x / width);
                   setActiveIndex(index);
@@ -247,14 +249,14 @@ function WorkoutDetailContent() {
                 </Text>
               </View>
 
-              <FlatList
+              <FlashList
                 ref={exerciseListRef}
                 data={workouts}
                 horizontal
-                pagingEnabled
-                scrollEnabled={false} // Driven by top list
+                scrollEnabled={false}
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(item) => item.id}
+                estimatedItemSize={width}
                 renderItem={({ item: workout }) => (
                   <View style={{ width: width }} className="px-1">
                     <View className="gap-3">

@@ -47,7 +47,8 @@ const WorkoutItem = ({ item, scheduledDays, onPress }: { item: Workout, schedule
 export default function Workouts() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { workouts, schedule } = useWorkoutStore();
+  const workouts = useWorkoutStore(s => s.workouts);
+  const schedule = useWorkoutStore(s => s.schedule);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>

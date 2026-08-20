@@ -1,0 +1,31 @@
+---
+description: UI/UX design standards, accessibility (a11y), haptics, and NativeWind styling constraints
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# UI/UX & Design System Rules
+
+## Core Designer Persona
+When generating UI components, act as an elite UI/UX designer. Prioritize visual hierarchy, whitespace, readability, and interaction feedback. Never compromise the aesthetic integrity of SpotMe.
+
+## Design Tokens & Styling (NativeWind)
+- NEVER invent random hex codes or inline colors (e.g., `#FF5733`).
+- ALWAYS use the project's predefined Tailwind theme colors (e.g., `bg-primary`, `text-muted-foreground`, `border-border`).
+- Adhere strictly to the 4pt grid system for spacing. Use Tailwind's default spacing scale (`p-4` = 16px, `gap-2` = 8px). Avoid arbitrary values like `p-[13px]`.
+
+## Typography & Readability
+- Use semantic text components if available, or strict Tailwind text classes (`text-lg font-semibold`, `text-sm text-muted-foreground`).
+- Maintain high contrast for readability. Secondary text must still pass WCAG AA contrast ratios against its background.
+- Avoid center-aligned text for paragraphs; only use center alignment for short titles or empty states.
+
+## Accessibility (A11y)
+- **Tap Targets**: ALL interactive elements (buttons, links, icon buttons) MUST have a minimum tap target size of 48x48 pixels. Use padding or `hitSlop` to achieve this if the visual element is smaller.
+- **Screen Readers**: Any button or touchable that does not contain text (e.g., an Icon-only button) MUST have an `accessibilityLabel` explaining its action.
+- **Roles**: Use `accessibilityRole="button"` or appropriate roles for custom touchables.
+
+## Interaction & Haptics
+- Integrate `expo-haptics` for meaningful interactions.
+- Use `Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)` for minor actions (e.g., toggling a habit, expanding a card).
+- Use `Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)` for completing a major flow (e.g., finishing a workout).
+- Do not overuse haptics. Never fire haptics on scroll or continuous slider value changes unless throttled.

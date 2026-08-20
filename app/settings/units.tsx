@@ -10,7 +10,9 @@ export default function UnitsSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { units, setWeightUnit, setHeightUnit } = useUserStore();
+  const units = useUserStore(s => s.units);
+  const setWeightUnit = useUserStore(s => s.setWeightUnit);
+  const setHeightUnit = useUserStore(s => s.setHeightUnit);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>

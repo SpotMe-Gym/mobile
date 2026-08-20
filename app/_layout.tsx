@@ -15,7 +15,7 @@ const queryClient = new QueryClient();
 cssInterop(SafeAreaView, { className: 'style' });
 
 export default function RootLayout() {
-  const { hasCompletedOnboarding } = useUserStore();
+  const hasCompletedOnboarding = useUserStore(s => s.hasCompletedOnboarding);
   const segments = useSegments();
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);

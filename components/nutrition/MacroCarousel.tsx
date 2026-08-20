@@ -49,7 +49,7 @@ export const MacroCarousel = React.memo(function MacroCarousel({
   const [activeIndex, setActiveIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
-  const handleScroll = useCallback((event: any) => {
+  const handleScroll = useCallback((event: { nativeEvent: { layoutMeasurement: { width: number }; contentOffset: { x: number } } }) => {
     const slideSize = event.nativeEvent.layoutMeasurement.width;
     const roundIndex = Math.round(event.nativeEvent.contentOffset.x / slideSize);
     setActiveIndex(prev => prev !== roundIndex ? roundIndex : prev);

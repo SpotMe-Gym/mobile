@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { View, Text, TextInput, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal, Keyboard } from 'react-native';
+import { View, Text, TextInput, ActivityIndicator, TouchableOpacity, Alert, Modal, Keyboard } from 'react-native';
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
@@ -29,7 +31,7 @@ export default function NutritionSearch() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { meal } = useLocalSearchParams<{ meal: string }>(); // e.g. "Breakfast"
-  const { knownFoods } = useNutritionStore();
+  const knownFoods = useNutritionStore(s => s.knownFoods);
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodProduct[]>([]);
@@ -176,7 +178,8 @@ export default function NutritionSearch() {
             <Image
               source={{ uri: item.image_url }}
               className="w-16 h-16 rounded-lg bg-zinc-800"
-              resizeMode="cover"
+              contentFit="cover"
+              transition={200}
             />
           ) : (
             <View className="w-16 h-16 rounded-lg bg-zinc-800 items-center justify-center">
@@ -258,10 +261,11 @@ export default function NutritionSearch() {
         {loading ? (
           <ActivityIndicator color="#3b82f6" size="large" className="mt-10" />
         ) : (
-          <FlatList
+          <FlashList
             data={results}
-            keyExtractor={(item) => item.code + Math.random()}
+            keyExtractor={(item) => item.code}
             renderItem={renderItem}
+            estimatedItemSize={100}
             contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
             ListEmptyComponent={
               <View className="items-center mt-10 opacity-70">

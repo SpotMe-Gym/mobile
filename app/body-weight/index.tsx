@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 
 // Preview content - matches the home card appearance including the Gauge Fix
 function WeightCardPreview() {
-  const { weightHistory } = useUserStore();
+  const weightHistory = useUserStore(s => s.weightHistory);
   const { cardDimensions } = useExpandableCardContext();
   const { currentWeight, convertWeight } = useUnitConverter();
   const { t } = useTranslation();
@@ -78,7 +78,9 @@ function WeightDetailContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { handleClose } = useExpandableCardContext();
-  const { weightHistory, addWeightEntry, removeWeightEntry } = useUserStore();
+  const weightHistory = useUserStore(s => s.weightHistory);
+  const addWeightEntry = useUserStore(s => s.addWeightEntry);
+  const removeWeightEntry = useUserStore(s => s.removeWeightEntry);
   const { currentWeight, convertWeight, toStorageWeight } = useUnitConverter();
   const [modalVisible, setModalVisible] = useState(false);
   const { t } = useTranslation();

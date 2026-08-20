@@ -1,15 +1,17 @@
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { User, Minus, Plus, Ruler, Weight } from 'lucide-react-native';
 
+interface BioForm {
+  name: string;
+  gender: 'Male' | 'Female' | 'Other' | '';
+  height: string;
+  weight: string;
+  age: string;
+}
+
 interface Step1BioProps {
-  form: {
-    name: string;
-    gender: 'Male' | 'Female' | 'Other' | '';
-    height: string;
-    weight: string;
-    age: string;
-  };
-  setForm: (form: any) => void;
+  form: BioForm;
+  setForm: (form: BioForm) => void;
 }
 
 export function Step1Bio({ form, setForm }: Step1BioProps) {
@@ -41,7 +43,7 @@ export function Step1Bio({ form, setForm }: Step1BioProps) {
             <TouchableOpacity
               key={g}
               className={`flex-1 h-12 items-center justify-center rounded-xl border ${form.gender === g ? 'bg-blue-600 border-blue-600' : 'bg-zinc-900 border-zinc-800'}`}
-              onPress={() => setForm({ ...form, gender: g as any })}
+              onPress={() => setForm({ ...form, gender: g as BioForm['gender'] })}
             >
               <Text className={`font-semibold ${form.gender === g ? 'text-white' : 'text-zinc-400'}`}>{g}</Text>
             </TouchableOpacity>
