@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Dimensions, FlatList } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, FlatList, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -111,6 +111,7 @@ function WorkoutCardPreview() {
 function WorkoutDetailContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
   const { handleClose } = useExpandableCardContext();
   const today = getCurrentDayName();
   const { schedule, workouts: allWorkouts } = useWorkoutStore();
@@ -121,7 +122,7 @@ function WorkoutDetailContent() {
 
   // Carousel state
   const [activeIndex, setActiveIndex] = useState(0);
-  const width = Dimensions.get('window').width - 32; // Screen width minus padding
+  const width = windowWidth - 32; // Screen width minus padding
   const exerciseListRef = useRef<FlatList>(null);
 
   // Sync scroll handler

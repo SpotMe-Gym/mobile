@@ -1,0 +1,41 @@
+---
+description: Form handling standards using React Hook Form and Zod validation
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Forms & Validation Rules
+
+## Stack & Pattern
+
+- Form management: `react-hook-form`
+- Schema validation: `zod`
+- Schema resolver: `@hookform/resolvers/zod`
+
+## Schema Definitions & Type Inference
+
+- Define schemas alongside the form component or in a dedicated `types/` / `schemas/` directory.
+- Derive TypeScript types directly from schemas using `z.infer`:
+  ```tsx
+  export const exerciseFormSchema = z.object({
+    name: z.string().min(1, 'Name is required').max(100),
+    targetReps: z.number().int().positive(),
+    notes: z.string().optional(),
+  });
+
+  export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>;
+  ```
+
+## Controlled Input Formatting (New Architecture)
+- When formatting text as the user types (e.g., dates, phone numbers, weights), ensure the `onChangeText` transform returns unchanged text when edits happen in the middle of the string.
+- In the New Architecture, returning a heavily transformed string mid-input can cause the cursor to snap to the end. Prefer native props like `maxLength` and `editable` where possible, or handle formatting on the UI thread to prevent flickering.
+
+## Component Architecture
+- Use the `Controller` component for custom UI inputs (e.g., segmented controls, custom weight pickers).
+- Keep form submission handlers typed:
+  ```tsx
+  const { control, handleSubmit, formState: { errors } } = useForm<ExerciseFormValues>({
+    resolver: zodResolver(exerciseFormSchema),
+    defaultValues: { name: '', targetReps: 10 },
+  });
+  ```

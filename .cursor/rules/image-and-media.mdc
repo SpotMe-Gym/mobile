@@ -1,0 +1,25 @@
+---
+description: Image rendering and asset optimization standards using expo-image
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Image & Media Rules
+
+## Core Principles
+
+- NEVER use `Image` from `react-native`.
+- Always use `Image` from `expo-image`.
+
+## Best Practices
+
+- Always define explicit dimensions (width/height or aspect ratio) in styles or props to avoid layout shifts.
+- Use `placeholder` (blurhash or thumbnail) for remote network images.
+- Set appropriate `contentFit` (`cover`, `contain`, etc.) instead of standard `resizeMode`.
+- Enable transitions for smoother visual loading.
+
+```tsx
+import { Image } from 'expo-image';
+
+<Image '100%', 200 blurhash: cachePolicy="memory-disk" contentFit="cover" defaultBlurhash height: imageUrl placeholder="{{" source="{{" style="{{" transition="{200}" uri: width: }}/>
+```

@@ -16,60 +16,56 @@ alwaysApply: false
 - **Forms**: React Hook Form + Zod
 - **i18n**: i18next + react-i18next
 
+## Component Restrictions (Strict)
+
+- **Lists**: NEVER use `FlatList` or `ScrollView` mapped arrays. Use `@shopify/flash-list`.
+- **Images**: NEVER use `Image` from `react-native`. Use `expo-image`.
+- **Safe Area**: Do not hardcode padding for safe areas; rely on `SafeAreaView` and context hooks.
+- **Data Fetching**: NEVER use `useEffect` for API calls. Use `@tanstack/react-query`.
+
 ## Project Structure
 
-```
 app/           → Expo Router screens (file-based routing)
 components/    → Reusable UI components
   ui/          → Primitives (Button, Card, Icon)
 hooks/         → Custom React hooks
 store/         → Zustand stores
-services/      → API/external service calls
+services/      → API/external service calls (React Query hooks go here)
 utils/         → Pure utility functions
 i18n/          → Internationalization config + locale JSON
 lib/           → Shared helpers (cn utility)
-```
 
 ## Android-Specific Rules
 
 ### Dimensions
-- Use `Dimensions.get('window')` for animation math that involves `measureInWindow` coordinates — they share the same coordinate space
-- Use `Dimensions.get('screen')` on Android ONLY for visual coverage (backdrops, fill views) that need to extend behind the system navigation bar
-- NEVER mix screen dims and window dims in the same transform calculation — the coordinate mismatch causes wrong positioning on Android
-- Prefer `useWindowDimensions()` hook over module-level `Dimensions.get()` when dimensions need to be reactive
+- Use `Dimensions.get('window')` for animation math that involves `measureInWindow` coordinates — they share the same coordinate space.
+- Use `Dimensions.get('screen')` on Android ONLY for visual coverage (backdrops, fill views) that need to extend behind the system navigation bar.
+- NEVER mix screen dims and window dims in the same transform calculation — the coordinate mismatch causes wrong positioning on Android.
+- Prefer `useWindowDimensions()` hook over module-level `Dimensions.get()` when dimensions need to be reactive.
 
 ### View Flattening
-- Add `collapsable={false}` to any `Animated.View` that participates in native animations — Android's view flattening can collapse intermediate views and break Reanimated's native driver
+- Add `collapsable={false}` to any `Animated.View` that participates in native animations — Android's view flattening can collapse intermediate views and break Reanimated's native driver.
 
 ### Edge-to-Edge
-- `edgeToEdgeEnabled: true` is set in app.json — always account for safe area insets using `useSafeAreaInsets()`
-- Ensure bottom content (tabs, FABs, sheets) accounts for the navigation bar height
+- `edgeToEdgeEnabled: true` is set in app.json — always account for safe area insets using `useSafeAreaInsets()`.
+- Ensure bottom content (tabs, FABs, sheets) accounts for the navigation bar height.
 
 ### LayoutAnimation
-- `UIManager.setLayoutAnimationEnabledExperimental(true)` is required on Android before using `LayoutAnimation`
-- Prefer Reanimated's `withTiming`/`withSpring` over LayoutAnimation when possible, as LayoutAnimation can conflict with Reanimated
+- `UIManager.setLayoutAnimationEnabledExperimental(true)` is required on Android before using `LayoutAnimation`.
+- Prefer Reanimated's `withTiming`/`withSpring` over LayoutAnimation when possible, as LayoutAnimation can conflict with Reanimated.
 
 ## Navigation Patterns
 
 ### Expandable Card System
 The app uses a custom card-to-fullscreen animation system:
-1. Home cards use `useExpandableNavigation()` hook for press animations and navigation
-2. Detail screens use `ExpandableCardLayoutWithContext` wrapper
-3. Route params pass card position (`cardX`, `cardY`, `cardWidth`, `cardHeight`)
-4. Stack screens for expandable cards MUST use `presentation: 'transparentModal'` with `animation: 'none'`
+1. Home cards use `useExpandableNavigation()` hook for press animations and navigation.
+2. Detail screens use `ExpandableCardLayoutWithContext` wrapper.
+3. Route params pass card position (`cardX`, `cardY`, `cardWidth`, `cardHeight`).
+4. Stack screens for expandable cards MUST use `presentation: 'transparentModal'` with `animation: 'none'`.
 
 ### Route Config for Expandable Cards
 ```tsx
-<Stack.Screen
-  name="route-name"
-  options={{
-    headerShown: false,
-    presentation: 'transparentModal',
-    animation: 'none',
-    gestureEnabled: false,
-    contentStyle: { backgroundColor: 'transparent' },
-  }}
-/>
+<Stack.Screen 'none', 'transparent' 'transparentModal', animation: backgroundColor: contentStyle: false, gestureEnabled: headerShown: name="route-name" options="{{" presentation: { }, }}/>
 ```
 
 ## Zustand Store Patterns
@@ -86,20 +82,20 @@ The app uses a custom card-to-fullscreen animation system:
   ```
 
 ### Persistence
-- Use MMKV (`react-native-mmkv`) for fast synchronous storage (user preferences)
-- Use AsyncStorage for larger data (nutrition logs)
-- Always increment `version` and add migration when changing persisted state shape
+- Use MMKV (`react-native-mmkv`) for fast synchronous storage (user preferences).
+- Use AsyncStorage for larger data (nutrition logs).
+- Always increment `version` and add migration when changing persisted state shape.
 
 ## Component Patterns
 
 ### Styling
-- Use NativeWind `className` for all styling
-- Use `StyleSheet.create()` only for dynamic styles or styles that need numeric values
-- The `cn()` utility from `lib/utils.ts` merges Tailwind classes safely
+- Use NativeWind `className` for all styling.
+- Use `StyleSheet.create()` only for dynamic styles or styles that need numeric values.
+- The `cn()` utility from `lib/utils.ts` merges Tailwind classes safely.
 
 ### Icons
-- Always use the `Icon` wrapper component from `components/ui/Icon`
-- Import icons from `lucide-react-native`
+- Always use the `Icon` wrapper component from `components/ui/Icon`.
+- Import icons from `lucide-react-native`.
 
 ### Safe Area
-- Use `<SafeAreaView edges={['top']}>` for screens — avoid `edges={['bottom']}` since the TabBar handles bottom spacing
+- Use `<SafeAreaView edges={['top']}>` for screens — avoid `edges={['bottom']}` since the TabBar handles bottom spacing.

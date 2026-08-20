@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { TrendingUp, TrendingDown, Minus, Play, Sparkles } from 'lucide-react-native';
@@ -25,6 +25,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 
 export default function Dashboard() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { name, weightHistory, targets } = useUserStore();
   const { currentWeight, convertWeight } = useUnitConverter();
   const { getDailyTotals } = useNutritionStore();
@@ -70,13 +71,14 @@ export default function Dashboard() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <ScrollView className="flex-1 px-4 pt-2" contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView className="flex-1 px-4 pt-2" contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
         {/* Header */}
         <View className="mb-6 flex-row justify-between items-center relative">
           {/* Left: Profile */}
           <Pressable
             onPress={() => router.push('/profile')}
-            className="h-10 w-10 bg-zinc-800 rounded-full items-center justify-center border border-zinc-700 z-10"
+            className="h-11 w-11 bg-zinc-800 rounded-full items-center justify-center border border-zinc-700 z-10"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text className="text-white font-bold">{name ? name[0].toUpperCase() : 'U'}</Text>
           </Pressable>
@@ -99,7 +101,7 @@ export default function Dashboard() {
         {/* Greeting Sub-header */}
         <View className="mb-6">
           <Text className="text-textSecondary text-sm font-medium">{t('common.monday')}, {t('common.jan')} 19</Text>
-          <Text className="text-white text-3xl font-bold">{t('common.hello')}, {name || 'User'}</Text>
+          <Text className="text-white text-3xl font-bold" numberOfLines={1} adjustsFontSizeToFit>{t('common.hello')}, {name || 'User'}</Text>
         </View>
 
         {/* Bento Grid */}

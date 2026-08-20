@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Plus, Play, Dumbbell, Sparkles } from 'lucide-react-native';
@@ -46,6 +46,7 @@ const WorkoutItem = ({ item, scheduledDays, onPress }: { item: Workout, schedule
 
 export default function Workouts() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { workouts, schedule } = useWorkoutStore();
 
   return (
@@ -75,7 +76,7 @@ export default function Workouts() {
                 onPress={() => router.push(`/workouts/create?id=${item.id}`)}
               />
             )}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
               <View className="items-center justify-center py-20 opacity-50">
@@ -92,7 +93,8 @@ export default function Workouts() {
           variant="primary"
           icon={<Icon icon={Plus} color="white" size={28} />}
           onPress={() => router.push('/workouts/create')}
-          className="absolute bottom-6 right-6 h-14 w-14 shadow-lg"
+          className="absolute right-6 h-14 w-14 shadow-lg"
+          style={{ bottom: insets.bottom + 16 }}
         />
       </View>
     </SafeAreaView>

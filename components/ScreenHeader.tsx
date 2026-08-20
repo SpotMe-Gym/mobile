@@ -25,7 +25,7 @@ export function ScreenHeader({ title, onBack, rightAction, className, showBackBu
 
   return (
     <View className={`flex-row items-center justify-between mb-6 mt-2 ${className || ''}`}>
-      <View className="flex-row items-center">
+      <View className="flex-row items-center flex-1 mr-4">
         {showBackButton && (
           <Button
             size="icon"
@@ -35,7 +35,7 @@ export function ScreenHeader({ title, onBack, rightAction, className, showBackBu
             className="h-12 w-12 mr-4"
           />
         )}
-        <Text className="text-2xl font-bold text-white">{title}</Text>
+        <Text className="text-2xl font-bold text-white flex-shrink" numberOfLines={1}>{title}</Text>
       </View>
 
       {rightAction && (

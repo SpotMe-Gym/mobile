@@ -1,6 +1,6 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNutritionStore, FoodItem, Meal } from '../../../store/nutritionStore';
 import { ChevronLeft, Plus, Minus, Utensils } from 'lucide-react-native';
 import { Button } from '../../../components/ui/Button';
@@ -13,6 +13,7 @@ const OZ_TO_G = 28.3495;
 
 export default function ProductDetail() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { units } = useUnitConverter();
   const isImperial = units.weight === 'lbs';
@@ -107,7 +108,7 @@ export default function ProductDetail() {
             </View>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
             {/* Image & Title */}
             <View className="items-center mb-10">
               <View className="shadow-2xl shadow-black/80">
@@ -123,9 +124,9 @@ export default function ProductDetail() {
                   </View>
                 )}
               </View>
-              <View className="mt-6 items-center">
-                <Text className="text-3xl font-black text-white text-center leading-tight mb-1">{product.product_name}</Text>
-                <Text className="text-zinc-400 text-lg font-medium">{product.brands}</Text>
+              <View className="mt-6 items-center px-4">
+                <Text className="text-3xl font-black text-white text-center leading-tight mb-1" numberOfLines={2} adjustsFontSizeToFit>{product.product_name}</Text>
+                <Text className="text-zinc-400 text-lg font-medium" numberOfLines={1}>{product.brands}</Text>
               </View>
             </View>
 
@@ -196,7 +197,7 @@ export default function ProductDetail() {
           </ScrollView>
 
           {/* Floating Action Button */}
-          <View className="absolute bottom-8 left-6 right-6">
+          <View className="absolute left-6 right-6" style={{ bottom: insets.bottom + 16 }}>
             <Button
               variant="primary"
               size="lg"

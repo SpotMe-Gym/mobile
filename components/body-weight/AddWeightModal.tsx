@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Modal } from 'react-native';
+import { View, Text, TextInput, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useState } from 'react';
 import { X } from 'lucide-react-native';
 import { Button } from '../ui/Button';
@@ -28,7 +28,10 @@ export function AddWeightModal({ visible, onClose, onSave, currentWeight }: AddW
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black/80 justify-center items-center px-4">
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1 bg-black/80 justify-center items-center px-4"
+      >
         <View className="w-full max-w-sm bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
           <View className="flex-row justify-between items-center mb-6">
             <Text className="text-white text-xl font-bold">Log Weight</Text>
@@ -77,7 +80,7 @@ export function AddWeightModal({ visible, onClose, onSave, currentWeight }: AddW
             className="w-full"
           />
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

@@ -73,11 +73,19 @@ export function Step3Nutrition({
 
         {/* Calorie Stepper */}
         <View className="flex-row justify-between items-center bg-zinc-950 p-2 rounded-xl mb-4">
-          <TouchableOpacity onPress={() => updateCalories(calories - calStep)} className="h-10 w-10 bg-zinc-800 rounded-lg items-center justify-center">
+          <TouchableOpacity 
+            onPress={() => updateCalories(calories - calStep)} 
+            className="h-11 w-11 bg-zinc-800 rounded-lg items-center justify-center"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Minus size={20} color="white" />
           </TouchableOpacity>
           <Text className="text-zinc-500 text-xs">Adjust Total ({calStep})</Text>
-          <TouchableOpacity onPress={() => updateCalories(calories + calStep)} className="h-10 w-10 bg-zinc-800 rounded-lg items-center justify-center">
+          <TouchableOpacity 
+            onPress={() => updateCalories(calories + calStep)} 
+            className="h-11 w-11 bg-zinc-800 rounded-lg items-center justify-center"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Plus size={20} color="white" />
           </TouchableOpacity>
         </View>
@@ -124,14 +132,22 @@ function MacroSlider({ label, val, setVal, color, step }: { label: string, val: 
         </View>
       </View>
       <View className="flex-row items-center gap-3">
-        <TouchableOpacity onPress={() => setVal(Math.max(0, val - step))} className="p-1 bg-zinc-800 rounded">
-          <Minus size={14} color="gray" />
+        <TouchableOpacity 
+          onPress={() => setVal(Math.max(0, val - step))} 
+          className="h-9 w-9 bg-zinc-800 rounded items-center justify-center"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Minus size={16} color="gray" />
         </TouchableOpacity>
         <View className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
           <View className={`h-full ${color}`} style={{ width: '100%' }} />
         </View>
-        <TouchableOpacity onPress={() => setVal(val + step)} className="p-1 bg-zinc-800 rounded">
-          <Plus size={14} color="gray" />
+        <TouchableOpacity 
+          onPress={() => setVal(val + step)} 
+          className="h-9 w-9 bg-zinc-800 rounded items-center justify-center"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Plus size={16} color="gray" />
         </TouchableOpacity>
       </View>
     </View>

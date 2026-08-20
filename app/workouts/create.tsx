@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -54,15 +54,21 @@ const ExerciseCard = React.memo(({
     return (
       <View className="bg-zinc-900/50 border border-zinc-800/80 rounded-2xl p-3 mb-4 flex-row items-center">
         {/* Left Controls (Mini version) */}
-        <View className="items-center justify-center mr-3 gap-1">
-          <TouchableOpacity onPress={() => moveExercise(index, 'up')} disabled={index === 0}
-            className={`p-1 ${index === 0 ? 'opacity-20' : ''}`}>
-            <Icon icon={ChevronUp} size={14} color="#71717a" />
+        <View className="items-center justify-center mr-3 gap-0">
+          <TouchableOpacity 
+            onPress={() => moveExercise(index, 'up')} 
+            disabled={index === 0}
+            hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
+            className={`p-2 ${index === 0 ? 'opacity-20' : ''}`}>
+            <Icon icon={ChevronUp} size={16} color="#71717a" />
           </TouchableOpacity>
-          <Text className="text-zinc-600 text-[9px] font-bold">{index + 1}</Text>
-          <TouchableOpacity onPress={() => moveExercise(index, 'down')} disabled={index === totalCount - 1}
-            className={`p-1 ${index === totalCount - 1 ? 'opacity-20' : ''}`}>
-            <Icon icon={ChevronDown} size={14} color="#71717a" />
+          <Text className="text-zinc-600 text-xs font-bold">{index + 1}</Text>
+          <TouchableOpacity 
+            onPress={() => moveExercise(index, 'down')} 
+            disabled={index === totalCount - 1}
+            hitSlop={{ top: 4, bottom: 8, left: 8, right: 8 }}
+            className={`p-2 ${index === totalCount - 1 ? 'opacity-20' : ''}`}>
+            <Icon icon={ChevronDown} size={16} color="#71717a" />
           </TouchableOpacity>
         </View>
 
@@ -107,25 +113,27 @@ const ExerciseCard = React.memo(({
   return (
     <View className="bg-zinc-900 border border-zinc-800 rounded-3xl p-4 mb-4 flex-row">
       {/* Left Column: Reordering Controls */}
-      <View className="items-center justify-center mr-3 gap-1">
+      <View className="items-center justify-center mr-3 gap-0">
         <TouchableOpacity
           onPress={() => moveExercise(index, 'up')}
           disabled={index === 0}
-          className={`p-1 rounded-full ${index === 0 ? 'opacity-20' : 'bg-zinc-800 border border-zinc-700'}`}
+          hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
+          className={`p-2 rounded-full ${index === 0 ? 'opacity-20' : 'bg-zinc-800 border border-zinc-700'}`}
         >
-          <Icon icon={ChevronUp} size={14} color="#a1a1aa" />
+          <Icon icon={ChevronUp} size={16} color="#a1a1aa" />
         </TouchableOpacity>
 
-        <View className="bg-zinc-800 h-6 w-6 rounded-full items-center justify-center border border-zinc-700 my-1">
-          <Text className="text-zinc-400 text-[10px] font-bold">{index + 1}</Text>
+        <View className="bg-zinc-800 h-7 w-7 rounded-full items-center justify-center border border-zinc-700 my-1">
+          <Text className="text-zinc-400 text-xs font-bold">{index + 1}</Text>
         </View>
 
         <TouchableOpacity
           onPress={() => moveExercise(index, 'down')}
           disabled={index === totalCount - 1}
-          className={`p-1 rounded-full ${index === totalCount - 1 ? 'opacity-20' : 'bg-zinc-800 border border-zinc-700'}`}
+          hitSlop={{ top: 4, bottom: 8, left: 8, right: 8 }}
+          className={`p-2 rounded-full ${index === totalCount - 1 ? 'opacity-20' : 'bg-zinc-800 border border-zinc-700'}`}
         >
-          <Icon icon={ChevronDown} size={14} color="#a1a1aa" />
+          <Icon icon={ChevronDown} size={16} color="#a1a1aa" />
         </TouchableOpacity>
       </View>
 
@@ -327,6 +335,7 @@ const ExerciseCard = React.memo(({
 
 export default function CreateWorkout() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const editId = typeof params.id === 'string' ? params.id : undefined;
 
@@ -474,12 +483,13 @@ export default function CreateWorkout() {
         <ScrollView
           className="flex-1"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
           onScrollBeginDrag={showSaveButton}
           onScrollEndDrag={scheduleHide}
           onMomentumScrollBegin={showSaveButton}
           onMomentumScrollEnd={scheduleHide}
           scrollEventThrottle={16}
+          keyboardShouldPersistTaps="handled"
         >
 
           {/* Basic Info */}
@@ -567,8 +577,8 @@ export default function CreateWorkout() {
         </ScrollView>
 
         <Animated.View
-          className="absolute bottom-10 left-4 right-4"
-          style={saveButtonStyle}
+          className="absolute left-4 right-4"
+          style={[saveButtonStyle, { bottom: insets.bottom + 16 }]}
           pointerEvents="box-none"
         >
           <Button

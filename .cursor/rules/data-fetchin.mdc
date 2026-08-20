@@ -1,0 +1,56 @@
+---
+description: Data fetching, caching, API layer conventions, and network error handling
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Data Fetching & Caching Rules
+
+## Core Principles
+
+- NEVER use `useEffect` for data fetching.
+- Use `@tanstack/react-query` for all asynchronous server state.
+- Keep Zustand strictly for local client/UI state. Never duplicate server responses in global client stores.
+
+## Query & Mutation Standards
+
+### Query Keys
+- All query keys must be defined as hierarchical `as const` arrays in a dedicated `queryKeys` object:
+  ```tsx
+  export const workoutKeys = {
+    all: ['workouts'] as const,
+    lists: () => [...workoutKeys.all, 'list'] as const,
+    list: (filters: WorkoutFilters) => [...workoutKeys.lists(), { filters }] as const,
+    details: () => [...workoutKeys.all, 'detail'] as const,
+    detail: (id: string) => [...workoutKeys.details(), id] as const,
+  };
+  ```
+
+### Custom Hooks
+- Encapsulate all queries and mutations within dedicated custom hooks inside `hooks/` or `services/`:
+  ```tsx
+  // GOOD
+  export function useWorkoutDetail(id: string) {
+    return useQuery({
+      queryKey: workoutKeys.detail(id),
+      queryFn: () => fetchWorkoutById(id),
+      enabled: Boolean(id),
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+  }
+  ```
+
+### Mutations & Invalidation
+- Always invalidate queries or apply optimistic updates in mutation `onSuccess` / `onMutate` callbacks so lists automatically re-render without manual refreshes:
+  ```tsx
+  export function useCreateWorkout() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+      mutationFn: createWorkoutApi,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: workoutKeys.lists() });
+      },
+    });
+  }
+  ```

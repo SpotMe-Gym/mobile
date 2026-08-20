@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Check } from 'lucide-react-native';
@@ -12,6 +12,7 @@ const LANGUAGES = [
 
 export default function LanguageSettings() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
 
   const handleLanguageChange = (langCode: string) => {
@@ -23,7 +24,7 @@ export default function LanguageSettings() {
       <View className="flex-1 px-4">
         <ScreenHeader title={t('settings.language')} />
 
-        <ScrollView>
+        <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
           <Text className="text-zinc-400 font-medium mb-3 ml-1">{t('settings.selectLanguage')}</Text>
           <View className="bg-zinc-900 rounded-2xl overflow-hidden mb-8 border border-zinc-800">
             {LANGUAGES.map((lang, index) => (

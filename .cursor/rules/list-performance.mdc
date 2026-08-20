@@ -1,0 +1,36 @@
+---
+description: List virtualization standards and scrolling performance rules
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# List & Scroll Performance Rules
+
+## Core Principles
+
+- NEVER use React Native's built-in `FlatList` or `ScrollView` with `.map()` for unbounded or dynamic arrays (e.g., exercise lists, nutrition history).
+- Use `@shopify/flash-list` for all lists.
+
+## FlashList Constraints
+
+### Configuration Essentials
+- Always provide `estimatedItemSize` (compute the median height of items in pixels).
+- When list items vary drastically in layout (e.g., headers vs. workout cards), provide `getItemType` to allow recycling across multiple view types:
+  ```tsx
+  <FlashList data="{items}" estimatedItemSize="{72}" getItemType="{(item)"> item.type}
+    renderItem={renderItem}
+    keyExtractor={(item) => item.id}
+  />
+  ```
+
+### Render Item Memoization
+- The `renderItem` callback must be a stable reference (`useCallback`) or defined outside the component.
+- The component returned by `renderItem` must be wrapped in `React.memo`.
+- Never define inline objects or functions inside `renderItem`.
+
+  ```tsx
+  // GOOD
+  const renderItem = useCallback(({ item }: { item: WorkoutItem }) => (
+    <WorkoutListItem item="{item}" onPress="{handleItemPress}"/>
+  ), [handleItemPress]);
+  ```

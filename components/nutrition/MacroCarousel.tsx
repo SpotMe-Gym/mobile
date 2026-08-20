@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from 'react';
-import { View, Text, ScrollView, Dimensions, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, LayoutAnimation, Platform, UIManager, useWindowDimensions } from 'react-native';
 import { Card } from '../ui/Card';
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
@@ -8,9 +8,6 @@ import { CalorieGauge } from './CalorieGauge';
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width - 32; // Full width inside the px-4 parent
 
 interface MacroCarouselProps {
   totals: {
@@ -46,6 +43,9 @@ export const MacroCarousel = React.memo(function MacroCarousel({
   targets = { calories: 2800, protein: 180, carbs: 300, fat: 80 },
   showGauge = true
 }: MacroCarouselProps) {
+  const { width } = useWindowDimensions();
+  const CARD_WIDTH = width - 32;
+  
   const [activeIndex, setActiveIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
@@ -130,9 +130,13 @@ export const MacroCarousel = React.memo(function MacroCarousel({
           <Card className={`bg-zinc-900 border border-zinc-800 p-5 ${expanded ? 'min-h-80' : 'h-80'}`}>
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-white text-lg font-bold">Micronutrients</Text>
-              <TouchableOpacity onPress={toggleExpand} className="p-2 bg-zinc-800 rounded-full h-8 w-8 items-center justify-center">
+              <TouchableOpacity 
+                onPress={toggleExpand} 
+                className="p-2 bg-zinc-800 rounded-full h-11 w-11 items-center justify-center"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
                 <View pointerEvents="none">
-                  {expanded ? <ChevronUp size={18} color="white" /> : <ChevronDown size={18} color="white" />}
+                  {expanded ? <ChevronUp size={20} color="white" /> : <ChevronDown size={20} color="white" />}
                 </View>
               </TouchableOpacity>
             </View>

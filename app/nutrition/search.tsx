@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { View, Text, TextInput, FlatList, Image, ActivityIndicator, TouchableOpacity, Alert, Modal, Keyboard } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { searchFood, getFoodByBarcode, FoodProduct } from '../../services/foodService';
@@ -27,6 +27,7 @@ const historyToProduct = (item: HistoryItem): FoodProduct => ({
 
 export default function NutritionSearch() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { meal } = useLocalSearchParams<{ meal: string }>(); // e.g. "Breakfast"
   const { knownFoods } = useNutritionStore();
 
@@ -261,7 +262,7 @@ export default function NutritionSearch() {
             data={results}
             keyExtractor={(item) => item.code + Math.random()}
             renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 20 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
             ListEmptyComponent={
               <View className="items-center mt-10 opacity-70">
                 {!query.trim() ? (
@@ -301,8 +302,8 @@ export default function NutritionSearch() {
                 barcodeTypes: ["qr", "ean13", "ean8", "upc_e", "upc_a"],
               }}
             >
-              <View className="flex-1">
-                <View className="flex-row justify-end px-4 mt-16">
+              <View className="flex-1" style={{ paddingTop: insets.top + 8 }}>
+                <View className="flex-row justify-end px-4">
                   <Button
                     size="icon"
                     variant="secondary"

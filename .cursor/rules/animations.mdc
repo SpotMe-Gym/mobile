@@ -41,15 +41,14 @@ function MyComponent() {
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
-  return <Animated.View style={animatedStyle} />;
+  return <Animated.View style="{animatedStyle}"/>;
 }
 
 // BAD — hook inside JSX
 function MyComponent() {
   const scale = useSharedValue(1);
   return (
-    <Animated.View
-      style={useAnimatedStyle(() => ({
+    <Animated.View style="{useAnimatedStyle(()"> ({
         transform: [{ scale: scale.value }],
       }))}
     />
@@ -67,7 +66,7 @@ function MyComponent() {
 ### collapsable={false}
 ALWAYS add `collapsable={false}` to `Animated.View` components that have animated styles. Android's view flattening optimization removes "unnecessary" views, which breaks Reanimated's native driver:
 ```tsx
-<Animated.View collapsable={false} style={animatedStyle}>
+<Animated.View collapsable="{false}" style="{animatedStyle}">
 ```
 
 ### Reduced Motion

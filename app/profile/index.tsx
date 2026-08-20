@@ -1,5 +1,5 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStore } from '../../store/userStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -11,6 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 
 export default function Profile() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { name, age } = useUserStore();
   const { currentWeight, currentHeight } = useUnitConverter();
@@ -23,7 +24,7 @@ export default function Profile() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <ScrollView className="flex-1 px-4">
+      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
         {/* Header */}
         <View className="flex-row justify-between items-center mb-6 mt-2">
           <View className="flex-row items-center">
