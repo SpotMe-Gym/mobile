@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useUserStore } from '../store/userStore';
 import { Button } from '../components/ui/Button';
 import { ChevronLeft } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Step1Bio } from '../components/onboarding/Step1Bio';
 import { Step2Goals, ACTIVITY_LEVELS, GOALS } from '../components/onboarding/Step2Goals';
@@ -12,6 +13,7 @@ import { Step3Nutrition } from '../components/onboarding/Step3Nutrition';
 
 export default function Onboarding() {
   const router = useRouter();
+  const { t } = useTranslation();
   const setName = useUserStore(s => s.setName);
   const setGender = useUserStore(s => s.setGender);
   const setHeight = useUserStore(s => s.setHeight);
@@ -116,13 +118,13 @@ export default function Onboarding() {
   const handleNext = () => {
     if (step === 1) {
       if (!form.name || !form.gender || !form.height || !form.weight || !form.age) {
-        Alert.alert("Missing Info", "Please fill in all fields.");
+        Alert.alert(t('onboarding.missingInfo'), t('onboarding.pleaseFillAllFields'));
         return;
       }
       setStep(2);
     } else if (step === 2) {
       if (activityIndex === null || goalIndex === null) {
-        Alert.alert("Selection Required", "Please select your activity level and goal.");
+        Alert.alert(t('onboarding.selectionRequired'), t('onboarding.pleaseSelectActivityAndGoal'));
         return;
       }
       setStep(3);
@@ -206,7 +208,7 @@ export default function Onboarding() {
 
         <View className="py-4">
           <Button
-            label={step === 3 ? "Start Journey" : "Next"}
+            label={step === 3 ? t('onboarding.startJourney') : t('common.next')}
             onPress={handleNext}
             variant="white"
             className="w-full h-14 rounded-xl"

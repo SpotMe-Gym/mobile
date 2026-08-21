@@ -8,6 +8,7 @@ import { useWorkoutStore, Workout } from '../../store/workoutStore';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { Icon } from '../../components/ui/Icon';
+import { useTranslation } from 'react-i18next';
 
 // Helper to find which days a workout is assigned to
 const getWorkoutDays = (workoutId: string, schedule: Record<string, string | null>) => {
@@ -47,6 +48,7 @@ const WorkoutItem = ({ item, scheduledDays, onPress }: { item: Workout, schedule
 export default function Workouts() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const workouts = useWorkoutStore(s => s.workouts);
   const schedule = useWorkoutStore(s => s.schedule);
 
@@ -54,7 +56,7 @@ export default function Workouts() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4 relative">
         <ScreenHeader
-          title="My Workouts"
+          title={t('workouts.myWorkouts')}
           className="mt-8"
           rightAction={
             <Button
@@ -70,6 +72,7 @@ export default function Workouts() {
           <FlashList<Workout>
             data={workouts}
             keyExtractor={item => item.id}
+            estimatedItemSize={100}
             renderItem={({ item }) => (
               <WorkoutItem
                 item={item}
@@ -82,8 +85,8 @@ export default function Workouts() {
             ListEmptyComponent={() => (
               <View className="items-center justify-center py-20 opacity-50">
                 <Dumbbell size={48} color="white" />
-                <Text className="text-white font-bold mt-4">No Workouts Yet</Text>
-                <Text className="text-zinc-500 text-center mt-2">Create your first workout routine to get started.</Text>
+                <Text className="text-white font-bold mt-4">{t('workouts.noWorkoutsYet')}</Text>
+                <Text className="text-zinc-500 text-center mt-2">{t('workouts.createFirstWorkout')}</Text>
               </View>
             )}
           />

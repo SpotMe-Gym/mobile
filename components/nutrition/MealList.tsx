@@ -6,6 +6,7 @@ import { Icon } from '../ui/Icon';
 import { Meal, useNutritionStore } from '../../store/nutritionStore';
 import { Plus, Trash2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 interface MealListProps {
   meals: Meal[];
@@ -15,6 +16,7 @@ interface MealListProps {
 export const MealList = React.memo(function MealList({ meals, date }: MealListProps) {
   const removeFood = useNutritionStore(s => s.removeFood);
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <View className="pb-10">
@@ -30,12 +32,12 @@ export const MealList = React.memo(function MealList({ meals, date }: MealListPr
 
             {meal.foods.length === 0 ? (
               <Card className="bg-zinc-900 border border-zinc-800 py-6 items-center border-dashed">
-                <Text className="text-zinc-600 mb-2">No food logged yet</Text>
+                <Text className="text-zinc-600 mb-2">{t('food.noFoodLoggedYet')}</Text>
                 <Button
                   variant="ghost"
                   size="sm"
                   icon={<Icon icon={Plus} size={16} color="#3b82f6" />}
-                  label="Add Food"
+                  label={t('food.addFood')}
                   onPress={() => router.push({ pathname: '/nutrition/search', params: { meal: meal.name } })}
                   className="text-blue-500"
                 />
@@ -60,7 +62,7 @@ export const MealList = React.memo(function MealList({ meals, date }: MealListPr
                   variant="outline"
                   size="sm"
                   icon={<Icon icon={Plus} size={16} color="#3b82f6" />}
-                  label={`Add item to ${meal.name}`}
+                  label={t('food.addItemTo', { meal: meal.name })}
                   onPress={() => router.push({ pathname: '/nutrition/search', params: { meal: meal.name } })}
                   className="mt-2 bg-zinc-800/50 border-dashed"
                 />

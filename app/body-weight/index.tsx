@@ -102,11 +102,11 @@ function WeightDetailContent() {
   const handleDelete = (id?: string) => {
     if (!id) return;
     Alert.alert(
-      "Delete Entry",
-      "Are you sure you want to delete this weight entry?",
+      t('bodyWeight.deleteEntryTitle'),
+      t('bodyWeight.deleteEntryMessage'),
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => removeWeightEntry(id) }
+        { text: t('common.cancel'), style: "cancel" },
+        { text: t('common.delete'), style: "destructive", onPress: () => removeWeightEntry(id) }
       ]
     );
   };
@@ -120,7 +120,7 @@ function WeightDetailContent() {
 
       <View className="px-4">
         <ScreenHeader
-          title="Body Weight"
+          title={t('bodyWeight.title')}
           onBack={handleClose}
           rightAction={
             <Button
@@ -161,13 +161,13 @@ function WeightDetailContent() {
 
         {/* Chart */}
         <View className="mb-6">
-          <Text className="text-white text-lg font-bold mb-3">Trend</Text>
+          <Text className="text-white text-lg font-bold mb-3">{t('bodyWeight.trend')}</Text>
           <WeightChart data={chartData} />
         </View>
 
         {/* History List */}
         <View>
-          <Text className="text-white text-lg font-bold mb-3">History</Text>
+          <Text className="text-white text-lg font-bold mb-3">{t('bodyWeight.history')}</Text>
           <View className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
             {history.slice().reverse().map((entry, i) => {
               const dw = convertWeight(entry.weight);
@@ -196,7 +196,7 @@ function WeightDetailContent() {
             })}
             {history.length === 0 && (
               <View className="p-6 items-center">
-                <Text className="text-zinc-600">No history yet</Text>
+                <Text className="text-zinc-600">{t('bodyWeight.noHistoryYet')}</Text>
               </View>
             )}
           </View>

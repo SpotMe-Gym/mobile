@@ -88,11 +88,11 @@ function WorkoutCardPreview() {
           ) : (
             <>
               <View>
-                <Text className="text-white/80 font-medium text-lg mt-1">Rest Day</Text>
-                <Text className="text-white/60 text-xs mt-1">No workout set</Text>
+                <Text className="text-white/80 font-medium text-lg mt-1">{t('workouts.restDay')}</Text>
+                <Text className="text-white/60 text-xs mt-1">{t('workouts.noWorkoutSet')}</Text>
               </View>
               <Button
-                label="Assign"
+                label={t('workouts.assign')}
                 variant="ghost"
                 className="bg-white/10 mt-2"
                 onPress={() => { }}
@@ -113,6 +113,7 @@ function WorkoutCardPreview() {
 function WorkoutDetailContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const { handleClose } = useExpandableCardContext();
   const today = getCurrentDayName();
@@ -148,7 +149,7 @@ function WorkoutDetailContent() {
 
       <View className="px-4">
         <ScreenHeader
-          title="Today's Plan"
+          title={t('dashboard.todaysPlan')}
           onBack={handleClose}
           rightAction={
             <Button
@@ -211,7 +212,7 @@ function WorkoutDetailContent() {
                       </View>
 
                       <Button
-                        label="Start Workout"
+                        label={t('workouts.startWorkout')}
                         variant="secondary"
                         className="w-full bg-blue-600"
                         onPress={() => console.log('Start Workout', workout.id)}
@@ -242,10 +243,10 @@ function WorkoutDetailContent() {
               {/* Header for the list */}
               <View className="flex-row justify-between items-center mb-4 px-4">
                 <Text className="text-white text-lg font-bold">
-                  Exercises ({workouts[activeIndex]?.exercises.filter((ex: Exercise) => ex.type !== 'rest').length || 0})
+                  {t('workouts.exercises')} ({workouts[activeIndex]?.exercises.filter((ex: Exercise) => ex.type !== 'rest').length || 0})
                 </Text>
                 <Text className="text-zinc-500 text-xs font-medium">
-                  Showing: {workouts[activeIndex]?.name}
+                  {t('workouts.showing')}: {workouts[activeIndex]?.name}
                 </Text>
               </View>
 
@@ -269,7 +270,7 @@ function WorkoutDetailContent() {
                                   <Icon icon={Armchair} size={14} color="#d97706" />
                                 </View>
                                 <View>
-                                  <Text className="text-zinc-300 font-bold text-sm">Rest Period</Text>
+                                  <Text className="text-zinc-300 font-bold text-sm">{t('workouts.restPeriod')}</Text>
                                   <Text className="text-zinc-500 text-xs">{Math.floor(ex.restTime / 60)}m {ex.restTime % 60}s</Text>
                                 </View>
                               </View>
@@ -313,7 +314,7 @@ function WorkoutDetailContent() {
               <Button
                 variant="outline"
                 icon={<Icon icon={Plus} size={20} color="#71717a" />}
-                label="Add Another Workout"
+                label={t('workouts.addAnotherWorkout')}
                 onPress={() => router.push('/workouts')}
                 className="mt-8 mx-4 border-2 border-dashed border-zinc-700 rounded-2xl p-4"
               />
@@ -324,11 +325,11 @@ function WorkoutDetailContent() {
             <View className="h-20 w-20 bg-zinc-900 rounded-full items-center justify-center mb-6 border border-zinc-800">
               <Calendar size={40} color="#52525b" />
             </View>
-            <Text className="text-white text-2xl font-bold text-center">Rest Day</Text>
-            <Text className="text-zinc-500 text-center mt-2 px-10">No workout assigned for {today}. Enjoy your recovery or select a workout.</Text>
+            <Text className="text-white text-2xl font-bold text-center">{t('workouts.restDay')}</Text>
+            <Text className="text-zinc-500 text-center mt-2 px-10">{t('workouts.restDayMessage', { day: today })}</Text>
 
             <Button
-              label="Select Workout"
+              label={t('workouts.selectWorkout')}
               variant="white"
               className="mt-8 px-8"
               onPress={() => router.push('/workouts')}

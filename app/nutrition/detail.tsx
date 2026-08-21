@@ -55,6 +55,7 @@ function NutritionDetailContent() {
   const logs = useNutritionStore(s => s.logs);
   const getDailyTotals = useNutritionStore(s => s.getDailyTotals);
   const targets = useUserStore(s => s.targets);
+  const { t } = useTranslation();
 
   const today = new Date().toISOString().split('T')[0];
   const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
@@ -78,7 +79,7 @@ function NutritionDetailContent() {
 
       <View className="px-4">
         <ScreenHeader
-          title="Nutrition"
+          title={t('dashboard.nutrition')}
           onBack={handleClose}
           rightAction={
             <Button

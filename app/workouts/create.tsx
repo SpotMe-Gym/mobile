@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -10,6 +10,7 @@ import { useWorkoutStore, Exercise } from '../../store/workoutStore';
 import { v4 as uuidv4 } from 'uuid';
 import { Icon } from '@/components/ui/Icon';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, cancelAnimation } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 
 const ExerciseCard = React.memo(({
   ex,
@@ -26,6 +27,7 @@ const ExerciseCard = React.memo(({
   removeExercise: (id: string) => void,
   moveExercise: (index: number, direction: 'up' | 'down') => void
 }) => {
+  const { t } = useTranslation();
   const hasExecution = (ex.executionTime !== undefined && ex.executionTime > 0) || (ex.executionTime2 !== undefined && ex.executionTime2 > 0);
   const hasExecution2 = (ex.executionTime2 !== undefined && ex.executionTime2 > 0);
 
@@ -77,7 +79,7 @@ const ExerciseCard = React.memo(({
           <View className="bg-amber-900/10 p-2 rounded-xl border border-amber-900/20">
             <Icon icon={Armchair} size={16} color="#d97706" />
           </View>
-          <Text className="text-zinc-400 font-bold text-sm mr-auto">Rest Period</Text>
+          <Text className="text-zinc-400 font-bold text-sm mr-auto">{t('workouts.restPeriod')}</Text>
 
           <View className="flex-row items-center gap-1 bg-zinc-950/30 px-3 py-2 rounded-xl border border-zinc-800/30">
             <TextInput
@@ -143,10 +145,10 @@ const ExerciseCard = React.memo(({
         <View className="flex-row items-center gap-3">
           <TextInput
             className="flex-1 text-white font-bold text-lg"
-            placeholder="Exercise Name"
+            placeholder={t('workouts.exerciseName')}
             placeholderTextColor="#52525b"
             value={ex.name}
-            onChangeText={(t) => updateExercise(ex.id, 'name', t)}
+            onChangeText={(text) => updateExercise(ex.id, 'name', text)}
           />
           <TouchableOpacity onPress={() => removeExercise(ex.id)} className="p-2 bg-zinc-950/30 rounded-full">
             <Icon icon={Trash2} size={18} color="#ef4444" opacity={0.8} />
@@ -156,7 +158,7 @@ const ExerciseCard = React.memo(({
         {/* Sets / Reps Row */}
         <View className="flex-row gap-3">
           <View className="flex-1 bg-zinc-950/40 rounded-2xl p-4 flex-row items-center justify-between border border-zinc-800/50">
-            <Text className="text-zinc-500 text-[10px] font-bold tracking-widest text-zinc-600">SETS</Text>
+            <Text className="text-zinc-500 text-[10px] font-bold tracking-widest text-zinc-600">{t('workouts.sets')}</Text>
             <TextInput
               className="text-white font-bold text-lg text-right px-2 min-w-[40px]"
               value={ex.sets.toString()}
@@ -166,7 +168,7 @@ const ExerciseCard = React.memo(({
             />
           </View>
           <View className="flex-1 bg-zinc-950/40 rounded-2xl p-4 flex-row items-center justify-between border border-zinc-800/50">
-            <Text className="text-zinc-500 text-[10px] font-bold tracking-widest text-zinc-600">REPS</Text>
+            <Text className="text-zinc-500 text-[10px] font-bold tracking-widest text-zinc-600">{t('workouts.reps')}</Text>
             <TextInput
               className="text-white font-bold text-lg text-right px-2 min-w-[40px]"
               value={ex.reps}
@@ -180,7 +182,7 @@ const ExerciseCard = React.memo(({
         <View className="flex-row gap-3 items-center">
           <View className="flex-1 bg-zinc-950/40 rounded-2xl p-4 flex-row items-center border border-zinc-800/50 gap-3">
             <Clock size={16} color="#71717a" />
-            <Text className="text-zinc-500 text-[10px] font-bold tracking-widest mr-auto mt-0.5">REST</Text>
+            <Text className="text-zinc-500 text-[10px] font-bold tracking-widest mr-auto mt-0.5">{t('workouts.rest')}</Text>
             <View className="flex-row items-center gap-1">
               <TextInput
                 placeholder="0"
@@ -324,7 +326,7 @@ const ExerciseCard = React.memo(({
             className="flex-row items-center justify-center p-3 rounded-xl bg-zinc-800/30 border border-dashed border-zinc-700 active:bg-zinc-800"
           >
             <Icon icon={Plus} size={14} color="#71717a" className="mr-2" />
-            <Text className="text-zinc-500 text-xs font-bold">Add Execution Time</Text>
+            <Text className="text-zinc-500 text-xs font-bold">{t('workouts.addExecutionTime')}</Text>
           </TouchableOpacity>
         )}
 
@@ -336,6 +338,7 @@ const ExerciseCard = React.memo(({
 export default function CreateWorkout() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const editId = typeof params.id === 'string' ? params.id : undefined;
 
@@ -393,12 +396,12 @@ export default function CreateWorkout() {
 
   const handleSave = () => {
     if (!name.trim()) {
-      alert("Please enter a workout name");
+      Alert.alert(t('workouts.enterWorkoutName'));
       return;
     }
     const validExercises = exercises.filter(e => e.type === 'rest' || e.name.trim());
     if (validExercises.length === 0) {
-      alert("Please add at least one exercise or rest period");
+      Alert.alert(t('workouts.addAtLeastOneExercise'));
       return;
     }
 
@@ -482,7 +485,7 @@ export default function CreateWorkout() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
-        <ScreenHeader title={editId ? "Edit Workout" : "New Workout"} onBack={() => router.back()} className="mt-8" />
+        <ScreenHeader title={editId ? t('workouts.editWorkout') : t('workouts.newWorkout')} onBack={() => router.back()} className="mt-8" />
 
         <ScrollView
           className="flex-1"
@@ -499,20 +502,20 @@ export default function CreateWorkout() {
           {/* Basic Info */}
           <View className="gap-4 mb-6">
             <View>
-              <Text className="text-zinc-400 text-xs font-medium mb-1 ml-1">WORKOUT NAME</Text>
+              <Text className="text-zinc-400 text-xs font-medium mb-1 ml-1">{t('workouts.workoutName')}</Text>
               <TextInput
                 className="bg-zinc-900 border border-zinc-800 text-white p-4 rounded-2xl text-lg font-bold"
-                placeholder="e.g. Push Day A"
+                placeholder={t('workouts.workoutNamePlaceholder')}
                 placeholderTextColor="#52525b"
                 value={name}
-                onChangeText={(t) => { setName(t); onInteraction(); }}
+                onChangeText={(text) => { setName(text); onInteraction(); }}
               />
             </View>
             {/* Previously Duration / Difficulty - REMOVED */}
           </View>
 
           {/* Schedule */}
-          <Text className="text-white text-lg font-bold mb-4 mt-8">Weekly Schedule</Text>
+          <Text className="text-white text-lg font-bold mb-4 mt-8">{t('workouts.weeklySchedule')}</Text>
           <View className="flex-row justify-between mb-6">
             {DAYS.map((day) => {
               const isSelected = selectedDays.includes(day);
@@ -540,9 +543,9 @@ export default function CreateWorkout() {
 
           {/* Exercises */}
           <View className="flex-row justify-between items-end mb-4">
-            <Text className="text-white text-lg font-bold">Exercises</Text>
+            <Text className="text-white text-lg font-bold">{t('workouts.exercises')}</Text>
             {exercises.length === 0 && (
-              <Text className="text-zinc-500 text-xs italic">No exercises added yet</Text>
+              <Text className="text-zinc-500 text-xs italic">{t('workouts.noExercisesYet')}</Text>
             )}
           </View>
 
@@ -565,7 +568,7 @@ export default function CreateWorkout() {
             <Button
               variant="secondary"
               icon={<Icon icon={Plus} size={18} color="#9ca3af" />}
-              label="Add Exercise"
+              label={t('workouts.addExercise')}
               onPress={addExercise}
               className="flex-1 py-4 rounded-2xl"
             />
@@ -573,7 +576,7 @@ export default function CreateWorkout() {
             <Button
               variant="secondary"
               icon={<Icon icon={Armchair} size={18} color="#d97706" />}
-              label="Add Rest"
+              label={t('workouts.addRest')}
               onPress={addRest}
               className="flex-1 py-4 rounded-2xl"
             />
@@ -587,7 +590,7 @@ export default function CreateWorkout() {
           pointerEvents="box-none"
         >
           <Button
-            label="Save Workout"
+            label={t('workouts.saveWorkout')}
             className="bg-blue-600 h-14"
             onPress={handleSave}
           />

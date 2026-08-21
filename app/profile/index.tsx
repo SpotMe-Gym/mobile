@@ -51,13 +51,13 @@ export default function Profile() {
             <Text className="text-white text-3xl font-bold">{name ? name[0].toUpperCase() : 'U'}</Text>
           </View>
           <View>
-            <Text className="text-white text-xl font-bold">{name || 'User'}</Text>
-            <Text className="text-zinc-500">Premium Member</Text>
+            <Text className="text-white text-xl font-bold">{name || t('common.user')}</Text>
+            <Text className="text-zinc-500">{t('profile.premiumMember')}</Text>
           </View>
         </View>
 
         {/* Stats Grid */}
-        <Text className="text-white text-lg font-bold mb-4">{t('dashboard.bodyWeight')} & Stats</Text>
+        <Text className="text-white text-lg font-bold mb-4">{t('profile.statsTitle')}</Text>
         <View className="flex-row gap-3 mb-8">
           <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
             <Weight color="#3b82f6" size={24} />
@@ -72,7 +72,7 @@ export default function Profile() {
           <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
             <Hash color="#22c55e" size={24} />
             <Text className="text-white text-xl font-bold mt-2">{age || '--'}</Text>
-            <Text className="text-zinc-500 text-xs">Age</Text>
+            <Text className="text-zinc-500 text-xs">{t('common.age')}</Text>
           </Card>
         </View>
 
@@ -97,16 +97,16 @@ export default function Profile() {
         {/* Reset Data Button */}
         <Button
           variant="danger"
-          label="Reset All Data"
+          label={t('profile.resetAllData')}
           onPress={() => {
             const { resetUser } = useUserStore.getState();
             Alert.alert(
-              "Reset Data",
-              "Are you sure you want to clear all data and restart onboarding?",
+              t('profile.resetDataTitle'),
+              t('profile.resetDataMessage'),
               [
-                { text: "Cancel", style: "cancel" },
+                { text: t('common.cancel'), style: "cancel" },
                 {
-                  text: "Reset",
+                  text: t('common.reset'),
                   style: "destructive",
                   onPress: () => {
                     resetUser();

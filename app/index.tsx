@@ -103,7 +103,7 @@ export default function Dashboard() {
         {/* Greeting Sub-header */}
         <View className="mb-6">
           <Text className="text-textSecondary text-sm font-medium">{t('common.monday')}, {t('common.jan')} 19</Text>
-          <Text className="text-white text-3xl font-bold" numberOfLines={1} adjustsFontSizeToFit>{t('common.hello')}, {name || 'User'}</Text>
+          <Text className="text-white text-3xl font-bold" numberOfLines={1} adjustsFontSizeToFit>{t('common.hello')}, {name || t('common.user')}</Text>
         </View>
 
         {/* Bento Grid */}
@@ -228,12 +228,12 @@ export default function Dashboard() {
                       onPressOut={workoutCard.handlePressOut}
                     >
                       <View className="justify-center flex-1">
-                        <Text className="text-white/80 font-medium text-lg mt-1">Rest Day</Text>
-                        <Text className="text-white/60 text-xs mt-1">No workout set</Text>
+                        <Text className="text-white/80 font-medium text-lg mt-1">{t('workouts.restDay')}</Text>
+                        <Text className="text-white/60 text-xs mt-1">{t('workouts.noWorkoutSet')}</Text>
                       </View>
                       <View>
                         <Button
-                          label="Assign"
+                          label={t('workouts.assign')}
                           variant="ghost"
                           className="bg-white/10 mt-2"
                           onPress={() => router.push('/workouts')}
@@ -302,8 +302,8 @@ export default function Dashboard() {
                     <Play size={8} color="white" />
                   </View>
                   <View>
-                    <Text className="text-white font-medium">Pull Day</Text>
-                    <Text className="text-zinc-500 text-xs">Yesterday</Text>
+                    <Text className="text-white font-medium">{t('dashboard.pullDay')}</Text>
+                    <Text className="text-zinc-500 text-xs">{t('dashboard.yesterday')}</Text>
                   </View>
                 </View>
                 <Text className="text-zinc-400 text-sm">{t('dashboard.completed')}</Text>

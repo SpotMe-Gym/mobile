@@ -12,6 +12,7 @@ import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useNutritionStore, HistoryItem } from '../../store/nutritionStore';
+import { useTranslation } from 'react-i18next';
 
 // Helper to map HistoryItem to FoodProduct shape for consistent rendering
 const historyToProduct = (item: HistoryItem): FoodProduct => ({
@@ -30,6 +31,7 @@ const historyToProduct = (item: HistoryItem): FoodProduct => ({
 export default function NutritionSearch() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { meal } = useLocalSearchParams<{ meal: string }>(); // e.g. "Breakfast"
   const knownFoods = useNutritionStore(s => s.knownFoods);
 
@@ -122,7 +124,7 @@ export default function NutritionSearch() {
       if (!permission.granted) {
         const result = await requestPermission();
         if (!result.granted) {
-          Alert.alert("Permission Required", "Camera access is needed to scan barcodes.");
+          Alert.alert(t('food.permissionRequired'), t('food.cameraAccessNeeded'));
           return;
         }
       }
@@ -130,7 +132,7 @@ export default function NutritionSearch() {
       setScanned(false);
     } catch (err) {
       console.error("Camera permission error:", err);
-      Alert.alert("Error", "Could not request camera permissions.");
+      Alert.alert(t('food.error'), t('food.cameraPermissionError'));
     }
   };
 
@@ -154,7 +156,7 @@ export default function NutritionSearch() {
     if (product) {
       setResults([product]);
     } else {
-      Alert.alert("Not Found", "Product not found in database.");
+      Alert.alert(t('food.notFound'), t('food.productNotFound'));
     }
   };
 
@@ -183,7 +185,7 @@ export default function NutritionSearch() {
             />
           ) : (
             <View className="w-16 h-16 rounded-lg bg-zinc-800 items-center justify-center">
-              <Text className="text-zinc-600 text-xs">No Img</Text>
+              <Text className="text-zinc-600 text-xs">{t('food.noImage')}</Text>
             </View>
           )}
           <View className="flex-1 ml-4">
@@ -220,8 +222,8 @@ export default function NutritionSearch() {
               className="mr-4"
             />
             <View>
-              <Text className="text-3xl font-bold text-white">Add Food</Text>
-              {meal && <Text className="text-blue-400 font-medium text-sm">to {meal}</Text>}
+              <Text className="text-3xl font-bold text-white">{t('food.addFood')}</Text>
+              {meal && <Text className="text-blue-400 font-medium text-sm">{t('food.toMeal', { meal })}</Text>}
             </View>
           </View>
         </View>
@@ -229,7 +231,7 @@ export default function NutritionSearch() {
         {locationName && (
           <View className="flex-row items-center mb-4 pl-1">
             <MapPin size={14} color="#a1a1aa" />
-            <Text className="text-zinc-400 text-xs ml-1">Results optimized for <Text className="text-blue-400">{locationName}</Text></Text>
+            <Text className="text-zinc-400 text-xs ml-1">{t('food.resultsOptimizedFor')} <Text className="text-blue-400">{locationName}</Text></Text>
           </View>
         )}
 
@@ -239,7 +241,7 @@ export default function NutritionSearch() {
             <Search size={20} color="#A1A1AA" />
             <TextInput
               className="flex-1 ml-3 text-white h-full"
-              placeholder={meal ? `Search ${meal} foods...` : "Search food..."}
+              placeholder={meal ? t('food.searchMealFoods', { meal }) : t('food.searchFood')}
               placeholderTextColor="#52525B"
               value={query}
               onChangeText={setQuery}
@@ -272,15 +274,15 @@ export default function NutritionSearch() {
                 {!query.trim() ? (
                   <>
                     <Sparkles size={48} color="#3b82f6" style={{ marginBottom: 16, opacity: 0.5 }} />
-                    <Text className="text-zinc-500 font-medium text-lg">Suggestions</Text>
+                    <Text className="text-zinc-500 font-medium text-lg">{t('food.suggestions')}</Text>
                     <Text className="text-zinc-600 text-center mt-2 px-10">
-                      Foods you add to {meal || 'your meals'} will appear here automatically.
+                      {t('food.suggestionsMessage', { meal: meal || 'your meals' })}
                     </Text>
                   </>
                 ) : (
                   <>
                     <Search size={48} color="#71717a" style={{ marginBottom: 16 }} />
-                    <Text className="text-zinc-500">No results found</Text>
+                    <Text className="text-zinc-500">{t('food.noResultsFound')}</Text>
                   </>
                 )}
               </View>
@@ -289,7 +291,7 @@ export default function NutritionSearch() {
               !query.trim() && results.length > 0 ? (
                 <View className="flex-row items-center mb-3 ml-1">
                   <History size={14} color="#a1a1aa" />
-                  <Text className="text-zinc-400 text-xs ml-2 font-medium uppercase tracking-wider">Suggested History</Text>
+                  <Text className="text-zinc-400 text-xs ml-2 font-medium uppercase tracking-wider">{t('food.suggestedHistory')}</Text>
                 </View>
               ) : null
             }
@@ -319,7 +321,7 @@ export default function NutritionSearch() {
                 </View>
                 <View className="flex-1 justify-center items-center">
                   <View className="w-64 h-64 border-2 border-white/50 rounded-xl bg-transparent" />
-                  <Text className="text-white mt-4 font-bold bg-black/50 px-3 py-1 rounded">Scan a barcode</Text>
+                  <Text className="text-white mt-4 font-bold bg-black/50 px-3 py-1 rounded">{t('food.scanBarcode')}</Text>
                 </View>
               </View>
             </CameraView>
