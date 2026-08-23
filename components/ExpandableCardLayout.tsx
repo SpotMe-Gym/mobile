@@ -141,12 +141,14 @@ export function ExpandableCardLayoutWithContext({
         </Animated.View>
 
         <Animated.View collapsable={false} style={[styles.cardContainer, { backgroundColor }, containerStyle]}>
-          <View style={[styles.content, { backgroundColor, paddingTop: insets.top }]}>
+          {/* Inset must live on the detail wrapper only — padding on this view would
+              shift the absolutely-positioned preview against the padding box. */}
+          <View style={[styles.content, { backgroundColor }]}>
             <Animated.View collapsable={false} style={[styles.previewWrapper, previewContentStyle]}>
               {previewContent}
             </Animated.View>
 
-            <Animated.View collapsable={false} style={[styles.detailWrapper, detailContentStyle]}>
+            <Animated.View collapsable={false} style={[styles.detailWrapper, { paddingTop: insets.top }, detailContentStyle]}>
               {children}
             </Animated.View>
           </View>

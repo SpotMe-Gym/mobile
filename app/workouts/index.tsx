@@ -5,15 +5,18 @@ import { Button } from '../../components/ui/Button';
 import { Plus, Play, Dumbbell, Sparkles } from 'lucide-react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useWorkoutStore, Workout } from '../../store/workoutStore';
+import { useHasHydrated } from '../../hooks/useHasHydrated';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { Icon } from '../../components/ui/Icon';
 import { useTranslation } from 'react-i18next';
 
-// Helper to find which days a workout is assigned to
-const getWorkoutDays = (workoutId: string, schedule: Record<string, string | null>) => {
+// Helper to find which days a workout is assigned to.
+// A day maps to a list of workout ids, so this must test membership — comparing the
+// array to the id directly is always false, which silently hid every day badge.
+const getWorkoutDays = (workoutId: string, schedule: Record<string, string[]>) => {
   return Object.entries(schedule)
-    .filter(([_, id]) => id === workoutId)
+    .filter(([, ids]) => (ids ?? []).includes(workoutId))
     .map(([day]) => day.substring(0, 3)); // Mon, Tue
 };
 
@@ -51,6 +54,7 @@ export default function Workouts() {
   const { t } = useTranslation();
   const workouts = useWorkoutStore(s => s.workouts);
   const schedule = useWorkoutStore(s => s.schedule);
+  const isHydrated = useHasHydrated(useWorkoutStore);
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -70,7 +74,10 @@ export default function Workouts() {
 
         <View className="flex-1 w-full h-full">
           <FlashList<Workout>
-            data={workouts}
+            // Empty until hydrated: the seed workouts would otherwise flash before
+            // being replaced by the user's own, and the empty state would claim they
+            // have none at all.
+            data={isHydrated ? workouts : []}
             keyExtractor={item => item.id}
             estimatedItemSize={100}
             renderItem={({ item }) => (
@@ -82,13 +89,13 @@ export default function Workouts() {
             )}
             contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
             showsVerticalScrollIndicator={false}
-            ListEmptyComponent={() => (
+            ListEmptyComponent={() => isHydrated ? (
               <View className="items-center justify-center py-20 opacity-50">
                 <Dumbbell size={48} color="white" />
                 <Text className="text-white font-bold mt-4">{t('workouts.noWorkoutsYet')}</Text>
                 <Text className="text-zinc-500 text-center mt-2">{t('workouts.createFirstWorkout')}</Text>
               </View>
-            )}
+            ) : null}
           />
         </View>
 

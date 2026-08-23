@@ -1,110 +1,33 @@
 import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Play, Sparkles, Calendar, Plus, ArrowRightLeft, Armchair, Clock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../../components/ExpandableCardLayout';
+import { TodaysPlanCardContent } from '../../components/workouts/TodaysPlanCardContent';
+import { useTodaysWorkouts } from '../../hooks/useTodaysWorkouts';
 import { useTranslation } from 'react-i18next';
-import { useWorkoutStore, Workout, Exercise } from '../../store/workoutStore';
-import { useMemo, useState, useRef } from 'react';
+import { Workout, Exercise } from '../../store/workoutStore';
+import { useState, useRef } from 'react';
 import { Icon } from '@/components/ui/Icon';
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-// Helper to get current day name
-function getCurrentDayName() {
-  const d = new Date();
-  return DAYS[d.getDay()];
-}
-
-// Preview content - matches the home card appearance exactly
+// Preview content — renders the same component as the home grid card so the two can
+// never drift apart. Page width is derived from the known card dimensions rather than
+// measured, since a measure-then-setState pass would re-render mid-animation.
 function WorkoutCardPreview() {
   const { cardDimensions } = useExpandableCardContext();
-  const { t } = useTranslation();
-  const today = getCurrentDayName();
-  const schedule = useWorkoutStore(s => s.schedule);
-  const allWorkouts = useWorkoutStore(s => s.workouts);
-  const [layoutWidth, setLayoutWidth] = useState(0);
-
-  const workouts = useMemo(() => {
-    const workoutIds = schedule[today] || [];
-    return workoutIds.map(id => allWorkouts.find(w => w.id === id)).filter(Boolean) as Workout[];
-  }, [schedule, allWorkouts, today]);
+  const { workouts, isHydrated } = useTodaysWorkouts();
 
   return (
     <View className="flex-1 w-full items-center justify-center">
-      <View style={{
-        width: cardDimensions.cardWidth,
-        height: cardDimensions.cardHeight,
-        borderRadius: 16,
-        overflow: 'hidden',
-        backgroundColor: '#18181b',
-      }}>
-        <Card
-          className="h-full justify-between bg-zinc-900 border border-zinc-800"
-          title={t('dashboard.todaysPlan')}
-        >
-          {workouts.length > 0 ? (
-            <View
-              className="flex-1"
-              onLayout={(e) => setLayoutWidth(e.nativeEvent.layout.width)}
-            >
-              {(layoutWidth > 0) && (
-                <ScrollView
-                  horizontal
-                  pagingEnabled
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ flexGrow: 1 }}
-                >
-                  {workouts.map((workout, index) => (
-                    <View key={workout.id} style={{ width: layoutWidth }} className="justify-between">
-                      <View>
-                        <Text className="text-white/80 font-medium text-lg mt-1" numberOfLines={1}>{workout.name}</Text>
-                        <Text className="text-white/60 text-xs mt-1">{workout.duration} min • {workout.exercises.length} Ex</Text>
-                      </View>
-                      <Button
-                        label={t('dashboard.start')}
-                        variant="ghost"
-                        className="bg-white/10 mt-2"
-                        onPress={() => { }}
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
-              )}
-
-              {/* Pagination Dots */}
-              {workouts.length > 1 && (
-                <View className="flex-row justify-center mt-1 gap-1 absolute bottom-0 right-0 left-0">
-                  {workouts.map((_, i) => (
-                    <View key={i} className="h-1 w-1 rounded-full bg-white/30" />
-                  ))}
-                </View>
-              )}
-            </View>
-          ) : (
-            <>
-              <View>
-                <Text className="text-white/80 font-medium text-lg mt-1">{t('workouts.restDay')}</Text>
-                <Text className="text-white/60 text-xs mt-1">{t('workouts.noWorkoutSet')}</Text>
-              </View>
-              <Button
-                label={t('workouts.assign')}
-                variant="ghost"
-                className="bg-white/10 mt-2"
-                onPress={() => { }}
-              />
-            </>
-          )}
-
-          <View className="absolute right-[-4] bottom-[-4] opacity-5 pointer-events-none">
-            {workouts.length > 0 ? <Play size={64} color="white" /> : <Calendar size={64} color="white" />}
-          </View>
-        </Card>
-      </View>
+      <TodaysPlanCardContent
+        workouts={workouts}
+        isHydrated={isHydrated}
+        pageWidth={cardDimensions.cardWidth - 2} // minus 1px border each side
+        style={{ width: cardDimensions.cardWidth, height: cardDimensions.cardHeight }}
+      />
     </View>
   );
 }
@@ -116,13 +39,7 @@ function WorkoutDetailContent() {
   const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const { handleClose } = useExpandableCardContext();
-  const today = getCurrentDayName();
-  const schedule = useWorkoutStore(s => s.schedule);
-  const allWorkouts = useWorkoutStore(s => s.workouts);
-  const workouts = useMemo(() => {
-    const workoutIds = schedule[today] || [];
-    return workoutIds.map(id => allWorkouts.find(w => w.id === id)).filter(Boolean) as Workout[];
-  }, [schedule, allWorkouts, today]);
+  const { workouts, day: today, isHydrated } = useTodaysWorkouts();
 
   // Carousel state
   const [activeIndex, setActiveIndex] = useState(0);
@@ -167,7 +84,7 @@ function WorkoutDetailContent() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
       >
-        {workouts.length > 0 ? (
+        {!isHydrated ? null : workouts.length > 0 ? (
           <>
             {/* Horizontal Carousel for Workout Cards */}
             <View className="mt-2" style={{ height: 230 }}>

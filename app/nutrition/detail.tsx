@@ -6,8 +6,8 @@ import { useUserStore } from '../../store/userStore';
 import { MacroCarousel } from '../../components/nutrition/MacroCarousel';
 import { MealList } from '../../components/nutrition/MealList';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { CalorieGauge } from '../../components/nutrition/CalorieGauge';
-import { Card } from '../../components/ui/Card';
+import { NutritionCardContent } from '../../components/nutrition/NutritionCardContent';
+import { useHasHydrated } from '../../hooks/useHasHydrated';
 import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
 import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../../components/ExpandableCardLayout';
@@ -15,34 +15,16 @@ import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Sparkles } from 'lucide-react-native';
 
-// Preview content - matches the home card appearance exactly
+// Preview content — renders the same component as the home grid card so the two can
+// never drift apart.
 function NutritionCardPreview() {
-  const getDailyTotals = useNutritionStore(s => s.getDailyTotals);
-  const targets = useUserStore(s => s.targets);
   const { cardDimensions } = useExpandableCardContext();
-  const today = new Date().toISOString().split('T')[0];
-  const nutrition = getDailyTotals(today);
-  const { t } = useTranslation();
 
   return (
     <View className="flex-1 w-full items-center justify-center">
-      <View style={{
-        width: cardDimensions.cardWidth,
-        height: cardDimensions.cardHeight,
-        borderRadius: 16,
-        overflow: 'hidden',
-        backgroundColor: '#18181b',
-      }}>
-        <Card className="h-full bg-transparent justify-between" title={t('dashboard.nutrition')}>
-          <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, marginTop: -8 }}>
-            <CalorieGauge
-              totals={nutrition}
-              size="small"
-              targets={targets}
-            />
-          </View>
-        </Card>
-      </View>
+      <NutritionCardContent
+        style={{ width: cardDimensions.cardWidth, height: cardDimensions.cardHeight }}
+      />
     </View>
   );
 }
@@ -55,6 +37,7 @@ function NutritionDetailContent() {
   const logs = useNutritionStore(s => s.logs);
   const getDailyTotals = useNutritionStore(s => s.getDailyTotals);
   const targets = useUserStore(s => s.targets);
+  const isHydrated = useHasHydrated(useNutritionStore);
   const { t } = useTranslation();
 
   const today = new Date().toISOString().split('T')[0];
@@ -98,8 +81,14 @@ function NutritionDetailContent() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
-        <MacroCarousel totals={totals} targets={targets} showGauge={true} />
-        <MealList meals={currentLog.meals} date={today} />
+        {/* Withheld until hydrated so the screen never claims an empty day for a log
+            that simply has not been read off disk yet. */}
+        {isHydrated && (
+          <>
+            <MacroCarousel totals={totals} targets={targets} showGauge={true} />
+            <MealList meals={currentLog.meals} date={today} />
+          </>
+        )}
       </ScrollView>
     </View>
   );

@@ -129,6 +129,7 @@ export function useExpandableCard(
   const containerStyle = useAnimatedStyle(() => {
     // Apply container offset on UI thread — corrects measureInWindow mismatch on Android
     const offsetY = containerOffsetY ? containerOffsetY.value : 0;
+    
     const transX = interpolate(progress.value, [0, 1], [translateX, 0]);
     const transY = interpolate(progress.value, [0, 1], [translateY - offsetY, 0]);
     const sX = interpolate(progress.value, [0, 1], [scaleX, 1]);

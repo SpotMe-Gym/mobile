@@ -1,17 +1,15 @@
 import { useRef, useCallback } from 'react';
 import { View } from 'react-native';
 import { useRouter, Href } from 'expo-router';
-import { useSharedValue, withSpring } from 'react-native-reanimated';
+import { useSharedValue, withSpring, WithSpringConfig } from 'react-native-reanimated';
 
 interface UseExpandableNavigationOptions {
   /** Spring config for press animation */
   pressScale?: number;
-  springConfig?: {
-    damping: number;
-    stiffness: number;
-  };
+  springConfig?: WithSpringConfig;
 }
 
+// Standard spring config per animation rules
 const DEFAULT_OPTIONS: Required<UseExpandableNavigationOptions> = {
   pressScale: 0.96,
   springConfig: {
@@ -101,13 +99,16 @@ export function useExpandableNavigation(options: UseExpandableNavigationOptions 
         finalY = centerY - finalHeight / 2;
       }
 
+      // Whole pixels only: the detail screen lays its preview out at these exact
+      // dimensions, and a fractional size makes Yoga round the preview's flex chain
+      // differently than the grid card's, shifting inner content by up to a point.
       router.push({
         pathname: pathname as Href<string>,
         params: {
-          cardX: finalX.toFixed(1),
-          cardY: finalY.toFixed(1),
-          cardWidth: finalWidth.toFixed(1),
-          cardHeight: finalHeight.toFixed(1),
+          cardX: String(Math.round(finalX)),
+          cardY: String(Math.round(finalY)),
+          cardWidth: String(Math.round(finalWidth)),
+          cardHeight: String(Math.round(finalHeight)),
           ...additionalParams,
         },
       } as any);

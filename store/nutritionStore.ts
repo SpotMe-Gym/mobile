@@ -127,6 +127,18 @@ export const useNutritionStore = create<NutritionState>()(
     {
       name: 'nutrition-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = (persistedState ?? {}) as Partial<NutritionState>;
+
+        // 0 -> 1: knownFoods was added after the first release, so installs from before
+        // it shipped rehydrate without the key and crash every lookup against it.
+        if (version < 1) {
+          return { ...state, logs: state.logs ?? {}, knownFoods: state.knownFoods ?? {} };
+        }
+
+        return state;
+      },
     }
   )
 );

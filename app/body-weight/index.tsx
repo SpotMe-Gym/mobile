@@ -3,72 +3,28 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import Animated, { useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { ScreenHeader } from '../../components/ScreenHeader';
-import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Icon } from '../../components/ui/Icon';
 import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../../components/ExpandableCardLayout';
+import { BodyWeightCardContent } from '../../components/body-weight/BodyWeightCardContent';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '../../store/userStore';
 import { WeightChart } from '../../components/body-weight/WeightChart';
 import { AddWeightModal } from '../../components/body-weight/AddWeightModal';
-import { TrendingUp, TrendingDown, Minus, Plus, Trash2, Sparkles } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Plus, Trash2, Sparkles } from 'lucide-react-native';
 import { useUnitConverter } from '../../hooks/useUnitConverter';
 import { useRouter } from 'expo-router';
 
-// Preview content - matches the home card appearance including the Gauge Fix
+// Preview content — renders the same component as the home grid card so the two can
+// never drift apart.
 function WeightCardPreview() {
-  const weightHistory = useUserStore(s => s.weightHistory);
   const { cardDimensions } = useExpandableCardContext();
-  const { currentWeight, convertWeight } = useUnitConverter();
-  const { t } = useTranslation();
 
   return (
     <View className="flex-1 w-full items-center justify-center">
-      <View style={{
-        width: cardDimensions.cardWidth,
-        height: cardDimensions.cardHeight,
-        borderWidth: 1,
-        borderColor: '#27272a',
-        borderRadius: 16,
-        overflow: 'hidden',
-        backgroundColor: '#18181b',
-      }}>
-        <Card className="h-full bg-transparent border-none" title={t('dashboard.bodyWeight')}>
-          <View className="flex-row items-baseline mt-2">
-            <Text className="text-5xl font-bold text-white">{currentWeight.formatted}</Text>
-            <Text className="text-zinc-500 text-xl ml-2">{currentWeight.unit}</Text>
-          </View>
-          <View className="flex-row items-center mt-4">
-            {(() => {
-              const history = weightHistory || [];
-              const latestVal = currentWeight.value;
-              const prevEntry = history.length > 1 ? history[history.length - 2] : null;
-              const prevVal = prevEntry ? convertWeight(prevEntry.weight).value : latestVal;
-
-              const diff = latestVal - prevVal;
-              const isGain = diff > 0;
-
-              if (history.length < 2 || diff === 0) {
-                return (
-                  <>
-                    <Minus size={16} color="#71717a" />
-                    <Text className="text-zinc-500 ml-1 text-sm font-medium">{t('dashboard.noChange')}</Text>
-                  </>
-                );
-              }
-
-              return (
-                <>
-                  {isGain ? <TrendingUp size={16} color="#ef4444" /> : <TrendingDown size={16} color="#22c55e" />}
-                  <Text className={`${isGain ? 'text-red-500' : 'text-green-500'} ml-1 text-sm font-medium`}>
-                    {diff > 0 ? '+' : ''}{diff.toFixed(1)} {currentWeight.unit} {t('dashboard.sinceLast')}
-                  </Text>
-                </>
-              );
-            })()}
-          </View>
-        </Card>
-      </View>
+      <BodyWeightCardContent
+        style={{ width: cardDimensions.cardWidth, height: cardDimensions.cardHeight }}
+      />
     </View>
   );
 }
