@@ -6,6 +6,7 @@ import { lightImpact } from '../../lib/haptics';
 import { WidgetCell } from './WidgetCell';
 import { AddWidgetSheet } from './AddWidgetSheet';
 import { getWidgetDimensions, GRID_GAP } from './widgetSizes';
+import { findDropTarget, type WidgetFrame } from './dropTarget';
 import { WIDGET_REGISTRY } from './catalog';
 import { useDashboardStore, WidgetId } from '../../store/dashboardStore';
 
@@ -14,6 +15,7 @@ interface DashboardGridProps {
   onEnterEdit: () => void;
   addSheetOpen?: boolean;
   onAddSheetOpenChange?: (open: boolean) => void;
+  onDraggingChange?: (dragging: boolean) => void;
 }
 
 export function DashboardGrid({
@@ -21,6 +23,7 @@ export function DashboardGrid({
   onEnterEdit,
   addSheetOpen,
   onAddSheetOpenChange,
+  onDraggingChange,
 }: DashboardGridProps) {
   const { t } = useTranslation();
   const widgets = useDashboardStore(s => s.widgets);
@@ -34,43 +37,46 @@ export function DashboardGrid({
   const sheetOpen = addSheetOpen ?? internalSheetOpen;
   const setSheetOpen = onAddSheetOpenChange ?? setInternalSheetOpen;
 
-  const frames = useRef<Record<string, { x: number; y: number; width: number; height: number }>>({});
+  const frames = useRef<Record<string, WidgetFrame>>({});
+  const frozenFrames = useRef<Record<string, WidgetFrame>>({});
+  const draggingIdRef = useRef<WidgetId | null>(null);
+  const [draggingId, setDraggingId] = useState<WidgetId | null>(null);
 
-  const registerFrame = useCallback(
-    (id: WidgetId, frame: { x: number; y: number; width: number; height: number }) => {
-      frames.current[id] = frame;
-    },
-    [],
-  );
+  const registerFrame = useCallback((id: WidgetId, frame: WidgetFrame) => {
+    // The dragged cell's window rect follows the finger — never use that as home.
+    if (draggingIdRef.current === id) return;
+    frames.current[id] = frame;
+  }, []);
+
+  const handleDragStart = useCallback((id: WidgetId) => {
+    draggingIdRef.current = id;
+    frozenFrames.current = { ...frames.current };
+    setDraggingId(id);
+    onDraggingChange?.(true);
+  }, [onDraggingChange]);
+
+  const handleDragEnd = useCallback(() => {
+    draggingIdRef.current = null;
+    setDraggingId(null);
+    onDraggingChange?.(false);
+  }, [onDraggingChange]);
 
   const handleDrop = useCallback(
-    (fromId: WidgetId, absX: number, absY: number) => {
-      let targetId: WidgetId | null = null;
-      let closestDist = Infinity;
-      for (const widget of widgets) {
-        if (widget.id === fromId) continue;
-        const frame = frames.current[widget.id];
-        if (!frame) continue;
-        const cx = frame.x + frame.width / 2;
-        const cy = frame.y + frame.height / 2;
-        const dist = (absX - cx) ** 2 + (absY - cy) ** 2;
-        const inside =
-          absX >= frame.x &&
-          absX <= frame.x + frame.width &&
-          absY >= frame.y &&
-          absY <= frame.y + frame.height;
-        if (inside || dist < closestDist) {
-          closestDist = dist;
-          targetId = widget.id;
-          if (inside) break;
-        }
-      }
-      if (targetId && targetId !== fromId) {
-        reorderWidgets(fromId, targetId);
-        lightImpact();
-      }
+    (fromId: WidgetId, translationX: number, translationY: number) => {
+      const targetId = findDropTarget(
+        fromId,
+        translationX,
+        translationY,
+        widgets,
+        frozenFrames.current,
+      );
+      handleDragEnd();
+      if (!targetId) return false;
+      reorderWidgets(fromId, targetId);
+      lightImpact();
+      return true;
     },
-    [widgets, reorderWidgets],
+    [widgets, reorderWidgets, handleDragEnd],
   );
 
   const handleAdd = useCallback(
@@ -97,51 +103,56 @@ export function DashboardGrid({
   );
 
   return (
-    <View
-      className="flex-row flex-wrap"
-      style={{ gap: GRID_GAP }}
-      onLayout={(e) => {
-        const w = Math.round(e.nativeEvent.layout.width);
-        if (w > 0 && w !== containerWidth) setContainerWidth(w);
-      }}
-    >
-      {containerWidth > 0 &&
-        widgets.map((widget, index) => {
-          const def = WIDGET_REGISTRY[widget.id];
-          if (!def) return null;
-          const dims = getWidgetDimensions(widget.size, containerWidth, def.kind);
-          return (
-            <WidgetCell
-              key={widget.id}
-              id={widget.id}
-              size={widget.size}
-              width={dims.width}
-              height={dims.height}
-              containerWidth={containerWidth}
-              index={index}
-              isEditing={isEditing}
-              onEnterEdit={onEnterEdit}
-              onRemove={handleRemove}
-              onSetSize={setWidgetSize}
-              onDrop={handleDrop}
-              onRegisterFrame={registerFrame}
-            />
-          );
-        })}
+    <View collapsable={false} style={{ overflow: 'visible' }}>
+      <View
+        className="flex-row flex-wrap"
+        style={{ gap: GRID_GAP, overflow: 'visible' }}
+        onLayout={(e) => {
+          const w = Math.round(e.nativeEvent.layout.width);
+          if (w > 0 && w !== containerWidth) setContainerWidth(w);
+        }}
+      >
+        {containerWidth > 0 &&
+          widgets.map((widget, index) => {
+            const def = WIDGET_REGISTRY[widget.id];
+            if (!def) return null;
+            const dims = getWidgetDimensions(widget.size, containerWidth, def.kind);
+            return (
+              <WidgetCell
+                key={widget.id}
+                id={widget.id}
+                size={widget.size}
+                width={dims.width}
+                height={dims.height}
+                containerWidth={containerWidth}
+                index={index}
+                isEditing={isEditing}
+                onEnterEdit={onEnterEdit}
+                onRemove={handleRemove}
+                onSetSize={setWidgetSize}
+                onDragStart={handleDragStart}
+                onDragCancel={handleDragEnd}
+                onDrop={handleDrop}
+                onRegisterFrame={registerFrame}
+                layoutLocked={draggingId !== null}
+              />
+            );
+          })}
 
-      {isEditing && containerWidth > 0 && hasAddable && (
-        <Pressable
-          onPress={() => setSheetOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t('dashboard.editAddCard')}
-          style={{ width: colWidth, height: colWidth }}
-          className="rounded-2xl border border-dashed border-zinc-700 items-center justify-center"
-        >
-          <View className="h-12 w-12 items-center justify-center">
-            <Plus size={28} color="#71717a" />
-          </View>
-        </Pressable>
-      )}
+        {isEditing && containerWidth > 0 && hasAddable && (
+          <Pressable
+            onPress={() => setSheetOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('dashboard.editAddCard')}
+            style={{ width: colWidth, height: colWidth }}
+            className="rounded-2xl border border-dashed border-zinc-700 items-center justify-center"
+          >
+            <View className="h-12 w-12 items-center justify-center">
+              <Plus size={28} color="#71717a" />
+            </View>
+          </Pressable>
+        )}
+      </View>
 
       <AddWidgetSheet
         visible={sheetOpen}

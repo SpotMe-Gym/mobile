@@ -18,6 +18,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [isDraggingWidget, setIsDraggingWidget] = useState(false);
 
   const enterEdit = () => {
     if (isEditing) return;
@@ -28,11 +29,16 @@ export default function Dashboard() {
   const exitEdit = () => {
     setIsEditing(false);
     setAddSheetOpen(false);
+    setIsDraggingWidget(false);
   };
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <ScrollView className="flex-1 px-4 pt-2" contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+      <ScrollView
+        className="flex-1 px-4 pt-2"
+        scrollEnabled={!isDraggingWidget}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+      >
         <View className="mb-6 flex-row justify-between items-center relative">
           <Pressable
             onPress={() => router.push('/profile')}
@@ -90,6 +96,7 @@ export default function Dashboard() {
           onEnterEdit={enterEdit}
           addSheetOpen={addSheetOpen}
           onAddSheetOpenChange={setAddSheetOpen}
+          onDraggingChange={setIsDraggingWidget}
         />
 
         <Button

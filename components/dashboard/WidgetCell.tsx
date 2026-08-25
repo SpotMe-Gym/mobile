@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -39,10 +39,13 @@ interface WidgetCellProps {
   containerWidth: number;
   index: number;
   isEditing: boolean;
+  layoutLocked?: boolean;
   onEnterEdit: () => void;
   onRemove: (id: WidgetId) => void;
   onSetSize: (id: WidgetId, next: WidgetSize) => void;
-  onDrop: (fromId: WidgetId, absX: number, absY: number) => void;
+  onDragStart: (id: WidgetId) => void;
+  onDragCancel: () => void;
+  onDrop: (fromId: WidgetId, translationX: number, translationY: number) => boolean;
   onRegisterFrame: (id: WidgetId, frame: { x: number; y: number; width: number; height: number }) => void;
 }
 
@@ -54,9 +57,12 @@ export function WidgetCell({
   containerWidth,
   index,
   isEditing,
+  layoutLocked = false,
   onEnterEdit,
   onRemove,
   onSetSize,
+  onDragStart,
+  onDragCancel,
   onDrop,
   onRegisterFrame,
 }: WidgetCellProps) {
@@ -107,28 +113,55 @@ export function WidgetCell({
   }, [isEditing, shouldReduceMotion, index, rotate]);
 
   const animatedStyle = useAnimatedStyle(() => {
-    const dragScale = isDragging.value ? 1.04 : 1;
-    const pressScale = isEditing ? dragScale : cardScale.value;
-    const jiggling = isEditing && !isDragging.value && !isResizing.value;
+    const dragging = isDragging.value;
+    const pressScale = isEditing ? (dragging ? 1.04 : 1) : cardScale.value;
+    const jiggling = isEditing && !dragging && !isResizing.value;
     return {
-      width: previewW.value,
-      height: previewH.value,
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
         { rotate: `${jiggling ? rotate.value : 0}deg` },
         { scale: pressScale },
       ],
-      zIndex: isDragging.value || isResizing.value ? 20 : 0,
     };
   });
 
+  const slotStyle = useAnimatedStyle(() => ({
+    width: previewW.value,
+    height: previewH.value,
+    zIndex: isDragging.value || isResizing.value ? 30 : 0,
+    elevation: isDragging.value || isResizing.value ? 24 : 0,
+  }));
+
+  const SPRING = { damping: 15, stiffness: 400 } as const;
+
+  const handleDragStartJS = useCallback(() => {
+    onDragStart(id);
+  }, [onDragStart, id]);
+
   const handleDropJS = useCallback(
-    (absX: number, absY: number) => {
-      onDrop(id, absX, absY);
+    (translationX: number, translationY: number) => {
+      const committed = onDrop(id, translationX, translationY);
+      if (committed) {
+        isDragging.value = false;
+        translateX.value = 0;
+        translateY.value = 0;
+        return;
+      }
+      isDragging.value = false;
+      translateX.value = withSpring(0, SPRING);
+      translateY.value = withSpring(0, SPRING);
+      onDragCancel();
     },
-    [id, onDrop],
+    [id, onDrop, onDragCancel, isDragging, translateX, translateY],
   );
+
+  const handleCancelJS = useCallback(() => {
+    isDragging.value = false;
+    translateX.value = withSpring(0, SPRING);
+    translateY.value = withSpring(0, SPRING);
+    onDragCancel();
+  }, [onDragCancel, isDragging, translateX, translateY]);
 
   const commitResizeJS = useCallback(
     (liveW: number, liveH: number) => {
@@ -152,6 +185,7 @@ export function WidgetCell({
     .enabled(isEditing)
     .minDistance(8)
     .onStart(() => {
+      runOnJS(handleDragStartJS)();
       isDragging.value = true;
     })
     .onUpdate((e) => {
@@ -159,10 +193,11 @@ export function WidgetCell({
       translateY.value = e.translationY;
     })
     .onEnd((e) => {
-      isDragging.value = false;
-      runOnJS(handleDropJS)(e.absoluteX, e.absoluteY);
-      translateX.value = withSpring(0, { damping: 15, stiffness: 400 });
-      translateY.value = withSpring(0, { damping: 15, stiffness: 400 });
+      runOnJS(handleDropJS)(e.translationX, e.translationY);
+    })
+    .onFinalize((_e, success) => {
+      if (success) return;
+      runOnJS(handleCancelJS)();
     });
 
   const beginResize = () => {
@@ -219,6 +254,7 @@ export function WidgetCell({
   const handleLayout = useCallback(() => {
     nav.onLayout({ nativeEvent: { layout: { width, height } } });
     nav.cardRef.current?.measureInWindow((x, y, w, h) => {
+      if (isDragging.value) return;
       onRegisterFrame(id, { x, y, width: w, height: h });
     });
   }, [nav, width, height, id, onRegisterFrame]);
@@ -318,13 +354,18 @@ export function WidgetCell({
         collapsable={false}
         ref={nav.cardRef}
         onLayout={handleLayout}
-        layout={LinearTransition}
-        style={[{ borderRadius: 16 }, animatedStyle]}
+        layout={layoutLocked ? undefined : LinearTransition}
+        style={[{ borderRadius: 16, overflow: 'visible' }, slotStyle]}
       >
-        <View style={{ flex: 1, overflow: 'hidden', borderRadius: 16 }} pointerEvents="none">
-          {content}
-        </View>
-        {chrome}
+        <Animated.View
+          collapsable={false}
+          style={[StyleSheet.absoluteFill, { borderRadius: 16, overflow: 'hidden' }, animatedStyle]}
+        >
+          <View style={{ flex: 1 }} pointerEvents="none">
+            {content}
+          </View>
+          {chrome}
+        </Animated.View>
       </Animated.View>
     );
   }
@@ -335,7 +376,7 @@ export function WidgetCell({
         collapsable={false}
         ref={nav.cardRef}
         onLayout={handleLayout}
-        style={[{ overflow: 'hidden', borderRadius: 16 }, animatedStyle]}
+        style={[{ overflow: 'hidden', borderRadius: 16, width, height }, animatedStyle]}
       >
         <View style={{ flex: 1 }}>{content}</View>
       </Animated.View>
@@ -354,7 +395,7 @@ export function WidgetCell({
       delayLongPress={400}
       accessibilityRole="button"
       accessibilityLabel={t(def.titleKey)}
-      style={[{ overflow: 'hidden', borderRadius: 16 }, animatedStyle]}
+      style={[{ overflow: 'hidden', borderRadius: 16, width, height }, animatedStyle]}
     >
       <View style={{ flex: 1 }} pointerEvents="none">
         {content}
