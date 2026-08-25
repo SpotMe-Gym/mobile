@@ -3,6 +3,7 @@ import { View, Pressable, Dimensions, StyleSheet, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { SharedValue, useSharedValue } from 'react-native-reanimated';
 import { useExpandableCard, ExpandableCardConfig } from '../hooks/useExpandableCard';
+import type { WidgetSize } from './dashboard/widgetSizes';
 
 // Card container + animation math uses window dims (matches measureInWindow)
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -102,6 +103,7 @@ interface ExpandableCardContextValue {
     scaleY: number;
   };
   progress: SharedValue<number>;
+  widgetSize: WidgetSize;
 }
 
 const ExpandableCardContext = createContext<ExpandableCardContextValue | null>(null);
@@ -131,10 +133,11 @@ export function ExpandableCardLayoutWithContext({
     previewContentStyle,
     cardDimensions,
     progress,
+    widgetSize,
   } = useExpandableCard({ ...config, containerOffsetY: offsetY });
 
   return (
-    <ExpandableCardContext.Provider value={{ handleClose, cardDimensions, progress }}>
+    <ExpandableCardContext.Provider value={{ handleClose, cardDimensions, progress, widgetSize }}>
       <View ref={containerRef} onLayout={onContainerLayout} style={styles.container}>
         <Animated.View collapsable={false} style={[styles.backdrop, backdropStyle]}>
           <Pressable style={styles.backdropPressable} onPress={handleClose} />

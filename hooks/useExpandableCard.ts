@@ -15,11 +15,14 @@ import {
 // Must use 'window' — measureInWindow returns window-relative coordinates
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+import type { WidgetSize } from '../components/dashboard/widgetSizes';
+
 export interface CardParams {
   cardX?: string;
   cardY?: string;
   cardWidth?: string;
   cardHeight?: string;
+  widgetSize?: string;
 }
 
 export interface ExpandableCardConfig {
@@ -51,6 +54,8 @@ export interface ExpandableCardResult {
     scaleX: number;
     scaleY: number;
   };
+  /** Closed-card size token from the home grid — preview must use this, not infer. */
+  widgetSize: WidgetSize;
 }
 
 const DEFAULT_CONFIG = {
@@ -58,6 +63,11 @@ const DEFAULT_CONFIG = {
   closeDuration: 250,
   cardBorderRadius: 16,
 } as const;
+
+function parseWidgetSize(value: string | undefined): WidgetSize {
+  if (value === 'full' || value === 'half' || value === 'compact') return value;
+  return 'half';
+}
 
 export function useExpandableCard(
   config: ExpandableCardConfig = {}
@@ -77,6 +87,7 @@ export function useExpandableCard(
   const cardY = params.cardY ? parseFloat(params.cardY) : 280;
   const cardWidth = params.cardWidth ? parseFloat(params.cardWidth) : 170;
   const cardHeight = params.cardHeight ? parseFloat(params.cardHeight) : 176;
+  const widgetSize = parseWidgetSize(params.widgetSize);
 
   const geometry = useMemo(() => {
     const scaleX = cardWidth / SCREEN_WIDTH;
@@ -152,24 +163,21 @@ export function useExpandableCard(
   }));
 
   const detailContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0.6, 1], [0, 1]),
+    opacity: interpolate(progress.value, [0.35, 0.65], [0, 1]),
+    pointerEvents: progress.value > 0.5 ? 'auto' : 'none',
   }));
 
-  // Counter-scale keeps preview content at native size while container scales.
-  // Only visible in the narrow 0→0.15 progress range so GPU cost is minimal.
-  const previewContentStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(progress.value, [0, 0.15], [1, 0]);
-    const invScaleX = interpolate(progress.value, [0, 1], [1 / scaleX, 1]);
-    const invScaleY = interpolate(progress.value, [0, 1], [1 / scaleY, 1]);
-
-    return {
-      opacity,
-      transform: [
-        { scaleX: invScaleX },
-        { scaleY: invScaleY },
-      ],
-    };
-  });
+  // Constant inverse scale: preview is laid out at the closed-card size and always
+  // fills the morphing rectangle. Interpolating this toward 1 made content shrink
+  // into the center on close, then pop back when the modal unmounted.
+  const previewContentStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 0.4, 0.7], [1, 1, 0]),
+    transform: [
+      { scaleX: 1 / scaleX },
+      { scaleY: 1 / scaleY },
+    ],
+    pointerEvents: 'none',
+  }));
 
   return {
     progress,
@@ -187,6 +195,7 @@ export function useExpandableCard(
       scaleX,
       scaleY,
     },
+    widgetSize,
   };
 }
 

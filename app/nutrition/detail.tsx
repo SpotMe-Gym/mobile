@@ -18,12 +18,14 @@ import { Sparkles } from 'lucide-react-native';
 // Preview content — renders the same component as the home grid card so the two can
 // never drift apart.
 function NutritionCardPreview() {
-  const { cardDimensions } = useExpandableCardContext();
+  const { cardDimensions, widgetSize } = useExpandableCardContext();
+  const { cardWidth, cardHeight } = cardDimensions;
 
   return (
-    <View className="flex-1 w-full items-center justify-center">
+    <View style={{ width: cardWidth, height: cardHeight }}>
       <NutritionCardContent
-        style={{ width: cardDimensions.cardWidth, height: cardDimensions.cardHeight }}
+        size={widgetSize}
+        style={{ width: cardWidth, height: cardHeight }}
       />
     </View>
   );

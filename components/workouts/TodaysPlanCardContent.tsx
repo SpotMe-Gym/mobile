@@ -3,65 +3,98 @@ import { Play, Calendar } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/Button';
 import { Workout, Exercise } from '../../store/workoutStore';
+import type { WidgetSize } from '../dashboard/widgetSizes';
 
 interface TodaysPlanCardContentProps {
   workouts: Workout[];
   /** Width of one carousel page. Carousel is withheld until this is measured. */
   pageWidth: number;
-  /** Sizing for the bordered card box (`flex: 1` on the grid, explicit dims in the preview). */
+  size?: WidgetSize;
+  /** Explicit cell box from the grid or expand preview. */
   style?: StyleProp<ViewStyle>;
-  /** When false the body stays blank rather than claiming a rest day from seed state. */
   isHydrated?: boolean;
   onMeasureContent?: (width: number) => void;
   onOpen?: () => void;
   onPressIn?: () => void;
   onPressOut?: () => void;
-  /** Start / Assign button. */
+  onLongPress?: () => void;
   onAction?: () => void;
+  /** When true, inner controls do not fire — edit chrome owns the gestures. */
+  interactionsDisabled?: boolean;
 }
 
-/**
- * Closed-card body for Today's Plan, shared by the home grid and the expandable-card
- * preview. Both must render byte-identical markup: the preview is swapped for the real
- * card the instant the collapse animation ends, so any layout difference between them
- * reads as content jumping a few pixels at the end of the transition.
- */
 export function TodaysPlanCardContent({
   workouts,
   pageWidth,
+  size = 'half',
   style,
   isHydrated = true,
   onMeasureContent,
   onOpen,
   onPressIn,
   onPressOut,
+  onLongPress,
   onAction,
+  interactionsDisabled = false,
 }: TodaysPlanCardContentProps) {
   const { t } = useTranslation();
   const hasWorkouts = workouts.length > 0;
+  const isCompact = size === 'compact';
+  const first = workouts[0];
+  const openHandlers = interactionsDisabled
+    ? {}
+    : {
+        onPress: onOpen,
+        onPressIn,
+        onPressOut,
+        onLongPress,
+        delayLongPress: 400,
+      };
 
   return (
     <View
       style={[
-        { backgroundColor: '#18181b', borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#27272a' },
+        {
+          backgroundColor: '#18181b',
+          borderRadius: 16,
+          overflow: 'hidden',
+          borderWidth: 1,
+          borderColor: '#27272a',
+          flex: 1,
+        },
         style,
       ]}
     >
-      {/* Header overlay — visual only, touches pass through to the body below */}
       <View className="absolute top-0 left-0 right-0 px-4 pt-4 z-10" pointerEvents="none">
-        <Text className="text-white text-lg font-bold">{t('dashboard.todaysPlan')}</Text>
+        <Text className="text-white text-lg font-bold" numberOfLines={1}>
+          {t('dashboard.todaysPlan')}
+        </Text>
       </View>
 
       <View
         className="flex-1"
         onLayout={onMeasureContent ? (e) => onMeasureContent(e.nativeEvent.layout.width) : undefined}
       >
-        {!isHydrated ? null : hasWorkouts ? (
+        {!isHydrated ? null : isCompact ? (
+          <Pressable className="flex-1 px-4 pt-14 justify-center" {...openHandlers}>
+            {hasWorkouts && first ? (
+              <>
+                <Text className="text-white/80 font-medium text-base" numberOfLines={1}>{first.name}</Text>
+                <Text className="text-white/60 text-xs mt-1">
+                  {first.duration} min
+                </Text>
+              </>
+            ) : (
+              <Text className="text-white/80 font-medium text-base">{t('workouts.restDay')}</Text>
+            )}
+          </Pressable>
+        ) : hasWorkouts ? (
           <View className="flex-1">
             {pageWidth > 0 && (
               <ScrollView
                 horizontal
                 pagingEnabled
+                scrollEnabled={!interactionsDisabled}
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ flexGrow: 1 }}
               >
@@ -69,9 +102,7 @@ export function TodaysPlanCardContent({
                   <View key={workout.id} style={{ width: pageWidth }} className="justify-between pb-4">
                     <Pressable
                       className="flex-1 px-4 pt-14 justify-center"
-                      onPress={onOpen}
-                      onPressIn={onPressIn}
-                      onPressOut={onPressOut}
+                      {...openHandlers}
                     >
                       <View>
                         <Text className="text-white/80 font-medium text-lg mt-1" numberOfLines={1}>{workout.name}</Text>
@@ -86,7 +117,8 @@ export function TodaysPlanCardContent({
                         label={t('dashboard.start')}
                         variant="ghost"
                         className="bg-white/10 mt-2"
-                        onPress={onAction}
+                        onPress={interactionsDisabled ? undefined : onAction}
+                        disabled={interactionsDisabled}
                       />
                     </View>
                   </View>
@@ -105,9 +137,7 @@ export function TodaysPlanCardContent({
         ) : (
           <Pressable
             className="flex-1 justify-between px-4 pb-4 pt-14"
-            onPress={onOpen}
-            onPressIn={onPressIn}
-            onPressOut={onPressOut}
+            {...openHandlers}
           >
             <View className="justify-center flex-1">
               <Text className="text-white/80 font-medium text-lg mt-1">{t('workouts.restDay')}</Text>
@@ -118,14 +148,15 @@ export function TodaysPlanCardContent({
                 label={t('workouts.assign')}
                 variant="ghost"
                 className="bg-white/10 mt-2"
-                onPress={onAction}
+                onPress={interactionsDisabled ? undefined : onAction}
+                disabled={interactionsDisabled}
               />
             </View>
           </Pressable>
         )}
 
         <View className="absolute right-[-4] bottom-[-4] opacity-5 pointer-events-none z-0">
-          {!isHydrated ? null : hasWorkouts ? <Play size={64} color="white" /> : <Calendar size={64} color="white" />}
+          {!isHydrated ? null : hasWorkouts ? <Play size={isCompact ? 40 : 64} color="white" /> : <Calendar size={isCompact ? 40 : 64} color="white" />}
         </View>
       </View>
     </View>

@@ -35,7 +35,19 @@
     "sinceLast": "since last entry",
     "noChange": "No change",
     "pullDay": "Pull Day",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "editLayout": "Edit layout",
+    "editDone": "Done",
+    "editAddCard": "Add card",
+    "editRemove": "Remove card",
+    "editResize": "Resize card",
+    "editAlreadyAdded": "Added",
+    "editCategoryHealth": "Health",
+    "editCategoryTraining": "Training",
+    "editCategoryNutrition": "Nutrition",
+    "editCategoryGeneral": "General",
+    "quickActions": "Quick Actions",
+    "aiChat": "AI coach"
   },
   "tabs": {
     "home": "Home",

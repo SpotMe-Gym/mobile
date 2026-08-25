@@ -17,7 +17,19 @@
     "recentActivity": "Attività Recente",
     "completed": "Completato",
     "sinceLast": "dall'ultimo inserimento",
-    "noChange": "Nessun cambiamento"
+    "noChange": "Nessun cambiamento",
+    "editLayout": "Modifica layout",
+    "editDone": "Fine",
+    "editAddCard": "Aggiungi scheda",
+    "editRemove": "Rimuovi scheda",
+    "editResize": "Ridimensiona scheda",
+    "editAlreadyAdded": "Aggiunta",
+    "editCategoryHealth": "Salute",
+    "editCategoryTraining": "Allenamento",
+    "editCategoryNutrition": "Nutrizione",
+    "editCategoryGeneral": "Generale",
+    "quickActions": "Azioni rapide",
+    "aiChat": "Coach AI"
   },
   "tabs": {
     "home": "Home",

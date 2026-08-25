@@ -17,16 +17,18 @@ import { Icon } from '@/components/ui/Icon';
 // never drift apart. Page width is derived from the known card dimensions rather than
 // measured, since a measure-then-setState pass would re-render mid-animation.
 function WorkoutCardPreview() {
-  const { cardDimensions } = useExpandableCardContext();
+  const { cardDimensions, widgetSize } = useExpandableCardContext();
   const { workouts, isHydrated } = useTodaysWorkouts();
+  const { cardWidth, cardHeight } = cardDimensions;
 
   return (
-    <View className="flex-1 w-full items-center justify-center">
+    <View style={{ width: cardWidth, height: cardHeight }}>
       <TodaysPlanCardContent
         workouts={workouts}
         isHydrated={isHydrated}
-        pageWidth={cardDimensions.cardWidth - 2} // minus 1px border each side
-        style={{ width: cardDimensions.cardWidth, height: cardDimensions.cardHeight }}
+        size={widgetSize}
+        pageWidth={Math.max(cardWidth - 2, 0)}
+        style={{ width: cardWidth, height: cardHeight }}
       />
     </View>
   );
