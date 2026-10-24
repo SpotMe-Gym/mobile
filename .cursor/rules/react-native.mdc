@@ -8,11 +8,11 @@ alwaysApply: false
 
 ## Stack
 
-- **Framework**: Expo SDK 54, React Native 0.81, New Architecture enabled, React 19
-- **Navigation**: Expo Router 6 (file-based routing in `app/`, typed routes, `Stack.Protected` for the onboarding gate)
+- **Framework**: Expo SDK 58, React Native 0.88, New Architecture, React 19.3, TypeScript 6
+- **Navigation**: Expo Router (SDK 58; bundles React Navigation — import hooks such as `usePreventRemove` from `expo-router`) (file-based routing in `app/`, typed routes, `Stack.Protected` for the onboarding gate)
 - **Styling**: NativeWind (Tailwind CSS via className) with tokens from `theme/colors.ts`
 - **State**: Zustand with persist middleware (see Persistence below); TanStack Query for remote data
-- **Animation**: React Native Reanimated 4 + react-native-worklets (NEVER use RN's built-in Animated API). The worklets Babel plugin is added by `babel-preset-expo` — don't list it in `babel.config.js`.
+- **Animation**: React Native Reanimated 4.7 + react-native-worklets 0.13 (`scheduleOnRN`, not `runOnJS`) (NEVER use RN's built-in Animated API). The worklets Babel plugin is added by `babel-preset-expo` — don't list it in `babel.config.js`.
 - **Forms**: React Hook Form + Zod
 - **i18n**: i18next + react-i18next
 
@@ -50,7 +50,7 @@ __tests__/     → Jest tests
 - Add `collapsable={false}` to any `Animated.View` that participates in native animations — Android's view flattening can collapse intermediate views and break Reanimated's native driver.
 
 ### Edge-to-Edge
-- `edgeToEdgeEnabled: true` is set in app.json — always account for safe area insets using `useSafeAreaInsets()`.
+- Android is always edge-to-edge (mandatory since SDK 55; the `edgeToEdgeEnabled` flag no longer exists) — always account for safe area insets using `useSafeAreaInsets()`.
 - Ensure bottom content (tabs, FABs, sheets) accounts for the navigation bar height.
 
 ### LayoutAnimation

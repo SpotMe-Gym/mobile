@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useState } from 'react';
+import { forwardRef, useState, type ComponentRef } from 'react';
 import { Text, TextInput, View, type TextInputProps } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +24,7 @@ interface NumberFieldProps extends Omit<TextInputProps, 'value' | 'onChangeText'
  * Locale-safe numeric input: accepts "72,5" and "72.5", keeps the user's raw text while
  * typing (so the cursor never jumps) and reports a parsed number (or null) upward.
  */
-export const NumberField = forwardRef<TextInput, NumberFieldProps>(function NumberField(
+export const NumberField = forwardRef<ComponentRef<typeof TextInput>, NumberFieldProps>(function NumberField(
   { label, value, onChangeValue, decimals = 0, unit, icon, error, className, inputClassName, ...props },
   ref,
 ) {
@@ -32,12 +32,13 @@ export const NumberField = forwardRef<TextInput, NumberFieldProps>(function Numb
   const format = (v: number | null) =>
     v === null ? '' : formatNumber(v, i18n.language, decimals).replace(/\s/g, '');
   const [text, setText] = useState(() => format(value));
+  const [synced, setSynced] = useState(value);
 
   // Sync external changes (steppers, resets) without clobbering what is being typed.
-  useEffect(() => {
+  if (synced !== value) {
+    setSynced(value);
     if (parseDecimal(text) !== value) setText(format(value));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to external value changes
-  }, [value]);
+  }
 
   const handleChange = (next: string) => {
     const clean = decimals > 0 ? sanitizeDecimalInput(next, decimals) : sanitizeIntegerInput(next);

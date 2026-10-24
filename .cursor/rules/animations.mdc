@@ -20,7 +20,6 @@ import Animated, {
   withTiming,
   withSpring,
   interpolate,
-  runOnJS,
   useReducedMotion,
 } from 'react-native-reanimated';
 ```
@@ -126,19 +125,22 @@ The app's signature animation: cards on the home screen expand to fill the scree
 - Preview content MUST use counter-scale transforms (`1/scaleX`, `1/scaleY`) to maintain correct size while the container is scaled. Without this, the preview appears as a tiny doubly-scaled square.
 - Navigation lock prevents double-tap opening multiple cards
 
-## runOnJS Safety
+## Calling JS from worklets (scheduleOnRN)
 
-When calling JS functions from worklets (animation callbacks):
+`runOnJS` is deprecated (Reanimated 4.7 / worklets 0.13). Use `scheduleOnRN` from `react-native-worklets`, passing arguments directly:
 ```tsx
-// GOOD — wrap the function reference
+import { scheduleOnRN } from 'react-native-worklets';
+
+// GOOD — stable function reference, args passed through
 const goBack = useCallback(() => router.back(), [router]);
-
 progress.value = withTiming(0, config, (finished) => {
-  if (finished) runOnJS(goBack)();
+  if (finished) scheduleOnRN(goBack);
 });
 
-// BAD — calling methods directly
-progress.value = withTiming(0, config, (finished) => {
-  if (finished) runOnJS(router.back)(); // May lose 'this' binding
-});
+// BAD — deprecated, and calling a method loses its `this` binding
+if (finished) runOnJS(router.back)();
 ```
+
+## Gestures
+
+Gesture Handler 3 deprecates the `Gesture.Pan()` builder in favour of hooks (`usePanGesture`). `WidgetCell.tsx` still uses the builder (it remains supported); new gesture code should use the hook API, and the dashboard should be migrated once it can be tested on a device.

@@ -1,6 +1,6 @@
 # SpotMe
 
-Offline-first gym & nutrition tracker — Expo SDK 54, React Native 0.81 (New Architecture), Expo Router 6.
+Offline-first gym & nutrition tracker — Expo SDK 58, React Native 0.88 (New Architecture). Works with Xcode 27 / Device Hub.
 
 ## Getting started
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, usePreventRemove, useRouter } from 'expo-router';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Armchair, Plus } from 'lucide-react-native';
@@ -52,7 +52,6 @@ const newRest = (): ExerciseFormValues => ({
 
 export default function CreateWorkout() {
   const router = useRouter();
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
   const params = useLocalSearchParams<{ id?: string }>();
@@ -75,24 +74,18 @@ export default function CreateWorkout() {
   const { fields, append, remove, move } = useFieldArray({ control, name: 'exercises', keyName: 'fieldKey' });
 
   // Unsaved-changes guard: confirm before leaving a dirty form (swipe, back button, ✕).
-  const allowLeave = useRef(false);
+  // Leaving is a two-step dance: turn prevention off (state), then run the pending navigation
+  // once that render has committed.
+  const [leaveWith, setLeaveWith] = useState<(() => void) | null>(null);
+  usePreventRemove(formState.isDirty && leaveWith === null, ({ repeat }) => {
+    Alert.alert(t('workouts.discardTitle'), t('workouts.discardMessage'), [
+      { text: t('workouts.keepEditing'), style: 'cancel' },
+      { text: t('workouts.discard'), style: 'destructive', onPress: () => setLeaveWith(() => repeat) },
+    ]);
+  });
   useEffect(() => {
-    return navigation.addListener('beforeRemove', (e) => {
-      if (allowLeave.current || !formState.isDirty) return;
-      e.preventDefault();
-      Alert.alert(t('workouts.discardTitle'), t('workouts.discardMessage'), [
-        { text: t('workouts.keepEditing'), style: 'cancel' },
-        {
-          text: t('workouts.discard'),
-          style: 'destructive',
-          onPress: () => {
-            allowLeave.current = true;
-            navigation.dispatch(e.data.action);
-          },
-        },
-      ]);
-    });
-  }, [navigation, formState.isDirty, t]);
+    leaveWith?.();
+  }, [leaveWith]);
 
   const save = handleSubmit(
     (v) => {
@@ -108,8 +101,7 @@ export default function CreateWorkout() {
       if (editId && existing) updateWorkout(editId, data, days);
       else addWorkout({ id: newId(), ...data }, days);
       successFeedback();
-      allowLeave.current = true;
-      router.back();
+      setLeaveWith(() => () => router.back());
     },
     (errors) => {
       const message = errors.name ? t('workouts.enterWorkoutName') : t('workouts.addAtLeastOneExercise');
@@ -126,8 +118,7 @@ export default function CreateWorkout() {
         style: 'destructive',
         onPress: () => {
           deleteWorkout(editId);
-          allowLeave.current = true;
-          router.back();
+          setLeaveWith(() => () => router.back());
         },
       },
     ]);
@@ -270,7 +261,7 @@ export default function CreateWorkout() {
           className="border-t border-border bg-background px-4 pt-3"
           style={{ paddingBottom: Math.max(insets.bottom, 12) }}
         >
-          <Button label={t('workouts.saveWorkout')} size="lg" className="w-full rounded-2xl" onPress={save} />
+          <Button label={t('workouts.saveWorkout')} size="lg" className="w-full rounded-2xl" onPress={() => void save()} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

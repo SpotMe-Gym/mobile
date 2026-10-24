@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams } from 'expo-router';
@@ -42,12 +42,8 @@ function WeightDetailContent() {
   const isHydrated = useHasHydrated(useWeightStore);
   const { currentWeight, convertWeight, toKg, units } = useUnitConverter();
   const trend = useWeightTrend();
-  const [modalVisible, setModalVisible] = useState(false);
-
   // Quick action "Add weight" opens the sheet straight away.
-  useEffect(() => {
-    if (params.add === '1') setModalVisible(true);
-  }, [params.add]);
+  const [modalVisible, setModalVisible] = useState(params.add === '1');
 
   const newestFirst = useMemo(() => [...entries].reverse(), [entries]);
   const chartData = useMemo(

@@ -10,9 +10,9 @@ import Animated, {
   withSpring,
   cancelAnimation,
   useReducedMotion,
-  runOnJS,
   LinearTransition,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Minus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -78,8 +78,15 @@ export function WidgetCell({
 }: WidgetCellProps) {
   const { t } = useTranslation();
   const def = WIDGET_REGISTRY[id];
-  const nav = useExpandableNavigation();
-  const cardScale = nav.cardScale;
+  // Destructured: the React Compiler treats an object holding a ref as a ref itself.
+  const {
+    cardRef,
+    cardScale,
+    handlePressIn,
+    handlePressOut,
+    onLayout: onNavLayout,
+    navigateToDetail,
+  } = useExpandableNavigation();
   const shouldReduceMotion = useReducedMotion();
   const kind = def?.kind ?? 'card';
   const isAction = kind === 'action';
@@ -95,18 +102,18 @@ export function WidgetCell({
   const startH = useSharedValue(height);
 
   useEffect(() => {
-    previewW.value = width;
-    previewH.value = height;
+    previewW.set(width);
+    previewH.set(height);
   }, [width, height, previewW, previewH]);
 
   useEffect(() => {
     if (!isEditing || shouldReduceMotion) {
       cancelAnimation(rotate);
-      rotate.value = 0;
+      rotate.set(0);
       return;
     }
     const delay = (index % 3) * 90;
-    rotate.value = withDelay(
+    rotate.set(withDelay(
       delay,
       withRepeat(
         withSequence(
@@ -116,7 +123,7 @@ export function WidgetCell({
         -1,
         true,
       ),
-    );
+    ));
     return () => {
       cancelAnimation(rotate);
     };
@@ -151,23 +158,23 @@ export function WidgetCell({
     (translationX: number, translationY: number) => {
       const committed = onDrop(id, translationX, translationY);
       if (committed) {
-        isDragging.value = false;
-        translateX.value = 0;
-        translateY.value = 0;
+        isDragging.set(false);
+        translateX.set(0);
+        translateY.set(0);
         return;
       }
-      isDragging.value = false;
-      translateX.value = withSpring(0, SPRING);
-      translateY.value = withSpring(0, SPRING);
+      isDragging.set(false);
+      translateX.set(withSpring(0, SPRING));
+      translateY.set(withSpring(0, SPRING));
       onDragCancel();
     },
     [id, onDrop, onDragCancel, isDragging, translateX, translateY],
   );
 
   const handleCancelJS = useCallback(() => {
-    isDragging.value = false;
-    translateX.value = withSpring(0, SPRING);
-    translateY.value = withSpring(0, SPRING);
+    isDragging.set(false);
+    translateX.set(withSpring(0, SPRING));
+    translateY.set(withSpring(0, SPRING));
     onDragCancel();
   }, [onDragCancel, isDragging, translateX, translateY]);
 
@@ -176,8 +183,8 @@ export function WidgetCell({
       if (!def) return;
       const next = snapSize(liveW, liveH, containerWidth, def.sizes, size, kind);
       const snapped = getWidgetDimensions(next, containerWidth, kind);
-      previewW.value = snapped.width;
-      previewH.value = snapped.height;
+      previewW.set(snapped.width);
+      previewH.set(snapped.height);
       if (next !== size) {
         onSetSize(id, next);
         lightImpact();
@@ -193,42 +200,42 @@ export function WidgetCell({
     .enabled(isEditing)
     .minDistance(8)
     .onStart(() => {
-      runOnJS(handleDragStartJS)();
-      isDragging.value = true;
+      scheduleOnRN(handleDragStartJS);
+      isDragging.set(true);
     })
     .onUpdate((e) => {
-      translateX.value = e.translationX;
-      translateY.value = e.translationY;
+      translateX.set(e.translationX);
+      translateY.set(e.translationY);
     })
     .onEnd((e) => {
-      runOnJS(handleDropJS)(e.translationX, e.translationY);
+      scheduleOnRN(handleDropJS, e.translationX, e.translationY);
     })
     .onFinalize((_e, success) => {
       if (success) return;
-      runOnJS(handleCancelJS)();
+      scheduleOnRN(handleCancelJS);
     });
 
   const beginResize = () => {
     'worklet';
-    isResizing.value = true;
-    startW.value = previewW.value;
-    startH.value = previewH.value;
+    isResizing.set(true);
+    startW.set(previewW.value);
+    startH.set(previewH.value);
   };
 
   const applyResize = (tx: number, ty: number) => {
     'worklet';
-    previewW.value = Math.max(unit, Math.min(fullWidth, startW.value + tx));
+    previewW.set(Math.max(unit, Math.min(fullWidth, startW.value + tx)));
     if (isAction) {
-      previewH.value = ACTION_HEIGHT;
+      previewH.set(ACTION_HEIGHT);
     } else {
-      previewH.value = Math.max(unit, Math.min(unit * 2 + GRID_GAP, startH.value + ty));
+      previewH.set(Math.max(unit, Math.min(unit * 2 + GRID_GAP, startH.value + ty)));
     }
   };
 
   const endResize = () => {
     'worklet';
-    isResizing.value = false;
-    runOnJS(commitResizeJS)(previewW.value, previewH.value);
+    isResizing.set(false);
+    scheduleOnRN(commitResizeJS, previewW.value, previewH.value);
   };
 
   const resizeCorner = Gesture.Pan()
@@ -263,14 +270,15 @@ export function WidgetCell({
   // stays valid no matter where the page is scrolled.
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
     const slot = e.nativeEvent.layout;
-    nav.onLayout({ nativeEvent: { layout: { width, height } } });
+    onNavLayout({ nativeEvent: { layout: { width, height } } });
     onRegisterFrame(id, { x: slot.x, y: slot.y, width: slot.width, height: slot.height });
-  }, [nav, width, height, id, onRegisterFrame]);
+  }, [onNavLayout, width, height, id, onRegisterFrame]);
 
+  const detailPath = def?.detailPath;
   const openDetail = useCallback(() => {
-    if (isEditing || !def?.detailPath) return;
-    nav.navigateToDetail(def.detailPath, { widgetSize: size });
-  }, [isEditing, def?.detailPath, nav, size]);
+    if (isEditing || !detailPath) return;
+    navigateToDetail(detailPath, { widgetSize: size });
+  }, [isEditing, detailPath, navigateToDetail, size]);
 
   const canResize = def ? def.sizes.length > 1 : false;
   const editActions = [
@@ -308,8 +316,8 @@ export function WidgetCell({
       isEditing={isEditing}
       onEnterEdit={onEnterEdit}
       onOpenDetail={openDetail}
-      onPressIn={nav.handlePressIn}
-      onPressOut={nav.handlePressOut}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
     />
   );
 
@@ -385,7 +393,7 @@ export function WidgetCell({
     return (
       <Animated.View
         collapsable={false}
-        ref={nav.cardRef}
+        ref={cardRef}
         onLayout={handleLayout}
         accessible
         accessibilityLabel={`${t(def.titleKey)}, ${t(`dashboard.size.${size}`)}`}
@@ -412,7 +420,7 @@ export function WidgetCell({
     return (
       <Animated.View
         collapsable={false}
-        ref={nav.cardRef}
+        ref={cardRef}
         onLayout={handleLayout}
         style={[{ overflow: 'hidden', borderRadius: 16, width, height }, animatedStyle]}
       >
@@ -424,10 +432,10 @@ export function WidgetCell({
   return (
     <AnimatedPressable
       collapsable={false}
-      ref={nav.cardRef}
+      ref={cardRef}
       onLayout={handleLayout}
-      onPressIn={nav.handlePressIn}
-      onPressOut={nav.handlePressOut}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       onPress={openDetail}
       onLongPress={onEnterEdit}
       delayLongPress={400}

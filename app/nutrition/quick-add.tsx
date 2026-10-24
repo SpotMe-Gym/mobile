@@ -248,7 +248,7 @@ export default function QuickAdd() {
             size="lg"
             className="w-full rounded-2xl"
             loading={formState.isSubmitting}
-            onPress={handleSubmit(onSubmit)}
+            onPress={() => void handleSubmit(onSubmit)()}
           />
         </View>
       </KeyboardAvoidingView>

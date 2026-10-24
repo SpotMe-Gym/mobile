@@ -7,10 +7,10 @@ import {
   withTiming,
   Easing,
   interpolate,
-  runOnJS,
   useReducedMotion,
   type SharedValue,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import type { WidgetSize } from '@/components/dashboard/widgetSizes';
 
 export interface CardParams {
@@ -101,10 +101,10 @@ export function useExpandableCard(config: ExpandableCardConfig = {}): Expandable
 
   useEffect(() => {
     if (shouldReduceMotion) {
-      progress.value = 1;
+      progress.set(1);
       return;
     }
-    progress.value = withTiming(1, { duration: openDuration, easing: Easing.out(Easing.cubic) });
+    progress.set(withTiming(1, { duration: openDuration, easing: Easing.out(Easing.cubic) }));
     // Runs once on mount: the open animation must not restart on re-render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -118,13 +118,13 @@ export function useExpandableCard(config: ExpandableCardConfig = {}): Expandable
       navigateBack();
       return;
     }
-    progress.value = withTiming(
+    progress.set(withTiming(
       0,
       { duration: closeDuration, easing: Easing.inOut(Easing.cubic) },
       (finished) => {
-        if (finished) runOnJS(navigateBack)();
+        if (finished) scheduleOnRN(navigateBack);
       },
-    );
+    ));
   }, [isClosing, closeDuration, shouldReduceMotion, navigateBack, progress]);
 
   // Android hardware back: animate the card closed instead of popping the route abruptly.

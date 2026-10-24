@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, type ComponentRef } from 'react';
 import type { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSharedValue, withSpring, type WithSpringConfig } from 'react-native-reanimated';
@@ -27,17 +27,17 @@ let isGlobalNavigationLocked = false;
  */
 export function useExpandableNavigation(options: UseExpandableNavigationOptions = {}) {
   const router = useRouter();
-  const cardRef = useRef<View>(null);
+  const cardRef = useRef<ComponentRef<typeof View>>(null);
   const cardScale = useSharedValue(1);
   const layoutRef = useRef({ width: 0, height: 0 });
   const { pressScale, springConfig } = { ...DEFAULT_OPTIONS, ...options };
 
   const handlePressIn = useCallback(() => {
-    cardScale.value = withSpring(pressScale, springConfig);
+    cardScale.set(withSpring(pressScale, springConfig));
   }, [cardScale, pressScale, springConfig]);
 
   const handlePressOut = useCallback(() => {
-    cardScale.value = withSpring(1, springConfig);
+    cardScale.set(withSpring(1, springConfig));
   }, [cardScale, springConfig]);
 
   const onLayout = useCallback((event: { nativeEvent: { layout: { width: number; height: number } } }) => {

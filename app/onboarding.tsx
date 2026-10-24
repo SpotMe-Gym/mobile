@@ -119,7 +119,7 @@ export default function Onboarding() {
         <View className="py-4">
           <Button
             label={step === 3 ? t('onboarding.startJourney') : t('common.next')}
-            onPress={step === 3 ? finish : () => void next()}
+            onPress={() => void (step === 3 ? finish() : next())}
             variant="white"
             className="h-14 w-full rounded-xl"
           />

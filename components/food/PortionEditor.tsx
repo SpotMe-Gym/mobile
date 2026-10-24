@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Minus, Plus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -33,12 +33,13 @@ export function PortionEditor({
   const decimals = DECIMALS[unit];
   const fmt = (n: number) => formatNumber(n, i18n.language, decimals);
   const [text, setText] = useState(quantity === null ? '' : fmt(quantity));
+  const [synced, setSynced] = useState({ quantity, unit });
 
   // External changes (chips, steppers, unit switches) replace the text; typing doesn't.
-  useEffect(() => {
-    if (parseDecimal(text) !== quantity) setText(quantity === null ? '' : fmt(quantity));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- react to value/unit changes only
-  }, [quantity, unit]);
+  if (synced.quantity !== quantity || synced.unit !== unit) {
+    setSynced({ quantity, unit });
+    if (parseDecimal(text) !== quantity || synced.unit !== unit) setText(quantity === null ? '' : fmt(quantity));
+  }
 
   const handleText = (next: string) => {
     const clean = decimals > 0 ? sanitizeDecimalInput(next, decimals) : sanitizeIntegerInput(next);

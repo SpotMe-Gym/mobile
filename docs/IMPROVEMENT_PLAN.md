@@ -49,7 +49,18 @@ Scope agreed: every code-level item; SQLite, Sentry and EAS Update only scaffold
 
 **Beyond the plan — new food entry flow:** a serving-first entry sheet (`app/nutrition/product/[code].tsx`). Units come from the product (serving, g, ml, oz). It has quick-pick chips, switches units without changing the amount, defaults to your last portion, shows live macros against today's remaining targets, and has a meal picker. **Quick add** (`app/nutrition/quick-add.tsx`) logs kcal and macros by hand, can fill in kcal from the macros, and can save the result as a custom food.
 
-## How to read this
+### Expo SDK 58 upgrade (branch `chore/expo-sdk-58`)
+
+Needed for Xcode 27, which replaced Simulator.app with Device Hub; Expo CLI supports Device Hub from SDK 56. Expo 58.0.19, React Native 0.88, React 19.3, Reanimated 4.7, worklets 0.13, Gesture Handler 3.3, TypeScript 6, Jest 30. Verified: tsc 0 errors, ESLint 0 problems (now including the React Compiler rules), Jest 49/49, expo-doctor 20/20, iOS and Android bundles export. Code changes:
+- iOS deployment target 16.4 (SDK minimum); removed `edgeToEdgeEnabled` and `newArchEnabled` from app.json (both are now mandatory)
+- TypeScript 6: explicit `types: ["jest"]` and a `css.d.ts` for side-effect CSS imports
+- View/TextInput refs typed as `ComponentRef<typeof View>`; `StyleSheet.absoluteFillObject` → `absoluteFill`
+- `runOnJS` → `scheduleOnRN` (react-native-worklets); shared values written with `.set()` (React Compiler safe)
+- unsaved-changes guard rebuilt on `usePreventRemove` from expo-router
+- prop→state syncing moved from effects to render-time adjustment (NumberField, PortionEditor)
+- **Follow-up:** `Gesture.Pan()` is deprecated in Gesture Handler 3 (still supported); migrate the dashboard to `usePanGesture` after testing on a device.
+
+
 
 Each item has an **ID**, the **problem**, the **best-practice rationale**, the **action**, the **files**, a **done when** criterion and an **effort** (S < ½ day · M 1–3 days · L > 3 days).
 

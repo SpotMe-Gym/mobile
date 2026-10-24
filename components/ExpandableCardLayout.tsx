@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, type ComponentRef, type ReactNode } from 'react';
 import { Dimensions, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, type SharedValue } from 'react-native-reanimated';
@@ -14,12 +14,12 @@ import type { WidgetSize } from './dashboard/widgetSizes';
  * without waiting for a React re-render.
  */
 function useContainerOffset() {
-  const ref = useRef<View>(null);
+  const ref = useRef<ComponentRef<typeof View>>(null);
   const offsetY = useSharedValue(0);
   const onContainerLayout = useCallback(() => {
     if (Platform.OS !== 'android') return;
     ref.current?.measureInWindow((_x, y) => {
-      offsetY.value = y;
+      offsetY.set(y);
     });
   }, [offsetY]);
   return { ref, offsetY, onContainerLayout };
@@ -147,6 +147,6 @@ const styles = StyleSheet.create({
   backdrop: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: colors.overlay },
   fill: { flex: 1 },
   card: { position: 'absolute', overflow: 'hidden' },
-  preview: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
+  preview: { ...StyleSheet.absoluteFill, justifyContent: 'center', alignItems: 'center' },
   bottomFill: { position: 'absolute', left: 0, right: 0 },
 });

@@ -7,7 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/SpotMeIcon/appstore.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "backgroundColor": "#0A0A0A",
     "ios": {
       "supportsTablet": false,
@@ -54,7 +53,6 @@
         "foregroundImage": "./assets/SpotMeIcon/playstore.png",
         "backgroundColor": "#0A0A0A"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.spotme.app"
     },
@@ -70,7 +68,7 @@
         "expo-build-properties",
         {
           "ios": {
-            "deploymentTarget": "16.0"
+            "deploymentTarget": "16.4"
           }
         }
       ],

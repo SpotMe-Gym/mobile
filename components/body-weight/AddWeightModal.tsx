@@ -133,7 +133,7 @@ export function AddWeightModal({ visible, onClose, onSave, initialWeight, unit }
             )}
           />
 
-          <Button label={t('bodyWeight.saveEntry')} onPress={submit} className="w-full" />
+          <Button label={t('bodyWeight.saveEntry')} onPress={() => void submit()} className="w-full" />
         </View>
       </KeyboardAvoidingView>
     </Modal>
