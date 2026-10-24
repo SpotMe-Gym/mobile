@@ -1,159 +1,143 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
-import { createMMKV } from 'react-native-mmkv';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { mmkvStateStorage, userMMKV, LEGACY_WEIGHT_KEY } from '@/lib/storage';
+import type { Macros } from '@/utils/nutrition';
 
-export const storage = createMMKV({
-  id: 'user-storage',
-});
+export type Gender = 'male' | 'female' | 'other';
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very' | 'super';
+export type Goal = 'lose' | 'maintain' | 'gain';
+export type LanguagePref = 'system' | 'en' | 'it';
+export type WeightUnit = 'kg' | 'lbs';
+export type HeightUnit = 'cm' | 'ft';
 
-const mmkvStorage: StateStorage = {
-  setItem: (name, value) => {
-    return storage.set(name, value);
-  },
-  getItem: (name) => {
-    const value = storage.getString(name);
-    return value ?? null;
-  },
-  removeItem: (name) => {
-    storage.remove(name);
-  },
-};
+export const DEFAULT_TARGETS: Macros = { kcal: 2800, protein: 180, carbs: 300, fat: 80 };
 
-export interface UserState {
+export interface UserProfile {
   name: string;
-  gender: 'Male' | 'Female' | 'Other' | null;
-  height: string; // Stored in CM
-  weight: string; // Stored in KG
-  age: string;
+  gender: Gender | null;
+  heightCm: number | null;
+  age: number | null;
+  activityLevel: ActivityLevel | null;
+  goal: Goal | null;
+  targets: Macros;
+}
+
+interface UserState extends UserProfile {
   hasCompletedOnboarding: boolean;
-  weightHistory: Array<{ id?: string; date: string; weight: number }>; // weight in KG
-  units: {
-    weight: 'kg' | 'lbs';
-    height: 'cm' | 'ft';
-  };
+  units: { weight: WeightUnit; height: HeightUnit };
+  language: LanguagePref;
 
-  // New Nutrition Fields
-  activityLevel: 'Sedentary' | 'Lightly Active' | 'Moderately Active' | 'Very Active' | 'Super Active' | null;
-  goal: 'Lose Weight' | 'Maintain Weight' | 'Gain Muscle' | null;
-  targets: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  };
-
-  setName: (name: string) => void;
-  setGender: (gender: 'Male' | 'Female' | 'Other') => void;
-  setHeight: (height: string) => void;
-  setWeight: (weight: string) => void;
-  addWeightEntry: (weight: string, date: string) => void;
-  removeWeightEntry: (id: string) => void;
-  setAge: (age: string) => void;
-  setWeightUnit: (unit: 'kg' | 'lbs') => void;
-  setHeightUnit: (unit: 'cm' | 'ft') => void;
-
-  setActivityLevel: (level: 'Sedentary' | 'Lightly Active' | 'Moderately Active' | 'Very Active' | 'Super Active') => void;
-  setGoal: (goal: 'Lose Weight' | 'Maintain Weight' | 'Gain Muscle') => void;
-  setTargets: (targets: { calories: number; protein: number; carbs: number; fat: number }) => void;
-
-  completeOnboarding: () => void;
+  completeOnboarding: (profile: UserProfile) => void;
+  updateProfile: (patch: Partial<UserProfile>) => void;
+  setTargets: (targets: Macros) => void;
+  setWeightUnit: (unit: WeightUnit) => void;
+  setHeightUnit: (unit: HeightUnit) => void;
+  setLanguage: (language: LanguagePref) => void;
   resetUser: () => void;
 }
+
+const initialState = {
+  name: '',
+  gender: null,
+  heightCm: null,
+  age: null,
+  activityLevel: null,
+  goal: null,
+  targets: DEFAULT_TARGETS,
+  hasCompletedOnboarding: false,
+  units: { weight: 'kg', height: 'cm' },
+  language: 'system',
+} satisfies Omit<UserState, keyof UserActions>;
+
+type UserActions = Pick<
+  UserState,
+  | 'completeOnboarding'
+  | 'updateProfile'
+  | 'setTargets'
+  | 'setWeightUnit'
+  | 'setHeightUnit'
+  | 'setLanguage'
+  | 'resetUser'
+>;
 
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
-      name: '',
-      gender: null,
-      height: '',
-      weight: '',
-      age: '',
-      hasCompletedOnboarding: false,
-      weightHistory: [],
-      units: {
-        weight: 'kg',
-        height: 'cm',
-      },
-
-      activityLevel: null,
-      goal: null,
-      targets: { calories: 2800, protein: 180, carbs: 300, fat: 80 },
-
-      setName: (name) => set({ name }),
-      setGender: (gender) => set({ gender }),
-      setHeight: (height) => set({ height }),
-      setWeight: (weight) => set((state) => {
-        // When setting current weight, always add a new entry to history
-        const today = new Date().toISOString().split('T')[0];
-        const newHistory = [...(state.weightHistory || [])];
-
-        // Generate a unique ID
-        const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-        newHistory.push({ id, date: today, weight: parseFloat(weight) });
-
-        // Sort by date
-        newHistory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-        return { weight, weightHistory: newHistory };
-      }),
-      addWeightEntry: (weight, date) => set((state) => {
-        const newHistory = [...(state.weightHistory || [])];
-
-        // Always add new entry, never overwrite
-        const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-        newHistory.push({ id, date, weight: parseFloat(weight) });
-
-        newHistory.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-        // Update current weight if this new entry is the most recent or equal to today
-        // actually, we should just take the last entry in the sorted list as current weight
-        const latestEntry = newHistory[newHistory.length - 1];
-
-        return {
-          weightHistory: newHistory,
-          weight: latestEntry ? latestEntry.weight.toString() : state.weight
-        };
-      }),
-      removeWeightEntry: (id) => set((state) => {
-        // Filter out the entry with the given ID
-        // For legacy entries without ID, we can't easily target them individually here without more logic,
-        // but new ones will work.
-        const newHistory = state.weightHistory.filter(e => e.id !== id);
-
-        // Update current weight to the *new* latest entry
-        const latestEntry = newHistory[newHistory.length - 1];
-
-        return {
-          weightHistory: newHistory,
-          weight: latestEntry ? latestEntry.weight.toString() : '' // Fallback to empty if no history
-        };
-      }),
-      setAge: (age) => set({ age }),
-      setWeightUnit: (unit) => set((state) => ({ units: { ...state.units, weight: unit } })),
-      setHeightUnit: (unit) => set((state) => ({ units: { ...state.units, height: unit } })),
-
-      setActivityLevel: (level) => set({ activityLevel: level }),
-      setGoal: (goal) => set({ goal }),
+      ...initialState,
+      completeOnboarding: (profile) => set({ ...profile, hasCompletedOnboarding: true }),
+      updateProfile: (patch) => set(patch),
       setTargets: (targets) => set({ targets }),
-
-      completeOnboarding: () => set({ hasCompletedOnboarding: true }),
-      resetUser: () => set({
-        name: '',
-        gender: null,
-        height: '',
-        weight: '',
-        age: '',
-        hasCompletedOnboarding: false,
-        weightHistory: [],
-        units: { weight: 'kg', height: 'cm' },
-        activityLevel: null,
-        goal: null,
-        targets: { calories: 2800, protein: 180, carbs: 300, fat: 80 }
-      }),
+      setWeightUnit: (unit) => set((s) => ({ units: { ...s.units, weight: unit } })),
+      setHeightUnit: (unit) => set((s) => ({ units: { ...s.units, height: unit } })),
+      setLanguage: (language) => set({ language }),
+      resetUser: () => set(initialState),
     }),
     {
       name: 'user-storage',
-      storage: createJSONStorage(() => mmkvStorage),
-    }
-  )
+      storage: createJSONStorage(() => mmkvStateStorage(userMMKV)),
+      version: 1,
+      migrate: (persisted, version) => migrateUserState(persisted, version),
+    },
+  ),
 );
+
+// ---------------------------------------------------------------------------
+// Migrations (exported for tests)
+// ---------------------------------------------------------------------------
+
+const GENDER_V0: Record<string, Gender> = { Male: 'male', Female: 'female', Other: 'other' };
+const ACTIVITY_V0: Record<string, ActivityLevel> = {
+  Sedentary: 'sedentary',
+  'Lightly Active': 'light',
+  'Moderately Active': 'moderate',
+  'Very Active': 'very',
+  'Super Active': 'super',
+};
+const GOAL_V0: Record<string, Goal> = {
+  'Lose Weight': 'lose',
+  'Maintain Weight': 'maintain',
+  'Gain Muscle': 'gain',
+};
+
+const toNumberOrNull = (v: unknown): number | null => {
+  const n = typeof v === 'number' ? v : typeof v === 'string' ? parseFloat(v.replace(',', '.')) : NaN;
+  return Number.isFinite(n) ? n : null;
+};
+
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+
+export function migrateUserState(persisted: unknown, version: number): Partial<UserState> {
+  const s = isRecord(persisted) ? persisted : {};
+  if (version >= 1) return s as Partial<UserState>;
+
+  // v0 → v1: string numbers → numbers, display labels → enum ids, calories → kcal,
+  // weight history moves to its own store (handed off through a one-shot MMKV key).
+  const legacyHistory = Array.isArray(s.weightHistory) ? s.weightHistory : [];
+  const legacyCurrent = toNumberOrNull(s.weight);
+  if (legacyHistory.length > 0 || legacyCurrent !== null) {
+    userMMKV.set(LEGACY_WEIGHT_KEY, JSON.stringify({ history: legacyHistory, current: legacyCurrent }));
+  }
+
+  const t = isRecord(s.targets) ? s.targets : {};
+  const units = isRecord(s.units) ? s.units : {};
+  return {
+    name: typeof s.name === 'string' ? s.name : '',
+    gender: typeof s.gender === 'string' ? (GENDER_V0[s.gender] ?? null) : null,
+    heightCm: toNumberOrNull(s.height),
+    age: toNumberOrNull(s.age),
+    activityLevel: typeof s.activityLevel === 'string' ? (ACTIVITY_V0[s.activityLevel] ?? null) : null,
+    goal: typeof s.goal === 'string' ? (GOAL_V0[s.goal] ?? null) : null,
+    targets: {
+      kcal: toNumberOrNull(t.calories) ?? DEFAULT_TARGETS.kcal,
+      protein: toNumberOrNull(t.protein) ?? DEFAULT_TARGETS.protein,
+      carbs: toNumberOrNull(t.carbs) ?? DEFAULT_TARGETS.carbs,
+      fat: toNumberOrNull(t.fat) ?? DEFAULT_TARGETS.fat,
+    },
+    hasCompletedOnboarding: s.hasCompletedOnboarding === true,
+    units: {
+      weight: units.weight === 'lbs' ? 'lbs' : 'kg',
+      height: units.height === 'ft' ? 'ft' : 'cm',
+    },
+    language: 'system',
+  };
+}

@@ -1,43 +1,35 @@
 import { useMemo } from 'react';
-import { useWorkoutStore, Workout } from '../store/workoutStore';
+import { useWorkoutStore, type Workout } from '@/store/workoutStore';
+import { fromDayKey, isoWeekday, type IsoWeekday } from '@/utils/date';
 import { useHasHydrated } from './useHasHydrated';
-
-// Indexed by Date.getDay(), so Sunday must stay at position 0.
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
-
-export function getTodayName(): string {
-  return DAYS[new Date().getDay()];
-}
+import { useToday } from './useToday';
 
 interface TodaysWorkouts {
   workouts: Workout[];
-  /** Day name used to index the schedule, e.g. "Sunday". */
-  day: string;
-  /** False while the store still holds seed data; gate any UI that reads `workouts`. */
+  /** ISO weekday used to index the schedule (Mon = 1). */
+  weekday: IsoWeekday;
+  /** False while the store still holds its initial state; gate any UI that reads `workouts`. */
   isHydrated: boolean;
 }
 
 /**
- * Resolves the schedule entry for today into full workout objects.
- *
- * Single source of truth for the home grid card, the expandable-card preview and the
- * detail screen. These previously each kept their own copy of this derivation, which
- * let the closed and open states of the card disagree.
+ * Resolves today's schedule entry into workouts. Single source of truth for the home card,
+ * the expandable-card preview and the detail screen, so closed and open states agree.
  */
 export function useTodaysWorkouts(): TodaysWorkouts {
-  const schedule = useWorkoutStore(s => s.schedule);
-  const allWorkouts = useWorkoutStore(s => s.workouts);
+  const schedule = useWorkoutStore((s) => s.schedule);
+  const allWorkouts = useWorkoutStore((s) => s.workouts);
   const isHydrated = useHasHydrated(useWorkoutStore);
-
-  const day = getTodayName();
+  const today = useToday(); // re-evaluates the weekday at midnight
+  const weekday = useMemo(() => isoWeekday(fromDayKey(today)), [today]);
 
   const workouts = useMemo(
     () =>
-      (schedule[day] ?? [])
-        .map(id => allWorkouts.find(w => w.id === id))
+      (schedule[weekday] ?? [])
+        .map((id) => allWorkouts.find((w) => w.id === id))
         .filter((w): w is Workout => !!w),
-    [schedule, allWorkouts, day]
+    [schedule, allWorkouts, weekday],
   );
 
-  return { workouts, day, isHydrated };
+  return { workouts, weekday, isHydrated };
 }

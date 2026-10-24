@@ -1,132 +1,91 @@
 import { useRef, useCallback } from 'react';
-import { View } from 'react-native';
-import { useRouter, Href } from 'expo-router';
-import { useSharedValue, withSpring, WithSpringConfig } from 'react-native-reanimated';
+import type { View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSharedValue, withSpring, type WithSpringConfig } from 'react-native-reanimated';
+
+/** Routes registered with the expandable-card presentation in app/_layout.tsx. */
+export type ExpandableRoute = '/nutrition/detail' | '/body-weight' | '/workouts/today';
 
 interface UseExpandableNavigationOptions {
-  /** Spring config for press animation */
   pressScale?: number;
   springConfig?: WithSpringConfig;
 }
 
-// Standard spring config per animation rules
+// Standard press spring (animations rule).
 const DEFAULT_OPTIONS: Required<UseExpandableNavigationOptions> = {
   pressScale: 0.96,
-  springConfig: {
-    damping: 15,
-    stiffness: 400,
-  },
+  springConfig: { damping: 15, stiffness: 400 },
 };
 
-/* Global lock to prevent multiple cards from opening simultaneously */
+/* Module-level lock: two cards tapped in the same frame must not both open. */
 let isGlobalNavigationLocked = false;
 
 /**
- * Hook for creating expandable card navigation with press animations.
- * Use this on home screen cards that expand into detail pages.
- * 
- * @example
- * ```tsx
- * const { cardRef, cardScale, cardAnimatedStyle, navigateToDetail } = useExpandableNavigation();
- * 
- * <AnimatedPressable
- *   ref={cardRef}
- *   onPressIn={() => cardScale.value = withSpring(0.96)}
- *   onPressOut={() => cardScale.value = withSpring(1)}
- *   onPress={() => navigateToDetail('/nutrition-detail')}
- *   style={cardAnimatedStyle}
- * >
- *   ...
- * </AnimatedPressable>
- * ```
+ * Press animation + navigation for home cards that expand into a detail page. The card's
+ * window rect is passed as route params; the detail screen animates from it
+ * (ExpandableCardLayoutWithContext).
  */
 export function useExpandableNavigation(options: UseExpandableNavigationOptions = {}) {
   const router = useRouter();
   const cardRef = useRef<View>(null);
   const cardScale = useSharedValue(1);
-
   const layoutRef = useRef({ width: 0, height: 0 });
-
   const { pressScale, springConfig } = { ...DEFAULT_OPTIONS, ...options };
 
   const handlePressIn = useCallback(() => {
     cardScale.value = withSpring(pressScale, springConfig);
-  }, [pressScale, springConfig]);
+  }, [cardScale, pressScale, springConfig]);
 
   const handlePressOut = useCallback(() => {
     cardScale.value = withSpring(1, springConfig);
-  }, [springConfig]);
+  }, [cardScale, springConfig]);
 
-  const onLayout = useCallback((event: any) => {
+  const onLayout = useCallback((event: { nativeEvent: { layout: { width: number; height: number } } }) => {
     const { width, height } = event.nativeEvent.layout;
     layoutRef.current = { width, height };
   }, []);
 
+  const navigateToDetail = useCallback(
+    (pathname: ExpandableRoute, additionalParams?: Record<string, string>) => {
+      if (isGlobalNavigationLocked) return;
+      isGlobalNavigationLocked = true;
+      setTimeout(() => {
+        isGlobalNavigationLocked = false;
+      }, 150);
 
+      cardRef.current?.measureInWindow((x, y, width, height) => {
+        // The card may be mid press-scale: rebuild the unscaled rect around the measured centre
+        // so the animation doesn't start from the shrunken frame.
+        let finalX = x;
+        let finalY = y;
+        let finalWidth = width;
+        let finalHeight = height;
+        if (layoutRef.current.width > 0 && layoutRef.current.height > 0) {
+          const centerX = x + width / 2;
+          const centerY = y + height / 2;
+          finalWidth = layoutRef.current.width;
+          finalHeight = layoutRef.current.height;
+          finalX = centerX - finalWidth / 2;
+          finalY = centerY - finalHeight / 2;
+        }
 
-  /**
-   * Navigate to a detail page, passing the card's position and dimensions.
-   * The detail page should use ExpandableCardLayout to animate from this position.
-   */
-  const navigateToDetail = useCallback((pathname: string, additionalParams?: Record<string, string | number>) => {
-    if (isGlobalNavigationLocked) return;
+        // Whole pixels only: the detail screen lays its preview out at these exact
+        // dimensions, and a fractional size makes Yoga round the preview's flex chain
+        // differently than the grid card's, shifting inner content by up to a point.
+        router.push({
+          pathname,
+          params: {
+            cardX: String(Math.round(finalX)),
+            cardY: String(Math.round(finalY)),
+            cardWidth: String(Math.round(finalWidth)),
+            cardHeight: String(Math.round(finalHeight)),
+            ...additionalParams,
+          },
+        });
+      });
+    },
+    [router],
+  );
 
-    isGlobalNavigationLocked = true;
-    // Reset lock after sufficient time for transition to complete
-    setTimeout(() => {
-      isGlobalNavigationLocked = false;
-    }, 150);
-
-    cardRef.current?.measureInWindow((x, y, width, height) => {
-      // If we have layout dims, use them to calculate the "Unscaled" position
-      // This prevents the animation from jumping if the card is currently scaled down (pressed)
-      let finalX = x;
-      let finalY = y;
-      let finalWidth = width;
-      let finalHeight = height;
-
-      if (layoutRef.current.width > 0 && layoutRef.current.height > 0) {
-        // Calculate center based on measured (possibly scaled) frame
-        const centerX = x + width / 2;
-        const centerY = y + height / 2;
-
-        // Restore unscaled dimensions
-        finalWidth = layoutRef.current.width;
-        finalHeight = layoutRef.current.height;
-
-        // Recalculate Top-Left based on Center and Unscaled Dimensions
-        finalX = centerX - finalWidth / 2;
-        finalY = centerY - finalHeight / 2;
-      }
-
-      // Whole pixels only: the detail screen lays its preview out at these exact
-      // dimensions, and a fractional size makes Yoga round the preview's flex chain
-      // differently than the grid card's, shifting inner content by up to a point.
-      router.push({
-        pathname: pathname as Href<string>,
-        params: {
-          cardX: String(Math.round(finalX)),
-          cardY: String(Math.round(finalY)),
-          cardWidth: String(Math.round(finalWidth)),
-          cardHeight: String(Math.round(finalHeight)),
-          ...additionalParams,
-        },
-      } as any);
-    });
-  }, [router]);
-
-  return {
-    /** Ref to attach to the card component */
-    cardRef,
-    /** Shared value for scale animation */
-    cardScale,
-    /** Handler for press in (starts shrink animation) */
-    handlePressIn,
-    /** Handler for press out (returns to normal scale) */
-    handlePressOut,
-    /** Handler for layout to capture unscaled dimensions */
-    onLayout,
-    /** Navigate to detail page with card position params */
-    navigateToDetail,
-  };
+  return { cardRef, cardScale, handlePressIn, handlePressOut, onLayout, navigateToDetail };
 }

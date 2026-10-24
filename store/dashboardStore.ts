@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
+import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
 import type { WidgetSize } from '../components/dashboard/widgetSizes';
 import { DEFAULT_HOME_WIDGETS, isRegisteredWidgetId } from '../components/dashboard/catalog';
@@ -80,6 +80,7 @@ export const useDashboardStore = create<DashboardState>()(
           const to = widgets.findIndex(w => w.id === toId);
           if (from < 0 || to < 0) return state;
           const [item] = widgets.splice(from, 1);
+          if (!item) return state;
           widgets.splice(to, 0, item);
           return { widgets };
         });
