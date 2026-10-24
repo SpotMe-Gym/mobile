@@ -69,6 +69,26 @@
             export PATH=$PATH:$ANDROID_HOME/emulator
             export PATH=$PATH:$ANDROID_HOME/platform-tools
             export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          '' + pkgs.lib.optionalString isDarwin ''
+            # The darwin stdenv exports MACOSX_DEPLOYMENT_TARGET=14.0; it must not leak into
+            # Xcode/CocoaPods builds (the iOS target comes from app.json / expo-build-properties).
+            unset MACOSX_DEPLOYMENT_TARGET DEVELOPER_DIR SDKROOT
+
+            # iOS builds use the system Xcode, not Nix. The active developer directory must be a
+            # full Xcode (not the Command Line Tools). Xcode ≤ 26 ships Simulator.app; Xcode 27
+            # replaced it with DeviceHub.app, which Expo CLI only supports from SDK 56.
+            XCODE_DIR="$(/usr/bin/xcode-select -p 2>/dev/null)"
+            if [ -d "$XCODE_DIR/Applications/DeviceHub.app" ] && [ ! -d "$XCODE_DIR/Applications/Simulator.app" ]; then
+              echo "🍎 Xcode: $XCODE_DIR (Device Hub)"
+              echo "   ⚠️  Expo SDK 54 can't drive Device Hub: build from Xcode, select an Xcode 26, or upgrade to SDK ≥ 56."
+            elif [ -z "$XCODE_DIR" ] || [ ! -d "$XCODE_DIR/Applications/Simulator.app" ]; then
+              echo ""
+              echo "⚠️  iOS: active developer dir is ''${XCODE_DIR:-none} — no Simulator there."
+              echo "   Fix: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
+              echo "   Then open Xcode once (Settings → Components) and install an iOS Simulator runtime."
+            else
+              echo "🍎 Xcode: $XCODE_DIR"
+            fi
           '';
         };
       }
