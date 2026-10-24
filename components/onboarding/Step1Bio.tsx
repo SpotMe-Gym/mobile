@@ -1,119 +1,154 @@
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { User, Minus, Plus, Ruler, Weight } from 'lucide-react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
+import { Controller, type Control } from 'react-hook-form';
+import { Ruler, User, Weight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
+import { colors } from '@/theme/colors';
+import { Icon } from '../ui/Icon';
+import { NumberField } from '../ui/NumberField';
+import { Stepper } from '../ui/Stepper';
+import type { OnboardingValues } from './schema';
+import { useFieldError } from './useFieldError';
 
-interface BioForm {
-  name: string;
-  gender: 'Male' | 'Female' | 'Other' | '';
-  height: string;
-  weight: string;
-  age: string;
-}
+const GENDERS = ['male', 'female', 'other'] as const;
 
-interface Step1BioProps {
-  form: BioForm;
-  setForm: (form: BioForm) => void;
-}
-
-export function Step1Bio({ form, setForm }: Step1BioProps) {
+export function Step1Bio({ control }: { control: Control<OnboardingValues> }) {
   const { t } = useTranslation();
-
-  const genderOptions = [
-    { key: 'Male', label: t('common.male') },
-    { key: 'Female', label: t('common.female') },
-    { key: 'Other', label: t('common.other') },
-  ] as const;
+  const fieldError = useFieldError();
 
   return (
     <View>
-      <Text className="text-4xl font-bold text-white mb-2">{t('onboarding.welcomeToSpotMe')}</Text>
-      <Text className="text-zinc-400 text-lg mb-8">{t('onboarding.letsStartWithBasics')}</Text>
+      <Text accessibilityRole="header" className="mb-2 text-4xl font-bold text-foreground">
+        {t('onboarding.welcomeToSpotMe')}
+      </Text>
+      <Text className="mb-8 text-lg text-muted">{t('onboarding.letsStartWithBasics')}</Text>
 
-      {/* Name */}
-      <View className="mb-5">
-        <Text className="text-zinc-400 font-medium mb-2 ml-1">{t('common.name')}</Text>
-        <View className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 h-14 flex-row items-center">
-          <User color="#A1A1AA" size={20} />
-          <TextInput
-            className="flex-1 ml-3 text-white text-lg h-full"
-            placeholder={t('onboarding.yourName')}
-            placeholderTextColor="#52525B"
-            value={form.name}
-            onChangeText={(text) => setForm({ ...form, name: text })}
-          />
-        </View>
-      </View>
-
-      {/* Gender */}
-      <View className="mb-5">
-        <Text className="text-zinc-400 font-medium mb-2 ml-1">{t('common.gender')}</Text>
-        <View className="flex-row gap-3">
-          {genderOptions.map((g) => (
-            <TouchableOpacity
-              key={g.key}
-              className={`flex-1 h-12 items-center justify-center rounded-xl border ${form.gender === g.key ? 'bg-blue-600 border-blue-600' : 'bg-zinc-900 border-zinc-800'}`}
-              onPress={() => setForm({ ...form, gender: g.key as BioForm['gender'] })}
+      <Controller
+        control={control}
+        name="name"
+        render={({ field, fieldState }) => (
+          <View className="mb-5">
+            <Text className="mb-2 ml-1 font-medium text-muted">{t('common.name')}</Text>
+            <View
+              className={cn(
+                'h-14 flex-row items-center rounded-xl border bg-surface px-4',
+                fieldState.error ? 'border-danger' : 'border-border',
+              )}
             >
-              <Text className={`font-semibold ${form.gender === g.key ? 'text-white' : 'text-zinc-400'}`}>{g.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Age */}
-      <View className="mb-5">
-        <Text className="text-zinc-400 font-medium mb-2 ml-1">{t('common.age')}</Text>
-        <View className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex-row justify-between items-center">
-          <TouchableOpacity onPress={() => {
-            const current = parseInt(form.age) || 25;
-            if (current > 10) setForm({ ...form, age: (current - 1).toString() });
-          }} className="h-12 w-12 bg-zinc-800 rounded-full items-center justify-center">
-            <Minus size={20} color="white" />
-          </TouchableOpacity>
-          <View className="items-center">
-            <Text className="text-3xl font-bold text-white">{form.age}</Text>
-            <Text className="text-zinc-500 text-xs">{t('common.years')}</Text>
+              <Icon icon={User} size={20} color={colors.muted} />
+              <TextInput
+                className="ml-3 h-full flex-1 text-lg text-foreground"
+                placeholder={t('onboarding.yourName')}
+                placeholderTextColor={colors.placeholder}
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                autoComplete="given-name"
+                textContentType="givenName"
+                accessibilityLabel={t('common.name')}
+              />
+            </View>
+            {fieldState.error && (
+              <Text className="ml-1 mt-1 text-sm text-danger-text">
+                {fieldError(fieldState.error.message)}
+              </Text>
+            )}
           </View>
-          <TouchableOpacity onPress={() => {
-            const current = parseInt(form.age) || 25;
-            if (current < 100) setForm({ ...form, age: (current + 1).toString() });
-          }} className="h-12 w-12 bg-zinc-800 rounded-full items-center justify-center">
-            <Plus size={20} color="white" />
-          </TouchableOpacity>
-        </View>
-      </View>
+        )}
+      />
 
-      <View className="flex-row gap-4 mb-4">
-        {/* Height */}
-        <View className="flex-1">
-          <Text className="text-zinc-400 font-medium mb-2 ml-1">{t('common.heightCm')}</Text>
-          <View className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 h-14 flex-row items-center">
-            <Ruler color="#A1A1AA" size={20} />
-            <TextInput
-              className="flex-1 ml-3 text-white text-lg h-full"
+      <Controller
+        control={control}
+        name="gender"
+        render={({ field, fieldState }) => (
+          <View className="mb-5">
+            <Text className="mb-2 ml-1 font-medium text-muted">{t('common.gender')}</Text>
+            <View className="flex-row gap-3" accessibilityRole="radiogroup">
+              {GENDERS.map((g) => {
+                const selected = field.value === g;
+                return (
+                  <Pressable
+                    key={g}
+                    onPress={() => field.onChange(g)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    className={cn(
+                      'h-12 flex-1 items-center justify-center rounded-xl border',
+                      selected ? 'border-primary bg-primary' : 'border-border bg-surface',
+                    )}
+                  >
+                    <Text
+                      className={cn('font-semibold', selected ? 'text-primary-foreground' : 'text-muted')}
+                    >
+                      {t(`common.${g}`)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {fieldState.error && (
+              <Text className="ml-1 mt-1 text-sm text-danger-text">
+                {fieldError(fieldState.error.message)}
+              </Text>
+            )}
+          </View>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="age"
+        render={({ field }) => (
+          <View className="mb-5">
+            <Text className="mb-2 ml-1 font-medium text-muted">{t('common.age')}</Text>
+            <Stepper
+              label={t('common.age')}
+              value={field.value}
+              onChange={field.onChange}
+              min={13}
+              max={100}
+              caption={t('common.years')}
+            />
+          </View>
+        )}
+      />
+
+      <View className="mb-4 flex-row gap-4">
+        <Controller
+          control={control}
+          name="heightCm"
+          render={({ field, fieldState }) => (
+            <NumberField
+              className="flex-1"
+              label={t('common.height')}
+              icon={Ruler}
+              unit="cm"
               placeholder="180"
-              placeholderTextColor="#52525B"
-              keyboardType="numeric"
-              value={form.height}
-              onChangeText={(text) => setForm({ ...form, height: text })}
+              value={field.value}
+              onChangeValue={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldError(fieldState.error?.message, t('onboarding.heightRange'))}
             />
-          </View>
-        </View>
-        {/* Weight */}
-        <View className="flex-1">
-          <Text className="text-zinc-400 font-medium mb-2 ml-1">{t('common.weightKg')}</Text>
-          <View className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 h-14 flex-row items-center">
-            <Weight color="#A1A1AA" size={20} />
-            <TextInput
-              className="flex-1 ml-3 text-white text-lg h-full"
+          )}
+        />
+        <Controller
+          control={control}
+          name="weightKg"
+          render={({ field, fieldState }) => (
+            <NumberField
+              className="flex-1"
+              label={t('common.weight')}
+              icon={Weight}
+              unit="kg"
+              decimals={1}
               placeholder="75"
-              placeholderTextColor="#52525B"
-              keyboardType="numeric"
-              value={form.weight}
-              onChangeText={(text) => setForm({ ...form, weight: text })}
+              value={field.value}
+              onChangeValue={field.onChange}
+              onBlur={field.onBlur}
+              error={fieldError(fieldState.error?.message, t('onboarding.weightRange'))}
             />
-          </View>
-        </View>
+          )}
+        />
       </View>
     </View>
   );

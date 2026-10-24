@@ -1,65 +1,118 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { Controller, type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
+import type { ActivityLevel, Goal } from '@/store/userStore';
+import type { OnboardingValues } from './schema';
+import { useFieldError } from './useFieldError';
 
-export const ACTIVITY_LEVELS = [
-  { labelKey: 'onboarding.sedentary', descKey: 'onboarding.sedentaryDesc', label: 'Sedentary', multiplier: 1.2 },
-  { labelKey: 'onboarding.lightlyActive', descKey: 'onboarding.lightlyActiveDesc', label: 'Lightly Active', multiplier: 1.375 },
-  { labelKey: 'onboarding.moderatelyActive', descKey: 'onboarding.moderatelyActiveDesc', label: 'Moderately Active', multiplier: 1.55 },
-  { labelKey: 'onboarding.veryActive', descKey: 'onboarding.veryActiveDesc', label: 'Very Active', multiplier: 1.725 },
-  { labelKey: 'onboarding.superActive', descKey: 'onboarding.superActiveDesc', label: 'Super Active', multiplier: 1.9 },
-] as const;
+const ACTIVITY: readonly ActivityLevel[] = ['sedentary', 'light', 'moderate', 'very', 'super'];
+const GOALS: readonly Goal[] = ['lose', 'maintain', 'gain'];
 
-export const GOALS = [
-  { labelKey: 'onboarding.loseWeight', label: 'Lose Weight', calOffset: -500 },
-  { labelKey: 'onboarding.maintainWeight', label: 'Maintain Weight', calOffset: 0 },
-  { labelKey: 'onboarding.gainMuscle', label: 'Gain Muscle', calOffset: 300 },
-] as const;
-
-interface Step2GoalsProps {
-  activityIndex: number | null;
-  setActivityIndex: (i: number) => void;
-  goalIndex: number | null;
-  setGoalIndex: (i: number) => void;
+function Option({
+  title,
+  subtitle,
+  selected,
+  onPress,
+  tone,
+}: {
+  title: string;
+  subtitle?: string;
+  selected: boolean;
+  onPress: () => void;
+  tone: 'primary' | 'success';
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      className={cn(
+        'min-h-14 flex-row items-center justify-between rounded-xl border p-4',
+        selected
+          ? tone === 'primary'
+            ? 'border-primary bg-primary/20'
+            : 'border-success bg-success/20'
+          : 'border-border bg-surface',
+      )}
+    >
+      <View className="flex-1">
+        <Text className={cn('font-bold', selected ? 'text-foreground' : 'text-muted')}>{title}</Text>
+        {subtitle && <Text className="mt-1 text-sm text-subtle">{subtitle}</Text>}
+      </View>
+      {selected && (
+        <View className={cn('h-4 w-4 rounded-full', tone === 'primary' ? 'bg-primary' : 'bg-success')} />
+      )}
+    </Pressable>
+  );
 }
 
-export function Step2Goals({ activityIndex, setActivityIndex, goalIndex, setGoalIndex }: Step2GoalsProps) {
+export function Step2Goals({ control }: { control: Control<OnboardingValues> }) {
   const { t } = useTranslation();
-
+  const fieldError = useFieldError();
   return (
     <View>
-      <Text className="text-3xl font-bold text-white mb-2">{t('onboarding.goalsAndActivity')}</Text>
-      <Text className="text-zinc-400 text-lg mb-8">{t('onboarding.helpUsCalculate')}</Text>
+      <Text accessibilityRole="header" className="mb-2 text-3xl font-bold text-foreground">
+        {t('onboarding.goalsAndActivity')}
+      </Text>
+      <Text className="mb-8 text-lg text-muted">{t('onboarding.helpUsCalculate')}</Text>
 
-      <Text className="text-white font-bold text-lg mb-4">{t('onboarding.howActiveAreYou')}</Text>
-      <View className="gap-3 mb-8">
-        {ACTIVITY_LEVELS.map((level, i) => (
-          <TouchableOpacity
-            key={i}
-            onPress={() => setActivityIndex(i)}
-            className={`flex-row justify-between items-center p-4 rounded-xl border ${activityIndex === i ? 'bg-blue-600/20 border-blue-500' : 'bg-zinc-900 border-zinc-800'}`}
-          >
-            <View>
-              <Text className={`font-bold ${activityIndex === i ? 'text-white' : 'text-zinc-300'}`}>{t(level.labelKey)}</Text>
-              <Text className="text-zinc-500 text-xs mt-1">{t(level.descKey)}</Text>
+      <Controller
+        control={control}
+        name="activity"
+        render={({ field, fieldState }) => (
+          <View className="mb-8">
+            <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
+              {t('onboarding.howActiveAreYou')}
+            </Text>
+            <View className="gap-3" accessibilityRole="radiogroup">
+              {ACTIVITY.map((level) => (
+                <Option
+                  key={level}
+                  tone="primary"
+                  title={t(`onboarding.activity.${level}`)}
+                  subtitle={t(`onboarding.activity.${level}Desc`)}
+                  selected={field.value === level}
+                  onPress={() => field.onChange(level)}
+                />
+              ))}
             </View>
-            {activityIndex === i && <View className="h-4 w-4 bg-blue-500 rounded-full" />}
-          </TouchableOpacity>
-        ))}
-      </View>
+            {fieldState.error && (
+              <Text className="ml-1 mt-2 text-sm text-danger-text">
+                {fieldError(fieldState.error.message)}
+              </Text>
+            )}
+          </View>
+        )}
+      />
 
-      <Text className="text-white font-bold text-lg mb-4">{t('onboarding.whatIsYourGoal')}</Text>
-      <View className="gap-3">
-        {GOALS.map((g, i) => (
-          <TouchableOpacity
-            key={i}
-            onPress={() => setGoalIndex(i)}
-            className={`flex-row justify-between items-center p-4 rounded-xl border ${goalIndex === i ? 'bg-green-600/20 border-green-500' : 'bg-zinc-900 border-zinc-800'}`}
-          >
-            <Text className={`font-bold ${goalIndex === i ? 'text-white' : 'text-zinc-300'}`}>{t(g.labelKey)}</Text>
-            {goalIndex === i && <View className="h-4 w-4 bg-green-500 rounded-full" />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      <Controller
+        control={control}
+        name="goal"
+        render={({ field, fieldState }) => (
+          <View>
+            <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
+              {t('onboarding.whatIsYourGoal')}
+            </Text>
+            <View className="gap-3" accessibilityRole="radiogroup">
+              {GOALS.map((g) => (
+                <Option
+                  key={g}
+                  tone="success"
+                  title={t(`onboarding.goal.${g}`)}
+                  selected={field.value === g}
+                  onPress={() => field.onChange(g)}
+                />
+              ))}
+            </View>
+            {fieldState.error && (
+              <Text className="ml-1 mt-2 text-sm text-danger-text">
+                {fieldError(fieldState.error.message)}
+              </Text>
+            )}
+          </View>
+        )}
+      />
     </View>
   );
 }

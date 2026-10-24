@@ -1,159 +1,111 @@
-import { View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { Minus, Plus, Info, Lock, Unlock, Sparkles } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
+import { Pressable, Text, View } from 'react-native';
+import { useController, type Control } from 'react-hook-form';
+import { Info, Lock, Unlock } from 'lucide-react-native';
+import { Trans, useTranslation } from 'react-i18next';
+import { colors } from '@/theme/colors';
+import { formatNumber } from '@/utils/number';
+import { kcalFromMacros, MAX_KCAL, MIN_KCAL, splitCalories } from '@/utils/nutrition';
+import { Icon } from '../ui/Icon';
+import { Stepper } from '../ui/Stepper';
+import type { OnboardingValues } from './schema';
 
-interface Step3NutritionProps {
-  calories: number;
-  updateCalories: (c: number) => void;
-  protein: number;
-  carbs: number;
-  fat: number;
-  updateMacro: (t: 'p' | 'c' | 'f', v: number) => void;
-  isLocked: boolean;
-  setIsLocked: (l: boolean) => void;
-}
+export function Step3Nutrition({ control }: { control: Control<OnboardingValues> }) {
+  const { t, i18n } = useTranslation();
+  const { field: targets } = useController({ control, name: 'targets' });
+  const { field: locked } = useController({ control, name: 'ratioLocked' });
+  const value = targets.value;
+  const isLocked = locked.value;
 
-export function Step3Nutrition({
-  calories, updateCalories,
-  protein, carbs, fat, updateMacro,
-  isLocked, setIsLocked
-}: Step3NutritionProps) {
-  const { t } = useTranslation();
+  const setKcal = (kcal: number) =>
+    // Locked: scale macros with the total. Unlocked: only the total target changes.
+    targets.onChange(isLocked ? { kcal, ...splitCalories(kcal) } : { ...value, kcal });
 
-  // Steps for adjusters
-  const calStep = isLocked ? 50 : 1;
-  const macroStep = isLocked ? 5 : 1;
+  const setMacro = (macro: 'protein' | 'carbs' | 'fat', grams: number) => {
+    const next = { ...value, [macro]: grams };
+    // Macros fully determine energy (Atwater), so the total follows them.
+    targets.onChange({
+      ...next,
+      kcal: Math.min(MAX_KCAL, Math.max(MIN_KCAL, kcalFromMacros(next.protein, next.carbs, next.fat))),
+    });
+  };
 
+  const g = t('common.grams');
   return (
     <View>
-      <View className="flex-row justify-between items-start mb-2">
-        <View>
-          <Text className="text-3xl font-bold text-white mb-1">{t('onboarding.oneLastThing')}</Text>
-          <Text className="text-zinc-400 text-base mb-6 w-64">
-            A <Text className="text-white font-bold">non-medical suggestion</Text> based on your stats.
-          </Text>
-        </View>
-        <TouchableOpacity
-          className="bg-purple-900/40 border border-purple-500/30 p-3 rounded-xl items-center justify-center"
-          onPress={() => Alert.alert(t('onboarding.aiCoachComingSoon'))}
-        >
-          <Sparkles size={20} color="#c084fc" />
-        </TouchableOpacity>
-      </View>
+      <Text accessibilityRole="header" className="mb-1 text-3xl font-bold text-foreground">
+        {t('onboarding.oneLastThing')}
+      </Text>
+      <Text className="mb-6 text-base text-muted">
+        <Trans
+          i18nKey="onboarding.nonMedicalSuggestion"
+          components={{ bold: <Text className="font-bold text-foreground" /> }}
+        />
+      </Text>
 
-      {/* Ratios Toggle */}
-      <TouchableOpacity
-        onPress={() => setIsLocked(!isLocked)}
-        className="flex-row items-center mb-4 self-start bg-zinc-900 px-3 py-2 rounded-lg border border-zinc-800"
+      <Pressable
+        onPress={() => locked.onChange(!isLocked)}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: isLocked }}
+        accessibilityLabel={t('onboarding.lockRatio')}
+        className="mb-4 min-h-11 flex-row items-center self-start rounded-lg border border-border bg-surface px-3 py-2"
       >
-        {isLocked ? <Lock size={16} color="#4ade80" /> : <Unlock size={16} color="#fbbf24" />}
-        <Text className={`ml-2 font-bold ${isLocked ? 'text-green-400' : 'text-amber-400'}`}>
+        <Icon
+          icon={isLocked ? Lock : Unlock}
+          size={16}
+          color={isLocked ? colors['success-text'] : colors['warning-text']}
+        />
+        <Text className={`ml-2 font-bold ${isLocked ? 'text-success-text' : 'text-warning-text'}`}>
           {isLocked ? t('onboarding.ratioLocked') : t('onboarding.ratioUnlocked')}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
 
-      {/* Calorie Card */}
-      <View className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6">
-        <View className="flex-row justify-between items-end mb-4">
-          <Text className="text-zinc-400 font-medium">{t('onboarding.dailyTarget')}</Text>
-          <View className="flex-row items-baseline">
-            <TextInput
-              value={calories.toString()}
-              onChangeText={(text) => {
-                const v = parseInt(text) || 0;
-                updateCalories(v);
-              }}
-              keyboardType="numeric"
-              className="text-3xl font-black text-white p-0"
-              style={{ minWidth: 80 }}
-              textAlign="right"
-              placeholderTextColor="#52525B"
-            />
-            <Text className="text-sm font-normal text-zinc-500 ml-1">{t('common.kcal')}</Text>
-          </View>
-        </View>
-
-        {/* Calorie Stepper */}
-        <View className="flex-row justify-between items-center bg-zinc-950 p-2 rounded-xl mb-4">
-          <TouchableOpacity 
-            onPress={() => updateCalories(calories - calStep)} 
-            className="h-11 w-11 bg-zinc-800 rounded-lg items-center justify-center"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Minus size={20} color="white" />
-          </TouchableOpacity>
-          <Text className="text-zinc-500 text-xs">{t('onboarding.adjustTotal', { step: calStep })}</Text>
-          <TouchableOpacity 
-            onPress={() => updateCalories(calories + calStep)} 
-            className="h-11 w-11 bg-zinc-800 rounded-lg items-center justify-center"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Plus size={20} color="white" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Macros */}
-        <View className="gap-4">
-          <MacroSlider label={t('food.protein')} val={protein} setVal={(v) => updateMacro('p', v)} color="bg-blue-500" step={macroStep} />
-          <MacroSlider label={t('food.carbs')} val={carbs} setVal={(v) => updateMacro('c', v)} color="bg-orange-500" step={macroStep} />
-          <MacroSlider label={t('onboarding.fats')} val={fat} setVal={(v) => updateMacro('f', v)} color="bg-yellow-500" step={macroStep} />
-        </View>
+      <View className="mb-6 gap-3 rounded-2xl border border-border bg-surface p-4">
+        <Stepper
+          label={t('onboarding.dailyTarget')}
+          caption={t('onboarding.dailyTarget')}
+          value={value.kcal}
+          display={t('common.kcalValue', { value: formatNumber(value.kcal, i18n.language, 0) })}
+          step={isLocked ? 50 : 10}
+          min={MIN_KCAL}
+          max={MAX_KCAL}
+          onChange={setKcal}
+          className="bg-surface-sunken"
+        />
+        <Stepper
+          label={t('food.protein')}
+          caption={t('food.protein')}
+          value={value.protein}
+          display={`${value.protein} ${g}`}
+          step={5}
+          onChange={(v) => setMacro('protein', v)}
+          className="bg-surface-sunken"
+        />
+        <Stepper
+          label={t('food.carbs')}
+          caption={t('food.carbs')}
+          value={value.carbs}
+          display={`${value.carbs} ${g}`}
+          step={5}
+          onChange={(v) => setMacro('carbs', v)}
+          className="bg-surface-sunken"
+        />
+        <Stepper
+          label={t('food.fat')}
+          caption={t('food.fat')}
+          value={value.fat}
+          display={`${value.fat} ${g}`}
+          step={5}
+          onChange={(v) => setMacro('fat', v)}
+          className="bg-surface-sunken"
+        />
       </View>
 
-      <View className="flex-row items-center bg-zinc-900/50 p-3 rounded-xl mb-4 border border-zinc-800/50">
-        <Info size={18} color="#71717a" className="mr-2" />
-        <Text className="text-zinc-500 text-xs flex-1 leading-4">
-          {isLocked
-            ? t('onboarding.lockedHint')
-            : t('onboarding.unlockedHint')}
+      <View className="mb-4 flex-row items-center rounded-xl border border-border bg-surface/50 p-3">
+        <Icon icon={Info} size={18} color={colors.subtle} className="mr-2" />
+        <Text className="flex-1 text-sm text-subtle">
+          {isLocked ? t('onboarding.lockedHint') : t('onboarding.unlockedHint')}
         </Text>
       </View>
     </View>
   );
-}
-
-// Helper Comp for Macro Slider
-function MacroSlider({ label, val, setVal, color, step }: { label: string, val: number, setVal: (v: number) => void, color: string, step: number }) {
-  const { t } = useTranslation();
-
-  return (
-    <View>
-      <View className="flex-row justify-between mb-2">
-        <Text className="text-white font-bold">{label}</Text>
-        <View className="flex-row items-baseline">
-          <TextInput
-            value={val.toString()}
-            onChangeText={(text) => {
-              const v = parseInt(text) || 0;
-              setVal(v);
-            }}
-            keyboardType="numeric"
-            className="text-zinc-400 font-bold p-0"
-            textAlign="right"
-            style={{ minWidth: 40 }}
-          />
-          <Text className="text-zinc-400 ml-1">{t('common.grams')}</Text>
-        </View>
-      </View>
-      <View className="flex-row items-center gap-3">
-        <TouchableOpacity 
-          onPress={() => setVal(Math.max(0, val - step))} 
-          className="h-9 w-9 bg-zinc-800 rounded items-center justify-center"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Minus size={16} color="gray" />
-        </TouchableOpacity>
-        <View className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
-          <View className={`h-full ${color}`} style={{ width: '100%' }} />
-        </View>
-        <TouchableOpacity 
-          onPress={() => setVal(val + step)} 
-          className="h-9 w-9 bg-zinc-800 rounded items-center justify-center"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Plus size={16} color="gray" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  )
 }

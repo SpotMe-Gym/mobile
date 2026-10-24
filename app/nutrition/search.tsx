@@ -1,333 +1,241 @@
-import { useState, useEffect, useMemo } from 'react';
-import { View, Text, TextInput, ActivityIndicator, TouchableOpacity, Alert, Modal, Keyboard } from 'react-native';
-import { Image } from 'expo-image';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as Location from 'expo-location';
-import { searchFood, getFoodByBarcode, FoodProduct } from '../../services/foodService';
-import { Search, Scan, X, ChevronLeft, MapPin, History, Sparkles } from 'lucide-react-native';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Icon } from '../../components/ui/Icon';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useNutritionStore, HistoryItem } from '../../store/nutritionStore';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronLeft, History, PenLine, ScanBarcode, Search, WifiOff } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Icon } from '@/components/ui/Icon';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { FoodRow } from '@/components/food/FoodRow';
+import { BarcodeScanner } from '@/components/food/BarcodeScanner';
+import { useFoodSearch, usePrimeProduct } from '@/hooks/useFood';
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage';
+import { useToday } from '@/hooks/useToday';
+import {
+  isMealType,
+  useDayEntries,
+  useFoodHistory,
+  type FoodRef,
+  type MealType,
+} from '@/store/nutritionStore';
+import { colors } from '@/theme/colors';
+import { formatNumber } from '@/utils/number';
+import { mealForTime } from '@/utils/portion';
 
-// Helper to map HistoryItem to FoodProduct shape for consistent rendering
-const historyToProduct = (item: HistoryItem): FoodProduct => ({
-  code: item.id,
-  product_name: item.name,
-  brands: item.brand || '',
-  image_url: item.image_url || '',
-  nutriments: {
-    "energy-kcal_100g": item.calories,
-    proteins_100g: item.protein,
-    carbohydrates_100g: item.carbs,
-    fat_100g: item.fat,
-  }
-});
+type Row =
+  | { type: 'header'; key: string; title: string; icon: 'history' | 'search' }
+  | { type: 'food'; key: string; food: FoodRef }
+  | { type: 'status'; key: string; kind: 'loading' | 'error'; message?: string };
 
 export default function NutritionSearch() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
-  const { meal } = useLocalSearchParams<{ meal: string }>(); // e.g. "Breakfast"
-  const knownFoods = useNutritionStore(s => s.knownFoods);
+  const { t, i18n } = useTranslation();
+  const params = useLocalSearchParams<{ meal?: string }>();
+  const meal: MealType = isMealType(params.meal) ? params.meal : mealForTime();
+  const mealName = t(`meals.${meal}`);
 
+  const history = useFoodHistory();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<FoodProduct[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanned, setScanned] = useState(false);
-  const [locationName, setLocationName] = useState<string | null>(null);
-  const [countryCode, setCountryCode] = useState<string | undefined>(undefined);
+  const [submitted, setSubmitted] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const remote = useFoodSearch(submitted);
+  const remoteError = useApiErrorMessage(remote.error);
+  const primeProduct = usePrimeProduct();
 
-  const [permission, requestPermission] = useCameraPermissions();
+  const today = useToday();
+  const loggedInMeal = useDayEntries(today).filter((e) => e.meal === meal);
+  const loggedKcal = loggedInMeal.reduce((a, e) => a + e.macros.kcal, 0);
 
-  // Get Smart Suggestions (Local history)
-  const suggestions = useMemo(() => {
-    const allHistory = Object.values(knownFoods);
-    // Sort by: 1. Matching meal context, 2. Recently used
-    return allHistory.sort((a, b) => {
-      const aMatch = meal && a.tags.includes(meal) ? 1 : 0;
-      const bMatch = meal && b.tags.includes(meal) ? 1 : 0;
-      if (aMatch !== bMatch) return bMatch - aMatch;
-      return new Date(b.lastUsed).getTime() - new Date(a.lastUsed).getTime();
-    }).slice(0, 10).map(historyToProduct);
-  }, [knownFoods, meal]);
+  // History: this meal's foods first, then most recent. Filtered live while typing — no
+  // network needed, which matters in a gym basement.
+  const localMatches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return Object.values(history)
+      .filter((f) => !q || f.name.toLowerCase().includes(q) || f.brand?.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const am = a.meals.includes(meal) ? 1 : 0;
+        const bm = b.meals.includes(meal) ? 1 : 0;
+        return am !== bm ? bm - am : b.lastUsed.localeCompare(a.lastUsed);
+      })
+      .slice(0, q ? 20 : 12);
+  }, [history, query, meal]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') return;
-
-        let location = await Location.getCurrentPositionAsync({});
-        let reverseGeocoded = await Location.reverseGeocodeAsync({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude
-        });
-
-        if (reverseGeocoded.length > 0) {
-          const address = reverseGeocoded[0];
-          setCountryCode(address.isoCountryCode?.toLowerCase());
-          setLocationName(address.city || address.region || address.country);
-        }
-      } catch (error) {
-        console.log("Error getting location", error);
-      }
-    })();
-  }, []);
-
-  // Initialize results with suggestions when query is empty
-  useEffect(() => {
-    if (!query.trim()) {
-      setResults(suggestions);
+  const rows = useMemo<Row[]>(() => {
+    const out: Row[] = [];
+    if (localMatches.length > 0) {
+      out.push({
+        type: 'header',
+        key: 'h-local',
+        title: query.trim() ? t('food.fromHistory') : t('food.suggestedHistory'),
+        icon: 'history',
+      });
+      localMatches.forEach((f) => out.push({ type: 'food', key: `l-${f.code}`, food: f }));
     }
-  }, [query, suggestions]);
-
-  const handleSearch = async () => {
-    if (!query.trim()) {
-      setResults(suggestions);
-      return;
+    if (submitted.trim().length >= 2 && submitted === query) {
+      const seen = new Set(localMatches.map((f) => f.code));
+      const results = (remote.data ?? []).filter((f) => !seen.has(f.code));
+      out.push({ type: 'header', key: 'h-remote', title: t('food.databaseResults'), icon: 'search' });
+      if (remote.isFetching && results.length === 0)
+        out.push({ type: 'status', key: 's-loading', kind: 'loading' });
+      else if (remote.isError)
+        out.push({ type: 'status', key: 's-error', kind: 'error', message: remoteError ?? undefined });
+      else if (results.length === 0)
+        out.push({ type: 'status', key: 's-empty', kind: 'error', message: t('food.noResultsFound') });
+      results.forEach((f) => out.push({ type: 'food', key: `r-${f.code}`, food: f }));
     }
-    setLoading(true);
-    Keyboard.dismiss();
+    return out;
+  }, [localMatches, submitted, query, remote.data, remote.isFetching, remote.isError, remoteError, t]);
 
-    // 1. Local Search
-    const lowerQuery = query.toLowerCase();
-    const localMatches = Object.values(knownFoods)
-      .filter(item => item.name.toLowerCase().includes(lowerQuery) || (item.brand && item.brand.toLowerCase().includes(lowerQuery)))
-      .map(historyToProduct);
-
-    // 2. API Search
-    const apiMatches = await searchFood(query, countryCode);
-
-    // Merge (Local first, then API, avoiding duplicates by code)
-    const combined = [...localMatches];
-    const seenCodes = new Set(localMatches.map(p => p.code));
-
-    apiMatches.forEach(p => {
-      if (!seenCodes.has(p.code)) {
-        combined.push(p);
-      }
-    });
-
-    setResults(combined);
-    setLoading(false);
-  };
-
-  const handleScanToggle = async () => {
-    try {
-      if (!permission) return;
-      if (!permission.granted) {
-        const result = await requestPermission();
-        if (!result.granted) {
-          Alert.alert(t('food.permissionRequired'), t('food.cameraAccessNeeded'));
-          return;
-        }
-      }
-      setIsScanning(true);
-      setScanned(false);
-    } catch (err) {
-      console.error("Camera permission error:", err);
-      Alert.alert(t('food.error'), t('food.cameraPermissionError'));
-    }
-  };
-
-  const handleBarcodeScanned = async ({ data }: { data: string }) => {
-    if (scanned) return;
-    setScanned(true);
-    setIsScanning(false);
-    setLoading(true);
-
-    // Check local first
-    if (knownFoods[data]) {
-      setResults([historyToProduct(knownFoods[data])]);
-      setLoading(false);
-      return;
-    }
-
-    // API
-    const product = await getFoodByBarcode(data);
-    setLoading(false);
-
-    if (product) {
-      setResults([product]);
-    } else {
-      Alert.alert(t('food.notFound'), t('food.productNotFound'));
-    }
-  };
-
-  const navigateToProduct = (item: FoodProduct) => {
-    // Pass essential data via params
-    router.push({
-      pathname: '/nutrition/product/[code]',
-      params: {
-        code: item.code,
-        meal: meal || 'Snack',
-        initialData: JSON.stringify(item)
-      }
-    });
-  };
-
-  const renderItem = ({ item }: { item: FoodProduct }) => (
-    <TouchableOpacity onPress={() => navigateToProduct(item)} activeOpacity={0.7} className="mb-3">
-      <Card className="bg-zinc-900 border border-zinc-800 pointer-events-none">
-        <View className="flex-row items-center">
-          {item.image_url ? (
-            <Image
-              source={{ uri: item.image_url }}
-              className="w-16 h-16 rounded-lg bg-zinc-800"
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <View className="w-16 h-16 rounded-lg bg-zinc-800 items-center justify-center">
-              <Text className="text-zinc-600 text-xs">{t('food.noImage')}</Text>
-            </View>
-          )}
-          <View className="flex-1 ml-4">
-            <Text className="text-white font-bold text-base" numberOfLines={1}>{item.product_name}</Text>
-            <Text className="text-zinc-400 text-sm">{item.brands}</Text>
-            <View className="flex-row mt-2 gap-3">
-              <Text className="text-zinc-300 text-xs font-medium bg-zinc-800 px-2 py-0.5 rounded mr-1">
-                {Math.round(item.nutriments["energy-kcal_100g"] || 0)} kcal
-              </Text>
-              <Text className="text-blue-400 text-xs font-medium">P: {Math.round(item.nutriments.proteins_100g || 0)}</Text>
-              <Text className="text-yellow-400 text-xs font-medium">C: {Math.round(item.nutriments.carbohydrates_100g || 0)}</Text>
-              <Text className="text-red-400 text-xs font-medium">F: {Math.round(item.nutriments.fat_100g || 0)}</Text>
-            </View>
-          </View>
-          <View className="h-8 w-8 bg-blue-600 rounded-full items-center justify-center">
-            <Text className="text-white font-bold">+</Text>
-          </View>
-        </View>
-      </Card>
-    </TouchableOpacity>
+  const openFood = useCallback(
+    (food: FoodRef) => {
+      primeProduct(food);
+      router.push({ pathname: '/nutrition/product/[code]', params: { code: food.code, meal } });
+    },
+    [primeProduct, router, meal],
   );
+
+  const handleScanned = (code: string) => {
+    setScanning(false);
+    router.push({ pathname: '/nutrition/product/[code]', params: { code, meal } });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <View className="p-4 flex-1">
-        {/* Header */}
-        <View className="flex-row items-center justify-between mb-6">
-          <View className="flex-row items-center">
-            <Button
-              size="icon"
-              variant="secondary"
-              icon={<Icon icon={ChevronLeft} size={24} color="white" />}
-              onPress={() => router.back()}
-              className="mr-4"
-            />
-            <View>
-              <Text className="text-3xl font-bold text-white">{t('food.addFood')}</Text>
-              {meal && <Text className="text-blue-400 font-medium text-sm">{t('food.toMeal', { meal })}</Text>}
-            </View>
+      <View className="flex-1 px-4 pt-2">
+        <View className="mb-4 flex-row items-center">
+          <IconButton
+            icon={ChevronLeft}
+            iconSize={24}
+            accessibilityLabel={t('common.back')}
+            onPress={() => router.back()}
+            className="mr-4"
+          />
+          <View className="flex-1">
+            <Text accessibilityRole="header" className="text-3xl font-bold text-foreground">
+              {t('food.addFood')}
+            </Text>
+            <Text className="text-sm font-medium text-primary-text">
+              {t('food.toMeal', { meal: mealName })}
+            </Text>
           </View>
         </View>
 
-        {locationName && (
-          <View className="flex-row items-center mb-4 pl-1">
-            <MapPin size={14} color="#a1a1aa" />
-            <Text className="text-zinc-400 text-xs ml-1">{t('food.resultsOptimizedFor')} <Text className="text-blue-400">{locationName}</Text></Text>
-          </View>
-        )}
-
-        {/* Search Bar */}
-        <View className="flex-row gap-2 mb-6">
-          <View className="flex-1 flex-row items-center bg-zinc-900 rounded-xl px-4 border border-zinc-800 h-12">
-            <Search size={20} color="#A1A1AA" />
+        <View className="mb-3 flex-row gap-2">
+          <View className="h-12 flex-1 flex-row items-center rounded-xl border border-border bg-surface px-4">
+            <Icon icon={Search} size={20} color={colors.muted} />
             <TextInput
-              className="flex-1 ml-3 text-white h-full"
-              placeholder={meal ? t('food.searchMealFoods', { meal }) : t('food.searchFood')}
-              placeholderTextColor="#52525B"
+              className="ml-3 h-full flex-1 text-base text-foreground"
+              placeholder={t('food.searchMealFoods', { meal: mealName })}
+              placeholderTextColor={colors.placeholder}
               value={query}
               onChangeText={setQuery}
-              onSubmitEditing={handleSearch}
+              onSubmitEditing={() => setSubmitted(query.trim())}
               returnKeyType="search"
-              autoFocus={!isScanning}
+              autoCorrect={false}
+              accessibilityLabel={t('food.searchFood')}
+              accessibilityHint={t('food.searchHint')}
             />
           </View>
-          <Button
-            size="icon"
+          <IconButton
+            icon={ScanBarcode}
             variant="outline"
-            icon={<Icon icon={Scan} size={20} color="white" />}
-            onPress={handleScanToggle}
-            className="w-12 h-12"
+            accessibilityLabel={t('food.scanBarcode')}
+            onPress={() => setScanning(true)}
           />
         </View>
 
-        {/* Results */}
-        {loading ? (
-          <ActivityIndicator color="#3b82f6" size="large" className="mt-10" />
-        ) : (
-          <FlashList
-            data={results}
-            keyExtractor={(item) => item.code}
-            renderItem={renderItem}
-            estimatedItemSize={100}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
-            ListEmptyComponent={
-              <View className="items-center mt-10 opacity-70">
-                {!query.trim() ? (
-                  <>
-                    <Sparkles size={48} color="#3b82f6" style={{ marginBottom: 16, opacity: 0.5 }} />
-                    <Text className="text-zinc-500 font-medium text-lg">{t('food.suggestions')}</Text>
-                    <Text className="text-zinc-600 text-center mt-2 px-10">
-                      {t('food.suggestionsMessage', { meal: meal || 'your meals' })}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Search size={48} color="#71717a" style={{ marginBottom: 16 }} />
-                    <Text className="text-zinc-500">{t('food.noResultsFound')}</Text>
-                  </>
-                )}
-              </View>
-            }
-            ListHeaderComponent={
-              !query.trim() && results.length > 0 ? (
-                <View className="flex-row items-center mb-3 ml-1">
-                  <History size={14} color="#a1a1aa" />
-                  <Text className="text-zinc-400 text-xs ml-2 font-medium uppercase tracking-wider">{t('food.suggestedHistory')}</Text>
-                </View>
-              ) : null
-            }
-          />
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          label={t('food.quickAddCta')}
+          icon={<Icon icon={PenLine} size={16} color={colors['primary-text']} />}
+          textClassName="text-primary-text"
+          className="mb-2 self-start"
+          onPress={() =>
+            router.push({ pathname: '/nutrition/quick-add', params: { meal, name: query.trim() } })
+          }
+        />
 
-        {/* Camera Modal Overlay */}
-        <Modal visible={isScanning} animationType="slide" presentationStyle="fullScreen">
-          <View className="flex-1 bg-black">
-            <CameraView
-              style={{ flex: 1 }}
-              onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
-              barcodeScannerSettings={{
-                barcodeTypes: ["qr", "ean13", "ean8", "upc_e", "upc_a"],
-              }}
-            >
-              <View className="flex-1" style={{ paddingTop: insets.top + 8 }}>
-                <View className="flex-row justify-end px-4">
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    icon={<Icon icon={X} size={28} color="white" />}
-                    onPress={() => setIsScanning(false)}
-                    className="bg-black/70 h-12 w-12"
-                    hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                  />
+        <FlashList
+          data={rows}
+          keyExtractor={(r) => r.key}
+          getItemType={(r) => r.type}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}
+          renderItem={({ item }) => {
+            if (item.type === 'header') {
+              return (
+                <View className="mb-3 ml-1 mt-2 flex-row items-center">
+                  <Icon icon={item.icon === 'history' ? History : Search} size={14} color={colors.muted} />
+                  <Text
+                    accessibilityRole="header"
+                    className="ml-2 text-xs font-medium uppercase tracking-wider text-muted"
+                  >
+                    {item.title}
+                  </Text>
                 </View>
-                <View className="flex-1 justify-center items-center">
-                  <View className="w-64 h-64 border-2 border-white/50 rounded-xl bg-transparent" />
-                  <Text className="text-white mt-4 font-bold bg-black/50 px-3 py-1 rounded">{t('food.scanBarcode')}</Text>
+              );
+            }
+            if (item.type === 'status') {
+              return item.kind === 'loading' ? (
+                <View className="items-center py-8">
+                  <ActivityIndicator color={colors.accent} />
                 </View>
-              </View>
-            </CameraView>
-          </View>
-        </Modal>
+              ) : (
+                <View
+                  className="mb-3 flex-row items-center rounded-2xl border border-border bg-surface p-4"
+                  accessibilityLiveRegion="polite"
+                >
+                  <Icon icon={WifiOff} size={18} color={colors.subtle} />
+                  <Text className="ml-3 flex-1 text-subtle">{item.message}</Text>
+                  {remote.isError && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      label={t('common.tryAgain')}
+                      onPress={() => void remote.refetch()}
+                    />
+                  )}
+                </View>
+              );
+            }
+            return <FoodRow food={item.food} onPress={openFood} />;
+          }}
+          ListEmptyComponent={
+            <EmptyState
+              icon={query.trim() ? Search : History}
+              title={query.trim() ? t('food.pressSearch') : t('food.suggestions')}
+              message={
+                query.trim() ? t('food.pressSearchMessage') : t('food.suggestionsMessage', { meal: mealName })
+              }
+            />
+          }
+        />
       </View>
+
+      {loggedInMeal.length > 0 && (
+        <View
+          className="absolute bottom-0 left-0 right-0 flex-row items-center justify-between border-t border-border bg-surface px-4 pt-3"
+          style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+          accessibilityLiveRegion="polite"
+        >
+          <Text className="flex-1 text-sm text-muted">
+            {t('food.mealSoFar', {
+              meal: mealName,
+              count: loggedInMeal.length,
+              kcal: formatNumber(loggedKcal, i18n.language, 0),
+            })}
+          </Text>
+          <Button label={t('common.done')} variant="white" size="sm" onPress={() => router.back()} />
+        </View>
+      )}
+
+      <BarcodeScanner visible={scanning} onClose={() => setScanning(false)} onScanned={handleScanned} />
     </SafeAreaView>
   );
 }

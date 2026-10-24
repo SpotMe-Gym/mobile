@@ -1,70 +1,73 @@
-import React, { useCallback } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { memo, useCallback } from 'react';
+import { View, Text, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Plus, Trash2 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
+import { IconButton } from '../ui/IconButton';
 import { Icon } from '../ui/Icon';
-import { Meal, useNutritionStore } from '../../store/nutritionStore';
-import { Plus, Trash2 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
+import { MEAL_TYPES, useNutritionStore, type LogEntry, type MealType } from '../../store/nutritionStore';
+import { colors } from '../../theme/colors';
+import { formatNumber } from '../../utils/number';
+import type { DayKey } from '../../utils/date';
 
 interface MealListProps {
-  meals: Meal[];
-  date: string;
+  entries: LogEntry[];
+  day: DayKey;
 }
 
-export const MealList = React.memo(function MealList({ meals, date }: MealListProps) {
-  const removeFood = useNutritionStore(s => s.removeFood);
-  const router = useRouter();
+export const MealList = memo(function MealList({ entries, day }: MealListProps) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const removeEntry = useNutritionStore((s) => s.removeEntry);
+
+  const openSearch = useCallback(
+    (meal: MealType) => router.push({ pathname: '/nutrition/search', params: { meal } }),
+    [router],
+  );
 
   return (
     <View className="pb-10">
-      {meals.map((meal) => {
-        const mealCalories = meal.foods.reduce((acc, f) => acc + f.calories, 0);
-
+      {MEAL_TYPES.map((meal) => {
+        const items = entries.filter((e) => e.meal === meal);
+        const mealKcal = items.reduce((acc, e) => acc + e.macros.kcal, 0);
+        const mealName = t(`meals.${meal}`);
         return (
-          <View key={meal.name} className="mb-6">
-            <View className="flex-row justify-between items-center mb-2 px-1">
-              <Text className="text-white text-lg font-bold">{meal.name}</Text>
-              <Text className="text-zinc-400 text-sm">{mealCalories} kcal</Text>
+          <View key={meal} className="mb-6">
+            <View className="mb-2 flex-row items-center justify-between px-1">
+              <Text accessibilityRole="header" className="text-lg font-bold text-foreground">
+                {mealName}
+              </Text>
+              <Text className="text-sm text-muted">
+                {t('common.kcalValue', { value: Math.round(mealKcal) })}
+              </Text>
             </View>
 
-            {meal.foods.length === 0 ? (
-              <Card className="bg-zinc-900 border border-zinc-800 py-6 items-center border-dashed">
-                <Text className="text-zinc-600 mb-2">{t('food.noFoodLoggedYet')}</Text>
+            {items.length === 0 ? (
+              <Card className="items-center border border-dashed border-border py-6">
+                <Text className="mb-2 text-subtle">{t('food.noFoodLoggedYet')}</Text>
                 <Button
                   variant="ghost"
                   size="sm"
-                  icon={<Icon icon={Plus} size={16} color="#3b82f6" />}
-                  label={t('food.addFood')}
-                  onPress={() => router.push({ pathname: '/nutrition/search', params: { meal: meal.name } })}
-                  className="text-blue-500"
+                  icon={<Icon icon={Plus} size={16} color={colors['primary-text']} />}
+                  label={t('food.addItemTo', { meal: mealName })}
+                  textClassName="text-primary-text"
+                  onPress={() => openSearch(meal)}
                 />
               </Card>
             ) : (
               <View className="gap-2">
-                {meal.foods.map((food) => (
-                  <Card key={food.id} className="bg-zinc-900 border border-zinc-800 flex-row justify-between items-center py-3">
-                    <View>
-                      <Text className="text-white font-medium">{food.name}</Text>
-                      <Text className="text-zinc-500 text-xs">{food.calories} kcal • {food.protein}p • {food.carbs}c • {food.fat}f</Text>
-                    </View>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      icon={<Icon icon={Trash2} size={16} color="#ef4444" />}
-                      onPress={() => removeFood(date, meal.name, food.id)}
-                    />
-                  </Card>
+                {items.map((entry) => (
+                  <MealEntryRow key={entry.id} entry={entry} onDelete={() => removeEntry(day, entry.id)} />
                 ))}
                 <Button
                   variant="outline"
                   size="sm"
-                  icon={<Icon icon={Plus} size={16} color="#3b82f6" />}
-                  label={t('food.addItemTo', { meal: meal.name })}
-                  onPress={() => router.push({ pathname: '/nutrition/search', params: { meal: meal.name } })}
-                  className="mt-2 bg-zinc-800/50 border-dashed"
+                  icon={<Icon icon={Plus} size={16} color={colors['primary-text']} />}
+                  label={t('food.addItemTo', { meal: mealName })}
+                  onPress={() => openSearch(meal)}
+                  className="mt-2 border-dashed bg-surface-elevated/50"
                 />
               </View>
             )}
@@ -72,5 +75,58 @@ export const MealList = React.memo(function MealList({ meals, date }: MealListPr
         );
       })}
     </View>
+  );
+});
+
+const MealEntryRow = memo(function MealEntryRow({
+  entry,
+  onDelete,
+}: {
+  entry: LogEntry;
+  onDelete: () => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const f = (n: number) => formatNumber(n, i18n.language, 0);
+  const portion =
+    entry.unit === 'portion'
+      ? null
+      : entry.unit === 'serving'
+        ? t('food.servingsCount', { count: entry.quantity })
+        : `${formatNumber(entry.quantity, i18n.language, 1)} ${t(`food.units.${entry.unit}`)}`;
+
+  const confirmDelete = () =>
+    Alert.alert(t('food.deleteEntryTitle'), t('food.deleteEntryMessage', { name: entry.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: onDelete },
+    ]);
+
+  return (
+    <Card className="flex-row items-center justify-between border border-border py-3">
+      <View className="flex-1 pr-2">
+        <Text className="font-medium text-foreground" numberOfLines={1}>
+          {entry.name}
+        </Text>
+        <Text className="text-xs text-subtle">
+          {[
+            portion,
+            t('common.kcalValue', { value: f(entry.macros.kcal) }),
+            t('food.macroLine', {
+              protein: f(entry.macros.protein),
+              carbs: f(entry.macros.carbs),
+              fat: f(entry.macros.fat),
+            }),
+          ]
+            .filter(Boolean)
+            .join(' • ')}
+        </Text>
+      </View>
+      <IconButton
+        icon={Trash2}
+        variant="danger"
+        iconSize={18}
+        accessibilityLabel={t('food.deleteEntryA11y', { name: entry.name })}
+        onPress={confirmDelete}
+      />
+    </Card>
   );
 });

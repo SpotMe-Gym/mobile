@@ -1,26 +1,36 @@
-import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '../../components/ui/Button';
-import { Play, Sparkles, Calendar, Plus, ArrowRightLeft, Armchair, Clock } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
+import {
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { ScreenHeader } from '../../components/ScreenHeader';
-import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../../components/ExpandableCardLayout';
-import { TodaysPlanCardContent } from '../../components/workouts/TodaysPlanCardContent';
-import { useTodaysWorkouts } from '../../hooks/useTodaysWorkouts';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Armchair, ArrowRightLeft, Calendar, Play, Plus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { Workout, Exercise } from '../../store/workoutStore';
-import { useState, useRef } from 'react';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { AiButton } from '@/components/AiButton';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
 import { Icon } from '@/components/ui/Icon';
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '@/components/ExpandableCardLayout';
+import { TodaysPlanCardContent } from '@/components/workouts/TodaysPlanCardContent';
+import { useTodaysWorkouts } from '@/hooks/useTodaysWorkouts';
+import { weekdayLabel } from '@/utils/date';
+import { colors } from '@/theme/colors';
+import type { Exercise } from '@/store/workoutStore';
 
-// Preview content — renders the same component as the home grid card so the two can
-// never drift apart. Page width is derived from the known card dimensions rather than
-// measured, since a measure-then-setState pass would re-render mid-animation.
+// Preview renders the same component as the home grid card so the two can never drift. Page
+// width comes from the known card size — a measure-then-setState pass would re-render mid-animation.
 function WorkoutCardPreview() {
   const { cardDimensions, widgetSize } = useExpandableCardContext();
   const { workouts, isHydrated } = useTodaysWorkouts();
   const { cardWidth, cardHeight } = cardDimensions;
-
   return (
     <View style={{ width: cardWidth, height: cardHeight }}>
       <TodaysPlanCardContent
@@ -34,226 +44,184 @@ function WorkoutCardPreview() {
   );
 }
 
-// Detail content
+function ExerciseRow({ ex, index }: { ex: Exercise; index: number }) {
+  const { t } = useTranslation();
+  const formatDuration = (seconds: number) =>
+    t('workouts.durationShort', { m: Math.floor(seconds / 60), s: seconds % 60 });
+  if (ex.type === 'rest') {
+    return (
+      <View className="mb-3 flex-row items-center rounded-xl border border-warning/30 bg-warning/10 p-3">
+        <View className="mr-4 h-8 w-8 items-center justify-center rounded-full bg-warning/20">
+          <Icon icon={Armchair} size={14} color={colors.warning} />
+        </View>
+        <View>
+          <Text className="text-sm font-bold text-foreground">{t('workouts.restPeriod')}</Text>
+          <Text className="text-xs text-subtle">{formatDuration(ex.restTime)}</Text>
+        </View>
+      </View>
+    );
+  }
+  const phases = [
+    ex.executionTime
+      ? `${ex.executionName || t('workouts.executionShort')}: ${formatDuration(ex.executionTime)}`
+      : null,
+    ex.executionTime2
+      ? `${ex.executionName2 || t('workouts.altShort')}: ${formatDuration(ex.executionTime2)}`
+      : null,
+    ex.restTime ? `${t('workouts.restShort')}: ${formatDuration(ex.restTime)}` : null,
+  ].filter(Boolean);
+  return (
+    <View className="mb-3 flex-row items-center rounded-xl border border-border bg-surface p-4">
+      <View className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-surface-elevated">
+        <Text className="font-bold text-subtle">{index + 1}</Text>
+      </View>
+      <View className="flex-1">
+        <Text className="font-bold text-foreground">{ex.name}</Text>
+        <Text className="mt-1 text-xs text-subtle">
+          {t('workouts.setsReps', { sets: ex.sets, reps: ex.reps })}
+        </Text>
+        {phases.length > 0 && <Text className="mt-1 text-xs text-primary-text">{phases.join(' • ')}</Text>}
+      </View>
+    </View>
+  );
+}
+
 function WorkoutDetailContent() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const { handleClose } = useExpandableCardContext();
-  const { workouts, day: today, isHydrated } = useTodaysWorkouts();
-
-  // Carousel state
+  const { workouts, weekday, isHydrated } = useTodaysWorkouts();
   const [activeIndex, setActiveIndex] = useState(0);
-  const width = windowWidth - 32; // Screen width minus padding
-  const exerciseListRef = useRef<FlashList<Workout>>(null);
+  const pageWidth = windowWidth - 32;
+  const dayName = weekdayLabel(weekday, i18n.language, 'long');
+  const active = workouts[Math.min(activeIndex, workouts.length - 1)];
 
-  // Sync scroll handler
-  const handleScroll = (event: { nativeEvent: { contentOffset: { x: number } } }) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    // Sync bottom list
-    exerciseListRef.current?.scrollToOffset({ offset: offsetX, animated: false });
-
-    // Update active index immediately during scroll for snappy dots
-    const currentIndex = Math.round(offsetX / width);
-    setActiveIndex(currentIndex);
-  };
+  // Index updates once per page settle — not on every scroll frame, which re-rendered the
+  // whole screen at 60 Hz before.
+  const onPageSettled = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) =>
+      setActiveIndex(Math.round(e.nativeEvent.contentOffset.x / pageWidth)),
+    [pageWidth],
+  );
 
   return (
     <View className="flex-1">
-      {/* Drag handle */}
-      <View className="items-center pt-2 pb-1">
-        <View className="w-10 h-1 bg-zinc-600 rounded-full" />
+      <View className="items-center pb-1 pt-2">
+        <View className="h-1 w-10 rounded-full bg-border-strong" />
       </View>
-
       <View className="px-4">
         <ScreenHeader
           title={t('dashboard.todaysPlan')}
+          subtitle={dayName}
           onBack={handleClose}
-          rightAction={
-            <Button
-              size="icon"
-              variant="ai"
-              icon={<Icon icon={Sparkles} size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />}
-              onPress={() => router.push('/chat')}
-            />
-          }
+          rightAction={<AiButton />}
         />
       </View>
 
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-      >
-        {!isHydrated ? null : workouts.length > 0 ? (
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+        {!isHydrated ? null : active ? (
           <>
-            {/* Horizontal Carousel for Workout Cards */}
-            <View className="mt-2" style={{ height: 230 }}>
-              <FlashList
-                data={workouts}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.id}
-                onScroll={handleScroll}
-                estimatedItemSize={width}
-                onMomentumScrollEnd={(event) => {
-                  const index = Math.round(event.nativeEvent.contentOffset.x / width);
-                  setActiveIndex(index);
-                }}
-                renderItem={({ item: workout, index }) => (
-                  <View style={{ width: width }} className="px-1">
-                    <View className="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl relative overflow-hidden h-[220px] justify-between">
-                      {/* Background decoration */}
-                      <View className="absolute right-[-20] bottom-[-20] opacity-5">
-                        <Icon icon={Play} size={120} color="white" />
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={onPageSettled}
+              contentContainerStyle={{ paddingHorizontal: 16 }}
+              accessibilityRole="adjustable"
+            >
+              {workouts.map((workout, index) => (
+                <View key={workout.id} style={{ width: pageWidth }} className="px-1">
+                  <View className="h-56 justify-between overflow-hidden rounded-3xl border border-border bg-surface p-6">
+                    <View className="absolute -bottom-5 -right-5 opacity-5">
+                      <Icon icon={Play} size={120} />
+                    </View>
+                    <View>
+                      <View className="flex-row items-start justify-between">
+                        <Text className="mb-1 text-xs font-bold uppercase tracking-wider text-primary-text">
+                          {t('workouts.workoutOfDay', { number: index + 1, day: dayName })}
+                        </Text>
+                        <IconButton
+                          icon={ArrowRightLeft}
+                          variant="ghost"
+                          iconSize={20}
+                          iconColor={colors.highlight}
+                          accessibilityLabel={t('workouts.changeWorkouts')}
+                          onPress={() => router.push('/workouts')}
+                          className="-mr-2 -mt-2"
+                        />
                       </View>
-
-                      <View>
-                        <View className="flex-row justify-between items-start">
-                          <Text className="text-blue-500 font-bold mb-1 tracking-wider text-xs">WORKOUT {index + 1} • {today.toUpperCase()}</Text>
-                          <TouchableOpacity
-                            onPress={() => router.push('/workouts')}
-                            className="h-10 w-10 bg-orange-500 rounded-xl items-center justify-center -mt-2 -mr-2"
-                            activeOpacity={0.8}
-                            hitSlop={10}
-                          >
-                            <Icon icon={ArrowRightLeft} size={20} color='white' strokeWidth={2.5} />
-                          </TouchableOpacity>
-                        </View>
-
-                        <Text className="text-3xl font-black text-white mb-2" numberOfLines={1} adjustsFontSizeToFit>{workout.name}</Text>
-
-                        <View className="flex-row gap-4 mb-4">
-                          <View className="bg-zinc-800 px-3 py-1 rounded-md"><Text className="text-zinc-300 font-medium text-xs">{workout.duration} Min</Text></View>
-                          {/* Difficulty removed */}
-                        </View>
+                      <Text className="mb-2 text-3xl font-black text-foreground" numberOfLines={2}>
+                        {workout.name}
+                      </Text>
+                      <View className="self-start rounded-md bg-surface-elevated px-3 py-1">
+                        <Text className="text-xs font-medium text-muted">
+                          {t('workouts.durationMinutes', { duration: workout.duration })}
+                        </Text>
                       </View>
-
-                      <Button
-                        label={t('workouts.startWorkout')}
-                        variant="secondary"
-                        className="w-full bg-blue-600"
-                        onPress={() => console.log('Start Workout', workout.id)}
-                      />
+                    </View>
+                    <View className="flex-row items-center gap-3">
+                      {/* Live tracking isn't built yet: the control is shown, but honestly disabled. */}
+                      <Button label={t('workouts.startWorkout')} disabled className="flex-1" />
+                      <Badge label={t('common.comingSoon')} />
                     </View>
                   </View>
-                )}
-                contentContainerStyle={{ paddingHorizontal: 12 }}
-                snapToInterval={width}
-                decelerationRate="fast"
-              />
-
-              {/* Pagination Dots */}
-              {workouts.length > 1 && (
-                <View className="flex-row justify-center mt-4 gap-2">
-                  {workouts.map((_, i) => (
-                    <View
-                      key={i}
-                      className={`h-2 rounded-full ${i === activeIndex ? 'w-6 bg-blue-600' : 'w-2 bg-zinc-700'}`}
-                    />
-                  ))}
                 </View>
-              )}
-            </View>
+              ))}
+            </ScrollView>
 
-            {/* Exercises List - SYNCHRONIZED SCROLL */}
-            <View className="mt-6">
-              {/* Header for the list */}
-              <View className="flex-row justify-between items-center mb-4 px-4">
-                <Text className="text-white text-lg font-bold">
-                  {t('workouts.exercises')} ({workouts[activeIndex]?.exercises.filter((ex: Exercise) => ex.type !== 'rest').length || 0})
+            {workouts.length > 1 && (
+              <View
+                className="mt-4 flex-row justify-center gap-2"
+                accessibilityLabel={t('workouts.pageOf', { page: activeIndex + 1, total: workouts.length })}
+              >
+                {workouts.map((w, i) => (
+                  <View
+                    key={w.id}
+                    className={`h-2 rounded-full ${i === activeIndex ? 'w-6 bg-primary' : 'w-2 bg-border-strong'}`}
+                  />
+                ))}
+              </View>
+            )}
+
+            <View className="mt-6 px-4">
+              <View className="mb-4 flex-row items-center justify-between">
+                <Text accessibilityRole="header" className="text-lg font-bold text-foreground">
+                  {t('workouts.exercisesCount', {
+                    count: active.exercises.filter((e) => e.type !== 'rest').length,
+                  })}
                 </Text>
-                <Text className="text-zinc-500 text-xs font-medium">
-                  {t('workouts.showing')}: {workouts[activeIndex]?.name}
+                <Text className="flex-shrink text-xs font-medium text-subtle" numberOfLines={1}>
+                  {active.name}
                 </Text>
               </View>
-
-              <FlashList
-                ref={exerciseListRef}
-                data={workouts}
-                horizontal
-                scrollEnabled={false}
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.id}
-                estimatedItemSize={width}
-                renderItem={({ item: workout }) => (
-                  <View style={{ width: width }} className="px-1">
-                    <View className="gap-3">
-                      {workout.exercises.map((ex: Exercise, i: number) => {
-                        if (ex.type === 'rest') {
-                          return (
-                            <View key={ex.id || i} className="bg-amber-950/20 p-3 rounded-xl border border-amber-900/30 flex-row justify-between items-center mb-3">
-                              <View className="flex-row items-center gap-4">
-                                <View className="h-8 w-8 bg-amber-900/20 rounded-full items-center justify-center">
-                                  <Icon icon={Armchair} size={14} color="#d97706" />
-                                </View>
-                                <View>
-                                  <Text className="text-zinc-300 font-bold text-sm">{t('workouts.restPeriod')}</Text>
-                                  <Text className="text-zinc-500 text-xs">{Math.floor(ex.restTime / 60)}m {ex.restTime % 60}s</Text>
-                                </View>
-                              </View>
-                            </View>
-                          );
-                        }
-
-                        return (
-                          <View key={ex.id || i} className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex-row justify-between items-center mb-3">
-                            <View className="flex-row items-center gap-4">
-                              <View className="h-10 w-10 bg-zinc-800 rounded-full items-center justify-center">
-                                <Text className="text-zinc-500 font-bold">{i + 1}</Text>
-                              </View>
-                              <View>
-                                <Text className="text-white font-bold">{ex.name}</Text>
-                                <View className="flex-row gap-2 mt-1 flex-wrap">
-                                  <Text className="text-zinc-500 text-xs">{ex.sets} Sets • {ex.reps} Reps</Text>
-                                  {(ex.executionTime || ex.executionTime2) && (
-                                    <Text className="text-zinc-500 text-xs text-blue-400">
-                                      {ex.executionTime ? `${ex.executionName || 'Exec'}: ${ex.executionTime}s` : ''}
-                                      {ex.executionTime2 ? ` + ${ex.executionName2 || 'Alt'}: ${ex.executionTime2}s` : ''}
-                                      {(ex.executionTime || ex.executionTime2) && ex.restTime ? ' • ' : ''}
-                                      {ex.restTime ? `Rest: ${ex.restTime}s` : ''}
-                                    </Text>
-                                  )}
-                                </View>
-                              </View>
-                            </View>
-                          </View>
-                        );
-                      })}
-                    </View>
-                  </View>
-                )}
-                contentContainerStyle={{ paddingHorizontal: 12 }}
-                snapToInterval={width}
-                decelerationRate="fast"
-              />
-
-              {/* Add another workout button aligned with the end of list */}
+              {active.exercises.map((ex, i) => (
+                <ExerciseRow key={ex.id} ex={ex} index={i} />
+              ))}
               <Button
                 variant="outline"
-                icon={<Icon icon={Plus} size={20} color="#71717a" />}
+                icon={<Icon icon={Plus} size={20} color={colors.subtle} />}
                 label={t('workouts.addAnotherWorkout')}
                 onPress={() => router.push('/workouts')}
-                className="mt-8 mx-4 border-2 border-dashed border-zinc-700 rounded-2xl p-4"
+                className="mt-6 rounded-2xl border-2 border-dashed p-4"
               />
             </View>
           </>
         ) : (
-          <View className="items-center py-20 px-4">
-            <View className="h-20 w-20 bg-zinc-900 rounded-full items-center justify-center mb-6 border border-zinc-800">
-              <Calendar size={40} color="#52525b" />
-            </View>
-            <Text className="text-white text-2xl font-bold text-center">{t('workouts.restDay')}</Text>
-            <Text className="text-zinc-500 text-center mt-2 px-10">{t('workouts.restDayMessage', { day: today })}</Text>
-
-            <Button
-              label={t('workouts.selectWorkout')}
-              variant="white"
-              className="mt-8 px-8"
-              onPress={() => router.push('/workouts')}
-            />
-          </View>
+          <EmptyState
+            icon={Calendar}
+            title={t('workouts.restDay')}
+            message={t('workouts.restDayMessage', { day: dayName })}
+            action={
+              <Button
+                label={t('workouts.selectWorkout')}
+                variant="white"
+                className="px-8"
+                onPress={() => router.push('/workouts')}
+              />
+            }
+          />
         )}
       </ScrollView>
     </View>
@@ -262,10 +230,7 @@ function WorkoutDetailContent() {
 
 export default function WorkoutDetail() {
   return (
-    <ExpandableCardLayoutWithContext
-      previewContent={<WorkoutCardPreview />}
-      backgroundColor="#18181b"
-    >
+    <ExpandableCardLayoutWithContext previewContent={<WorkoutCardPreview />}>
       <WorkoutDetailContent />
     </ExpandableCardLayoutWithContext>
   );

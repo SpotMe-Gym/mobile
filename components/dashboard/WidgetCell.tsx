@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet, type LayoutChangeEvent, type AccessibilityActionEvent } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -18,11 +18,12 @@ import { Minus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useExpandableNavigation } from '../../hooks/useExpandableNavigation';
 import { WIDGET_REGISTRY } from './catalog';
-import { snapSize, getWidgetDimensions, getColumnWidth, getFullWidth, ACTION_HEIGHT, GRID_GAP } from './widgetSizes';
+import { snapSize, getWidgetDimensions, getColumnWidth, getFullWidth, nextSize, ACTION_HEIGHT, GRID_GAP } from './widgetSizes';
 import type { WidgetSize } from './widgetSizes';
 import type { WidgetId } from '../../store/dashboardStore';
 import { Icon } from '../ui/Icon';
 import { lightImpact } from '../../lib/haptics';
+import { colors } from '../../theme/colors';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -30,6 +31,8 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const RESIZE_EDGE = 48;
 const RESIZE_CORNER = 56;
 const EDIT_BORDER = 3;
+/** Standard press/drag spring (animations rule). */
+const SPRING = { damping: 15, stiffness: 400 } as const;
 
 interface WidgetCellProps {
   id: WidgetId;
@@ -47,6 +50,10 @@ interface WidgetCellProps {
   onDragCancel: () => void;
   onDrop: (fromId: WidgetId, translationX: number, translationY: number) => boolean;
   onRegisterFrame: (id: WidgetId, frame: { x: number; y: number; width: number; height: number }) => void;
+  /** Non-gesture reorder for assistive tech (WCAG 2.5.7 dragging alternative). */
+  onMove: (id: WidgetId, direction: -1 | 1) => void;
+  isFirst: boolean;
+  isLast: boolean;
 }
 
 export function WidgetCell({
@@ -65,6 +72,9 @@ export function WidgetCell({
   onDragCancel,
   onDrop,
   onRegisterFrame,
+  onMove,
+  isFirst,
+  isLast,
 }: WidgetCellProps) {
   const { t } = useTranslation();
   const def = WIDGET_REGISTRY[id];
@@ -122,7 +132,7 @@ export function WidgetCell({
         { translateY: translateY.value },
         { rotate: `${jiggling ? rotate.value : 0}deg` },
         { scale: pressScale },
-      ],
+      ] as const,
     };
   });
 
@@ -132,8 +142,6 @@ export function WidgetCell({
     zIndex: isDragging.value || isResizing.value ? 30 : 0,
     elevation: isDragging.value || isResizing.value ? 24 : 0,
   }));
-
-  const SPRING = { damping: 15, stiffness: 400 } as const;
 
   const handleDragStartJS = useCallback(() => {
     onDragStart(id);
@@ -251,18 +259,43 @@ export function WidgetCell({
     .onUpdate((e) => applyResize(0, e.translationY))
     .onEnd(endResize);
 
-  const handleLayout = useCallback(() => {
+  // Grid-local layout, not measureInWindow: a transform never changes it, and it
+  // stays valid no matter where the page is scrolled.
+  const handleLayout = useCallback((e: LayoutChangeEvent) => {
+    const slot = e.nativeEvent.layout;
     nav.onLayout({ nativeEvent: { layout: { width, height } } });
-    nav.cardRef.current?.measureInWindow((x, y, w, h) => {
-      if (isDragging.value) return;
-      onRegisterFrame(id, { x, y, width: w, height: h });
-    });
+    onRegisterFrame(id, { x: slot.x, y: slot.y, width: slot.width, height: slot.height });
   }, [nav, width, height, id, onRegisterFrame]);
 
   const openDetail = useCallback(() => {
     if (isEditing || !def?.detailPath) return;
-    nav.navigateToDetail(def.detailPath as string, { widgetSize: size });
+    nav.navigateToDetail(def.detailPath, { widgetSize: size });
   }, [isEditing, def?.detailPath, nav, size]);
+
+  const canResize = def ? def.sizes.length > 1 : false;
+  const editActions = [
+    ...(!isFirst ? [{ name: 'moveUp', label: t('dashboard.a11yMoveEarlier') }] : []),
+    ...(!isLast ? [{ name: 'moveDown', label: t('dashboard.a11yMoveLater') }] : []),
+    ...(canResize ? [{ name: 'resize', label: t('dashboard.editResize') }] : []),
+    { name: 'remove', label: t('dashboard.editRemove') },
+  ];
+  const handleEditAction = (e: AccessibilityActionEvent) => {
+    if (!def) return;
+    switch (e.nativeEvent.actionName) {
+      case 'moveUp':
+        onMove(id, -1);
+        break;
+      case 'moveDown':
+        onMove(id, 1);
+        break;
+      case 'resize':
+        onSetSize(id, nextSize(size, def.sizes));
+        break;
+      case 'remove':
+        onRemove(id);
+        break;
+    }
+  };
 
   if (!def) return null;
 
@@ -285,7 +318,7 @@ export function WidgetCell({
       <View
         pointerEvents="none"
         className="absolute inset-0 rounded-2xl"
-        style={{ borderWidth: EDIT_BORDER, borderColor: '#a1a1aa' }}
+        style={{ borderWidth: EDIT_BORDER, borderColor: colors.muted }}
       />
       <Pressable
         onPress={() => onRemove(id)}
@@ -294,8 +327,8 @@ export function WidgetCell({
         hitSlop={8}
         className="absolute -top-2 -left-2 h-12 w-12 items-center justify-center z-20"
       >
-        <View className="h-7 w-7 rounded-full bg-zinc-200 items-center justify-center">
-          <Icon icon={Minus} size={16} color="#18181b" strokeWidth={3} />
+        <View className="h-7 w-7 rounded-full bg-muted items-center justify-center">
+          <Icon icon={Minus} size={16} color={colors.surface} strokeWidth={3} />
         </View>
       </Pressable>
 
@@ -342,7 +375,7 @@ export function WidgetCell({
           className="absolute items-center justify-center"
           style={{ right: 0, bottom: 0, width: RESIZE_CORNER, height: isAction ? ACTION_HEIGHT : RESIZE_CORNER }}
         >
-          <View className="absolute right-2 bottom-2 h-4 w-4 border-r-[3px] border-b-[3px] border-zinc-300 rounded-br-sm" />
+          <View className="absolute right-2 bottom-2 h-4 w-4 border-r-2 border-b-2 border-muted rounded-br-sm" />
         </View>
       </GestureDetector>
     </View>
@@ -354,6 +387,11 @@ export function WidgetCell({
         collapsable={false}
         ref={nav.cardRef}
         onLayout={handleLayout}
+        accessible
+        accessibilityLabel={`${t(def.titleKey)}, ${t(`dashboard.size.${size}`)}`}
+        accessibilityHint={t('dashboard.a11yEditHint')}
+        accessibilityActions={editActions}
+        onAccessibilityAction={handleEditAction}
         layout={layoutLocked ? undefined : LinearTransition}
         style={[{ borderRadius: 16, overflow: 'visible' }, slotStyle]}
       >
@@ -395,6 +433,10 @@ export function WidgetCell({
       delayLongPress={400}
       accessibilityRole="button"
       accessibilityLabel={t(def.titleKey)}
+      accessibilityActions={[{ name: 'longpress', label: t('dashboard.editLayout') }]}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === 'longpress') onEnterEdit();
+      }}
       style={[{ overflow: 'hidden', borderRadius: 16, width, height }, animatedStyle]}
     >
       <View style={{ flex: 1 }} pointerEvents="none">

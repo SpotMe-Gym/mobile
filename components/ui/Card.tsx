@@ -1,21 +1,30 @@
-import { View, ViewProps, Text } from 'react-native';
-import { cn } from '../../lib/utils';
+import type { ReactNode } from 'react';
+import { View, Text, type ViewProps } from 'react-native';
+import { cn } from '@/lib/utils';
 
 interface CardProps extends ViewProps {
   className?: string;
   title?: string;
   subtitle?: string;
-  headerRight?: React.ReactNode;
+  headerRight?: ReactNode;
 }
 
 export function Card({ className, children, title, subtitle, headerRight, ...props }: CardProps) {
   return (
-    <View className={`bg-card rounded-2xl p-4 ${className || ''}`} {...props}>
+    <View className={cn('rounded-2xl bg-surface p-4', className)} {...props}>
       {(title || subtitle || headerRight) && (
-        <View className="flex-row justify-between items-start mb-2">
-          <View>
-            {title && <Text className="text-white text-lg font-bold">{title}</Text>}
-            {subtitle && <Text className="text-textSecondary text-sm">{subtitle}</Text>}
+        <View className="mb-2 flex-row items-start justify-between">
+          <View className="flex-1">
+            {title && (
+              <Text
+                accessibilityRole="header"
+                className="text-lg font-bold text-foreground"
+                numberOfLines={1}
+              >
+                {title}
+              </Text>
+            )}
+            {subtitle && <Text className="text-sm text-muted">{subtitle}</Text>}
           </View>
           {headerRight}
         </View>

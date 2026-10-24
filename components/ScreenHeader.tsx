@@ -1,48 +1,51 @@
-import { View, Text } from 'react-native';
+import type { ReactNode } from 'react';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { Icon } from './ui/Icon';
-import { Button } from './ui/Button';
+import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
+import { IconButton } from './ui/IconButton';
 
 interface ScreenHeaderProps {
   title: string;
+  subtitle?: string;
   onBack?: () => void;
-  rightAction?: React.ReactNode;
+  rightAction?: ReactNode;
   className?: string;
   showBackButton?: boolean;
 }
 
-export function ScreenHeader({ title, onBack, rightAction, className, showBackButton = true }: ScreenHeaderProps) {
+export function ScreenHeader({
+  title,
+  subtitle,
+  onBack,
+  rightAction,
+  className,
+  showBackButton = true,
+}: ScreenHeaderProps) {
   const router = useRouter();
-
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      router.back();
-    }
-  };
+  const { t } = useTranslation();
 
   return (
-    <View className={`flex-row items-center justify-between mb-6 mt-2 ${className || ''}`}>
-      <View className="flex-row items-center flex-1 mr-4">
+    <View className={cn('mb-6 mt-2 flex-row items-center justify-between', className)}>
+      <View className="mr-4 flex-1 flex-row items-center">
         {showBackButton && (
-          <Button
-            size="icon"
-            variant="secondary"
-            icon={<Icon icon={ChevronLeft} color="white" size={24} />}
-            onPress={handleBack}
-            className="h-12 w-12 mr-4"
+          <IconButton
+            icon={ChevronLeft}
+            iconSize={24}
+            accessibilityLabel={t('common.back')}
+            onPress={onBack ?? (() => router.back())}
+            className="mr-4"
           />
         )}
-        <Text className="text-2xl font-bold text-white flex-shrink" numberOfLines={1}>{title}</Text>
-      </View>
-
-      {rightAction && (
-        <View>
-          {rightAction}
+        <View className="flex-shrink">
+          <Text accessibilityRole="header" className="text-2xl font-bold text-foreground" numberOfLines={1}>
+            {title}
+          </Text>
+          {subtitle && <Text className="text-sm text-subtle">{subtitle}</Text>}
         </View>
-      )}
+      </View>
+      {rightAction}
     </View>
   );
 }

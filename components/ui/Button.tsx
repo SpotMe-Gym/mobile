@@ -1,82 +1,86 @@
-import { TouchableOpacity, Text, TouchableOpacityProps, ActivityIndicator, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { ActivityIndicator, Pressable, Text, View, type PressableProps } from 'react-native';
+import { cn } from '@/lib/utils';
+import { colors } from '@/theme/colors';
+import { TOUCH_HEIGHT_CLASS } from '@/lib/platform';
 
-interface ButtonProps extends TouchableOpacityProps {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'white' | 'danger' | 'ai';
-  size?: 'sm' | 'md' | 'lg' | 'icon';
-  label?: string;
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'white' | 'danger' | 'ai';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+
+export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
+  label: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   className?: string;
+  textClassName?: string;
 }
 
+const VARIANTS: Record<ButtonVariant, string> = {
+  primary: 'bg-primary',
+  secondary: 'bg-surface-elevated',
+  outline: 'border border-border-strong bg-transparent',
+  ghost: 'bg-transparent',
+  white: 'bg-foreground',
+  danger: 'border border-danger/30 bg-danger/10',
+  ai: 'border border-accent/30 bg-accent/20',
+};
+
+const TEXT: Record<ButtonVariant, string> = {
+  primary: 'font-bold text-primary-foreground',
+  secondary: 'font-medium text-foreground',
+  outline: 'font-medium text-foreground',
+  ghost: 'font-medium text-muted',
+  white: 'font-bold text-on-light',
+  danger: 'font-bold text-danger-text',
+  ai: 'font-medium text-primary-text',
+};
+
+const SIZES: Record<ButtonSize, string> = { sm: 'px-3 py-2', md: 'px-4 py-3', lg: 'px-6 py-4' };
+const TEXT_SIZES: Record<ButtonSize, string> = { sm: 'text-sm', md: 'text-base', lg: 'text-lg' };
+
+/** Text button. For icon-only actions use IconButton (it requires an accessibility label). */
 export function Button({
+  label,
   variant = 'primary',
   size = 'md',
-  label,
-  loading,
-  className,
-  disabled,
+  loading = false,
   icon,
-  hitSlop = { top: 10, bottom: 10, left: 10, right: 10 },
+  className,
+  textClassName,
+  disabled,
+  accessibilityLabel,
   ...props
 }: ButtonProps) {
-  const isIconOnly = size === 'icon' || (!label && icon);
-
-  const baseStyle = "rounded-xl flex-row justify-center items-center";
-
-  const variants = {
-    primary: "bg-blue-600",
-    secondary: "bg-zinc-800",
-    outline: "border border-zinc-700 bg-transparent",
-    ghost: "bg-transparent",
-    white: "bg-white",
-    danger: "bg-red-500/10 border border-red-500/20",
-    ai: "bg-blue-600/20 border border-blue-500/30",
-  };
-
-  const sizes = {
-    sm: "px-3 py-2",
-    md: "px-4 py-3",
-    lg: "px-6 py-4",
-    icon: "h-10 w-10",
-  };
-
-  const textStyles = {
-    primary: "text-white font-bold",
-    secondary: "text-white font-medium",
-    outline: "text-zinc-300 font-medium",
-    ghost: "text-zinc-400 font-medium",
-    white: "text-black font-bold",
-    danger: "text-red-500 font-bold",
-    ai: "text-blue-500 font-medium",
-  };
-
-  const textSize = {
-    sm: "text-xs",
-    md: "text-base",
-    lg: "text-lg",
-    icon: "text-base",
-  };
-
-  const iconOnlyStyle = isIconOnly ? "rounded-full" : "";
-
+  const isDisabled = !!disabled || loading;
   return (
-    <TouchableOpacity
-      className={`${baseStyle} ${variants[variant]} ${sizes[size]} ${iconOnlyStyle} ${disabled ? 'opacity-50' : ''} ${className || ''}`}
-      disabled={disabled || loading}
-      hitSlop={hitSlop}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      disabled={isDisabled}
+      className={cn(
+        'flex-row items-center justify-center rounded-xl active:opacity-70',
+        TOUCH_HEIGHT_CLASS,
+        VARIANTS[variant],
+        SIZES[size],
+        isDisabled && 'opacity-50',
+        className,
+      )}
       {...props}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'danger' ? '#ef4444' : 'white'} size="small" />
-      ) : isIconOnly ? (
-        icon
+        <ActivityIndicator
+          color={variant === 'white' ? colors['on-light'] : colors.foreground}
+          size="small"
+        />
       ) : (
         <View className="flex-row items-center gap-2">
           {icon}
-          {label && <Text className={`${textStyles[variant]} ${textSize[size]}`}>{label}</Text>}
+          <Text className={cn(TEXT[variant], TEXT_SIZES[size], textClassName)}>{label}</Text>
         </View>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }

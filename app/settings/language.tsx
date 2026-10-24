@@ -1,51 +1,55 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, Check } from 'lucide-react-native';
-import { ScreenHeader } from '../../components/ScreenHeader';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { ListGroup, ListRow } from '@/components/ui/ListRow';
+import { useUserStore, type LanguagePref } from '@/store/userStore';
+import { resolveLanguage } from '@/i18n';
+import { lightImpact } from '@/lib/haptics';
 
-const LANGUAGES = [
-  { code: 'en', labelKey: 'settings.english' },
-  { code: 'it', labelKey: 'settings.italian' },
-];
+const OPTIONS: readonly LanguagePref[] = ['system', 'en', 'it'];
 
 export default function LanguageSettings() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const language = useUserStore((s) => s.language);
+  const setLanguage = useUserStore((s) => s.setLanguage);
 
-  const handleLanguageChange = (langCode: string) => {
-    i18n.changeLanguage(langCode);
-  };
+  const label = (pref: LanguagePref) =>
+    pref === 'system'
+      ? t('settings.systemDefault')
+      : pref === 'en'
+        ? t('settings.english')
+        : t('settings.italian');
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
         <ScreenHeader title={t('settings.language')} />
-
         <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
-          <Text className="text-zinc-400 font-medium mb-3 ml-1">{t('settings.selectLanguage')}</Text>
-          <View className="bg-zinc-900 rounded-2xl overflow-hidden mb-8 border border-zinc-800">
-            {LANGUAGES.map((lang, index) => (
-              <TouchableOpacity
-                key={lang.code}
-                onPress={() => handleLanguageChange(lang.code)}
-                className={`flex-row items-center justify-between p-5 active:bg-zinc-800/50 ${index !== LANGUAGES.length - 1 ? 'border-b border-zinc-800' : ''
-                  }`}
-              >
-                <View>
-                  <Text className="text-white text-lg font-semibold">{t(lang.labelKey)}</Text>
-                  <Text className="text-zinc-500 uppercase">{lang.code}</Text>
-                </View>
-                {i18n.language.startsWith(lang.code) && (
-                  <View className="bg-blue-600 h-8 w-8 rounded-full items-center justify-center">
-                    <Check size={16} color="white" />
-                  </View>
-                )}
-              </TouchableOpacity>
+          <Text className="mb-3 ml-1 font-medium text-muted">{t('settings.selectLanguage')}</Text>
+          <ListGroup>
+            {OPTIONS.map((pref, i) => (
+              <ListRow
+                key={pref}
+                title={label(pref)}
+                // Each language is named in itself too, so it's findable when the UI is in another one.
+                subtitle={
+                  pref === 'system'
+                    ? label(resolveLanguage('system'))
+                    : pref === 'en'
+                      ? 'English'
+                      : 'Italiano'
+                }
+                selected={language === pref}
+                isLast={i === OPTIONS.length - 1}
+                onPress={() => {
+                  lightImpact();
+                  setLanguage(pref);
+                }}
+              />
             ))}
-          </View>
+          </ListGroup>
         </ScrollView>
       </View>
     </SafeAreaView>

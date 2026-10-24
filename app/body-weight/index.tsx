@@ -1,181 +1,167 @@
-import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Text, View } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState } from 'react';
-import Animated, { useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
-import { ScreenHeader } from '../../components/ScreenHeader';
-import { Button } from '../../components/ui/Button';
-import { Icon } from '../../components/ui/Icon';
-import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '../../components/ExpandableCardLayout';
-import { BodyWeightCardContent } from '../../components/body-weight/BodyWeightCardContent';
+import { Plus, Trash2 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { useUserStore } from '../../store/userStore';
-import { WeightChart } from '../../components/body-weight/WeightChart';
-import { AddWeightModal } from '../../components/body-weight/AddWeightModal';
-import { TrendingUp, TrendingDown, Plus, Trash2, Sparkles } from 'lucide-react-native';
-import { useUnitConverter } from '../../hooks/useUnitConverter';
-import { useRouter } from 'expo-router';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { AiButton } from '@/components/AiButton';
+import { IconButton } from '@/components/ui/IconButton';
+import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '@/components/ExpandableCardLayout';
+import { BodyWeightCardContent } from '@/components/body-weight/BodyWeightCardContent';
+import { WeightChart } from '@/components/body-weight/WeightChart';
+import { AddWeightModal } from '@/components/body-weight/AddWeightModal';
+import { TrendBadge } from '@/components/body-weight/TrendBadge';
+import { useWeightStore, type WeightEntry } from '@/store/weightStore';
+import { useUnitConverter } from '@/hooks/useUnitConverter';
+import { useWeightTrend } from '@/hooks/useWeightTrend';
+import { useHasHydrated } from '@/hooks/useHasHydrated';
+import { successFeedback } from '@/lib/haptics';
+import { formatDayKey } from '@/utils/date';
 
-// Preview content — renders the same component as the home grid card so the two can
-// never drift apart.
+// Preview renders the same component as the home grid card so the two can never drift.
 function WeightCardPreview() {
   const { cardDimensions, widgetSize } = useExpandableCardContext();
   const { cardWidth, cardHeight } = cardDimensions;
-
   return (
     <View style={{ width: cardWidth, height: cardHeight }}>
-      <BodyWeightCardContent
-        size={widgetSize}
-        style={{ width: cardWidth, height: cardHeight }}
-      />
+      <BodyWeightCardContent size={widgetSize} style={{ width: cardWidth, height: cardHeight }} />
     </View>
   );
 }
 
-// Detail content
 function WeightDetailContent() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t, i18n } = useTranslation();
+  const params = useLocalSearchParams<{ add?: string }>();
   const { handleClose } = useExpandableCardContext();
-  const weightHistory = useUserStore(s => s.weightHistory);
-  const addWeightEntry = useUserStore(s => s.addWeightEntry);
-  const removeWeightEntry = useUserStore(s => s.removeWeightEntry);
-  const { currentWeight, convertWeight, toStorageWeight } = useUnitConverter();
+  const entries = useWeightStore((s) => s.entries);
+  const addEntry = useWeightStore((s) => s.addEntry);
+  const removeEntry = useWeightStore((s) => s.removeEntry);
+  const isHydrated = useHasHydrated(useWeightStore);
+  const { currentWeight, convertWeight, toKg, units } = useUnitConverter();
+  const trend = useWeightTrend();
   const [modalVisible, setModalVisible] = useState(false);
-  const { t } = useTranslation();
 
-  // Calculate trends
-  const history = weightHistory || [];
-  const latestVal = currentWeight.value;
-  const prevEntry = history.length > 1 ? history[history.length - 2] : null;
-  const prevVal = prevEntry ? convertWeight(prevEntry.weight).value : latestVal;
+  // Quick action "Add weight" opens the sheet straight away.
+  useEffect(() => {
+    if (params.add === '1') setModalVisible(true);
+  }, [params.add]);
 
-  const diff = latestVal - prevVal;
-  const isGain = diff > 0;
+  const newestFirst = useMemo(() => [...entries].reverse(), [entries]);
+  const chartData = useMemo(
+    () => entries.map((e) => ({ id: e.id, day: e.day, weight: convertWeight(e.kg).value })),
+    [entries, convertWeight],
+  );
 
-  const chartData = history.map(h => ({
-    ...h,
-    weight: convertWeight(h.weight).value
-  }));
+  const handleDelete = useCallback(
+    (entry: WeightEntry) => {
+      Alert.alert(t('bodyWeight.deleteEntryTitle'), t('bodyWeight.deleteEntryMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => removeEntry(entry.id) },
+      ]);
+    },
+    [removeEntry, t],
+  );
 
-  const handleDelete = (id?: string) => {
-    if (!id) return;
-    Alert.alert(
-      t('bodyWeight.deleteEntryTitle'),
-      t('bodyWeight.deleteEntryMessage'),
-      [
-        { text: t('common.cancel'), style: "cancel" },
-        { text: t('common.delete'), style: "destructive", onPress: () => removeWeightEntry(id) }
-      ]
-    );
-  };
+  const header = (
+    <View>
+      <View className="items-center py-6">
+        <View className="flex-row items-baseline">
+          <Text className="text-6xl font-bold tracking-tighter text-foreground">
+            {currentWeight.formatted}
+          </Text>
+          <Text className="ml-2 text-2xl font-medium text-subtle">{currentWeight.unit}</Text>
+        </View>
+        <View className="mt-2">
+          <TrendBadge trend={trend} pill />
+        </View>
+      </View>
+      <Text accessibilityRole="header" className="mb-3 text-lg font-bold text-foreground">
+        {t('bodyWeight.trend')}
+      </Text>
+      <WeightChart data={chartData} unit={units.weight} />
+      <Text accessibilityRole="header" className="mb-3 mt-6 text-lg font-bold text-foreground">
+        {t('bodyWeight.history')}
+      </Text>
+    </View>
+  );
 
   return (
     <View className="flex-1">
-      {/* Drag handle */}
-      <View className="items-center pt-2 pb-1">
-        <View className="w-10 h-1 bg-zinc-600 rounded-full" />
+      <View className="items-center pb-1 pt-2">
+        <View className="h-1 w-10 rounded-full bg-border-strong" />
       </View>
-
       <View className="px-4">
-        <ScreenHeader
-          title={t('bodyWeight.title')}
-          onBack={handleClose}
-          rightAction={
-            <Button
-              size="icon"
-              variant="ai"
-              icon={<Icon icon={Sparkles} size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />}
-              onPress={() => router.push('/chat')}
-            />
-          }
-        />
+        <ScreenHeader title={t('bodyWeight.title')} onBack={handleClose} rightAction={<AiButton />} />
       </View>
 
-      <ScrollView
-        className="flex-1 px-4"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
-      >
-        {/* Current Stat Header */}
-        <View className="items-center py-6">
-          <View className="flex-row items-baseline">
-            <Text className="text-6xl text-white font-bold tracking-tighter">{currentWeight.formatted}</Text>
-            <Text className="text-zinc-500 font-medium text-2xl ml-2">{currentWeight.unit}</Text>
-          </View>
-
-          {/* Trend Indicator */}
-          {diff !== 0 && (
-            <View className={`flex-row items-center mt-2 px-3 py-1 rounded-full ${isGain ? 'bg-red-500/20' : 'bg-green-500/20'}`}>
-              {isGain ? <TrendingUp size={16} color="#ef4444" /> : <TrendingDown size={16} color="#22c55e" />}
-              <Text className={`ml-2 font-bold ${isGain ? 'text-red-400' : 'text-green-400'}`}>
-                {Math.abs(diff).toFixed(1)} {currentWeight.unit} {t('dashboard.sinceLast')}
-              </Text>
+      {isHydrated && (
+        <FlashList
+          data={newestFirst}
+          keyExtractor={(e) => e.id}
+          ListHeaderComponent={header}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 96 }}
+          ListEmptyComponent={
+            <View className="items-center rounded-3xl border border-border bg-surface p-6">
+              <Text className="text-subtle">{t('bodyWeight.noHistoryYet')}</Text>
             </View>
-          )}
-          {diff === 0 && (
-            <Text className="text-zinc-500 mt-2">{t('dashboard.noChange')}</Text>
-          )}
-        </View>
-
-        {/* Chart */}
-        <View className="mb-6">
-          <Text className="text-white text-lg font-bold mb-3">{t('bodyWeight.trend')}</Text>
-          <WeightChart data={chartData} />
-        </View>
-
-        {/* History List */}
-        <View>
-          <Text className="text-white text-lg font-bold mb-3">{t('bodyWeight.history')}</Text>
-          <View className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800">
-            {history.slice().reverse().map((entry, i) => {
-              const dw = convertWeight(entry.weight);
-              return (
-                <View
-                  key={entry.id || `${entry.date}-${i}`}
-                  className={`flex-row items-center justify-between p-4 ${i !== history.length - 1 ? 'border-b border-zinc-800' : ''}`}
-                >
-                  <View>
-                    <Text className="text-zinc-400">{new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
-                  </View>
-                    <View className="flex-row items-center gap-4">
-                    <Text className="text-white font-bold text-lg">{dw.formatted} <Text className="text-xs font-normal text-zinc-600">{dw.unit}</Text></Text>
-                    {entry.id && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        icon={<Icon icon={Trash2} size={18} color="#ef4444" />}
-                        onPress={() => handleDelete(entry.id)}
-                        className="h-8 w-8"
-                      />
-                    )}
-                  </View>
+          }
+          renderItem={({ item, index }) => {
+            const dw = convertWeight(item.kg);
+            return (
+              <View
+                className={`flex-row items-center justify-between border-x border-border bg-surface px-4 py-2 ${
+                  index === 0 ? 'rounded-t-3xl border-t' : ''
+                } ${index === newestFirst.length - 1 ? 'rounded-b-3xl border-b' : 'border-b'}`}
+              >
+                <Text className="capitalize text-muted">
+                  {formatDayKey(item.day, i18n.language, {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                  })}
+                </Text>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-lg font-bold text-foreground">
+                    {dw.formatted} <Text className="text-xs font-normal text-subtle">{dw.unit}</Text>
+                  </Text>
+                  <IconButton
+                    icon={Trash2}
+                    variant="danger"
+                    iconSize={18}
+                    accessibilityLabel={t('bodyWeight.deleteEntryA11y', {
+                      value: dw.formatted,
+                      unit: dw.unit,
+                    })}
+                    onPress={() => handleDelete(item)}
+                  />
                 </View>
-              );
-            })}
-            {history.length === 0 && (
-              <View className="p-6 items-center">
-                <Text className="text-zinc-600">{t('bodyWeight.noHistoryYet')}</Text>
               </View>
-            )}
-          </View>
-        </View>
-
-      </ScrollView>
+            );
+          }}
+        />
+      )}
 
       <AddWeightModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onSave={(w, d) => addWeightEntry(toStorageWeight(w), d)}
-        currentWeight={currentWeight.formatted}
+        unit={units.weight}
+        initialWeight={currentWeight.formatted === '--' ? null : Number(currentWeight.formatted)}
+        onSave={(w, day) => {
+          addEntry(toKg(w), day);
+          successFeedback();
+        }}
       />
 
-      {/* Floating Add Button */}
-      <Button
-        size="icon"
+      <IconButton
+        icon={Plus}
         variant="primary"
-        icon={<Icon icon={Plus} size={32} color="white" />}
+        iconSize={28}
+        accessibilityLabel={t('bodyWeight.logWeight')}
         onPress={() => setModalVisible(true)}
-        className="absolute right-6 h-14 w-14 shadow-lg shadow-black/50 z-50"
+        className="absolute right-6 h-14 w-14 shadow-lg"
         style={{ bottom: insets.bottom + 24 }}
       />
     </View>
@@ -184,10 +170,7 @@ function WeightDetailContent() {
 
 export default function WeightDetail() {
   return (
-    <ExpandableCardLayoutWithContext
-      previewContent={<WeightCardPreview />}
-      backgroundColor="#18181b"
-    >
+    <ExpandableCardLayoutWithContext previewContent={<WeightCardPreview />}>
       <WeightDetailContent />
     </ExpandableCardLayoutWithContext>
   );

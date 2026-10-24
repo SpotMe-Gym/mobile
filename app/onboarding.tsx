@@ -1,220 +1,129 @@
-import { useState, useEffect } from 'react';
-import { View, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useUserStore } from '../store/userStore';
-import { Button } from '../components/ui/Button';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronLeft } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Step1Bio } from '@/components/onboarding/Step1Bio';
+import { Step2Goals } from '@/components/onboarding/Step2Goals';
+import { Step3Nutrition } from '@/components/onboarding/Step3Nutrition';
+import { onboardingSchema, STEP_FIELDS, type OnboardingValues } from '@/components/onboarding/schema';
+import { useUserStore, DEFAULT_TARGETS } from '@/store/userStore';
+import { useWeightStore } from '@/store/weightStore';
+import { calculateTargets } from '@/utils/nutrition';
+import { successFeedback } from '@/lib/haptics';
+import { cn } from '@/lib/utils';
 
-import { Step1Bio } from '../components/onboarding/Step1Bio';
-import { Step2Goals, ACTIVITY_LEVELS, GOALS } from '../components/onboarding/Step2Goals';
-import { Step3Nutrition } from '../components/onboarding/Step3Nutrition';
+type Step = 1 | 2 | 3;
 
 export default function Onboarding() {
-  const router = useRouter();
   const { t } = useTranslation();
-  const setName = useUserStore(s => s.setName);
-  const setGender = useUserStore(s => s.setGender);
-  const setHeight = useUserStore(s => s.setHeight);
-  const setWeight = useUserStore(s => s.setWeight);
-  const setAge = useUserStore(s => s.setAge);
-  const setActivityLevel = useUserStore(s => s.setActivityLevel);
-  const setGoal = useUserStore(s => s.setGoal);
-  const setTargets = useUserStore(s => s.setTargets);
-  const completeOnboarding = useUserStore(s => s.completeOnboarding);
+  const completeOnboarding = useUserStore((s) => s.completeOnboarding);
+  const addWeight = useWeightStore((s) => s.addEntry);
+  const [step, setStep] = useState<Step>(1);
 
-  const [step, setStep] = useState(1);
-
-  // Bio State
-  const [form, setForm] = useState({
-    name: '',
-    gender: '' as 'Male' | 'Female' | 'Other' | '',
-    height: '',
-    weight: '',
-    age: '25',
+  const { control, trigger, getValues, setValue, handleSubmit } = useForm<OnboardingValues>({
+    resolver: zodResolver(onboardingSchema),
+    mode: 'onTouched',
+    defaultValues: {
+      name: '',
+      gender: null,
+      age: 25,
+      heightCm: null,
+      weightKg: null,
+      activity: null,
+      goal: null,
+      targets: DEFAULT_TARGETS,
+      ratioLocked: true,
+    },
   });
 
-  // Strategy State
-  const [activityIndex, setActivityIndex] = useState<number | null>(null);
-  const [goalIndex, setGoalIndex] = useState<number | null>(null);
-
-  // Nutrition State
-  const [calories, setCalories] = useState(2500);
-  const [protein, setProtein] = useState(150);
-  const [carbs, setCarbs] = useState(250);
-  const [fat, setFat] = useState(70);
-  const [isLocked, setIsLocked] = useState(true);
-
-  // Constants
-  const MIN_CALS = 1200;
-  const MAX_CALS = 10000;
-
-  // Initial Calculation Effect
-  useEffect(() => {
-    if (step === 3 && activityIndex !== null && goalIndex !== null) {
-      calculateSuggestion();
-    }
-  }, [step]);
-
-  const calculateSuggestion = () => {
-    if (activityIndex === null || goalIndex === null) return;
-
-    // Mifflin-St Jeor
-    const w = parseFloat(form.weight) || 75;
-    const h = parseFloat(form.height) || 180;
-    const a = parseInt(form.age) || 25;
-    const gender = form.gender;
-
-    let bmr = (10 * w) + (6.25 * h) - (5 * a);
-    if (gender === 'Male') bmr += 5;
-    else if (gender === 'Female') bmr -= 161;
-    else bmr -= 78;
-
-    const tdee = Math.round(bmr * ACTIVITY_LEVELS[activityIndex].multiplier);
-    const targetCals = tdee + GOALS[goalIndex].calOffset;
-
-    const p = Math.round((targetCals * 0.3) / 4);
-    const c = Math.round((targetCals * 0.4) / 4);
-    const f = Math.round((targetCals * 0.3) / 9);
-
-    setCalories(targetCals);
-    setProtein(p);
-    setCarbs(c);
-    setFat(f);
-    setIsLocked(true); // Default to locked initially
-  };
-
-  const updateCalories = (newCals: number) => {
-    const c = Math.max(MIN_CALS, Math.min(MAX_CALS, newCals));
-    setCalories(c);
-
-    if (isLocked) {
-      // Maintain ratios (30/40/30)
-      setProtein(Math.round((c * 0.3) / 4));
-      setCarbs(Math.round((c * 0.4) / 4));
-      setFat(Math.round((c * 0.3) / 9));
-    }
-  };
-
-  const updateMacro = (type: 'p' | 'c' | 'f', val: number) => {
-    let p = protein;
-    let c = carbs;
-    let f = fat;
-
-    if (type === 'p') p = val;
-    if (type === 'c') c = val;
-    if (type === 'f') f = val;
-
-    setProtein(p);
-    setCarbs(c);
-    setFat(f);
-
-    // Always recalculate Total Calories when Macros change (Physics)
-    const newTotal = Math.round((p * 4) + (c * 4) + (f * 9));
-    setCalories(newTotal);
-  };
-
-  const handleNext = () => {
-    if (step === 1) {
-      if (!form.name || !form.gender || !form.height || !form.weight || !form.age) {
-        Alert.alert(t('onboarding.missingInfo'), t('onboarding.pleaseFillAllFields'));
-        return;
+  const next = async () => {
+    if (!(await trigger(STEP_FIELDS[step]))) return;
+    if (step === 2) {
+      const v = getValues();
+      if (v.weightKg !== null && v.heightCm !== null && v.gender && v.activity && v.goal) {
+        setValue(
+          'targets',
+          calculateTargets({
+            weightKg: v.weightKg,
+            heightCm: v.heightCm,
+            age: v.age,
+            gender: v.gender,
+            activity: v.activity,
+            goal: v.goal,
+          }),
+        );
       }
-      setStep(2);
-    } else if (step === 2) {
-      if (activityIndex === null || goalIndex === null) {
-        Alert.alert(t('onboarding.selectionRequired'), t('onboarding.pleaseSelectActivityAndGoal'));
-        return;
-      }
-      setStep(3);
-    } else {
-      handleFinish();
     }
+    setStep((s) => (s < 3 ? ((s + 1) as Step) : s));
   };
 
-  const handleBack = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
-  const handleFinish = async () => {
-    setName(form.name);
-    if (form.gender) setGender(form.gender);
-    setHeight(form.height);
-    setWeight(form.weight);
-    setAge(form.age);
-
-    if (activityIndex !== null) setActivityLevel(ACTIVITY_LEVELS[activityIndex].label);
-    if (goalIndex !== null) setGoal(GOALS[goalIndex].label);
-
-    setTargets({
-      calories,
-      protein,
-      carbs,
-      fat
+  const finish = handleSubmit((v) => {
+    if (v.weightKg !== null) addWeight(v.weightKg);
+    completeOnboarding({
+      name: v.name.trim(),
+      gender: v.gender,
+      age: v.age,
+      heightCm: v.heightCm,
+      activityLevel: v.activity,
+      goal: v.goal,
+      targets: v.targets,
     });
-
-    completeOnboarding();
-
-    setTimeout(() => {
-      router.replace('/');
-    }, 100);
-  };
+    successFeedback();
+    // Stack.Protected swaps to the home screen once the guard flips — no manual redirect.
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-6 pt-6">
-        {/* Header / Progress */}
-        <View className="flex-row items-center justify-between mb-8">
+        <View className="mb-8 flex-row items-center justify-between">
           {step > 1 ? (
-            <TouchableOpacity onPress={handleBack} className="p-2 bg-zinc-900 rounded-full">
-              <ChevronLeft color="white" size={24} />
-            </TouchableOpacity>
-          ) : <View className="w-10" />}
-
-          <View className="flex-row gap-2">
-            {[1, 2, 3].map(i => (
-              <View key={i} className={`h-2 w-8 rounded-full ${i <= step ? 'bg-blue-600' : 'bg-zinc-800'}`} />
+            <IconButton
+              icon={ChevronLeft}
+              accessibilityLabel={t('common.back')}
+              onPress={() => setStep((s) => (s - 1) as Step)}
+            />
+          ) : (
+            <View className="w-11" />
+          )}
+          <View
+            className="flex-row gap-2"
+            accessible
+            accessibilityRole="progressbar"
+            accessibilityLabel={t('onboarding.stepOf', { step, total: 3 })}
+          >
+            {[1, 2, 3].map((i) => (
+              <View
+                key={i}
+                className={cn('h-2 w-8 rounded-full', i <= step ? 'bg-primary' : 'bg-surface-elevated')}
+              />
             ))}
           </View>
-          <View className="w-10" />
+          <View className="w-11" />
         </View>
 
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-          {step === 1 && <Step1Bio form={form} setForm={setForm} />}
-
-          {step === 2 && (
-            <Step2Goals
-              activityIndex={activityIndex}
-              setActivityIndex={setActivityIndex}
-              goalIndex={goalIndex}
-              setGoalIndex={setGoalIndex}
-            />
-          )}
-
-          {step === 3 && (
-            <Step3Nutrition
-              calories={calories}
-              updateCalories={updateCalories}
-              protein={protein}
-              carbs={carbs}
-              fat={fat}
-              updateMacro={updateMacro}
-              isLocked={isLocked}
-              setIsLocked={setIsLocked}
-            />
-          )}
+        <ScrollView
+          className="flex-1"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+          {step === 1 && <Step1Bio control={control} />}
+          {step === 2 && <Step2Goals control={control} />}
+          {step === 3 && <Step3Nutrition control={control} />}
         </ScrollView>
 
         <View className="py-4">
           <Button
             label={step === 3 ? t('onboarding.startJourney') : t('common.next')}
-            onPress={handleNext}
+            onPress={step === 3 ? finish : () => void next()}
             variant="white"
-            className="w-full h-14 rounded-xl"
+            className="h-14 w-full rounded-xl"
           />
         </View>
-
       </View>
     </SafeAreaView>
   );

@@ -50,7 +50,7 @@ export function nextSize(current: WidgetSize, supported: WidgetSize[]): WidgetSi
   const cycle = SIZE_CYCLE.filter(s => supported.includes(s));
   if (cycle.length === 0) return current;
   const i = cycle.indexOf(current);
-  return cycle[(i + 1) % cycle.length];
+  return cycle[(i + 1) % cycle.length] ?? current;
 }
 
 export function snapSize(

@@ -1,233 +1,219 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
-import { Image } from 'expo-image';
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNutritionStore, FoodItem, Meal } from '../../../store/nutritionStore';
-import { ChevronLeft, Plus, Minus, Utensils } from 'lucide-react-native';
-import { Button } from '../../../components/ui/Button';
-import { Icon } from '../../../components/ui/Icon';
-import { useState, useMemo, useEffect } from 'react';
+import { AlertCircle, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { useUnitConverter } from '../../../hooks/useUnitConverter';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { FoodThumb } from '@/components/food/FoodThumb';
+import { PortionEditor } from '@/components/food/PortionEditor';
+import { MacroImpact } from '@/components/food/MacroImpact';
+import { MealPicker } from '@/components/food/MealPicker';
+import { useProduct } from '@/hooks/useFood';
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage';
+import { useToday } from '@/hooks/useToday';
+import {
+  isMealType,
+  useDailyTotals,
+  useNutritionStore,
+  type FoodRef,
+  type MealType,
+  type PortionUnit,
+} from '@/store/nutritionStore';
+import { useUserStore } from '@/store/userStore';
+import { successFeedback } from '@/lib/haptics';
+import {
+  availableUnits,
+  baseToPortion,
+  defaultPortion,
+  macrosForPortion,
+  mealForTime,
+  portionToBase,
+} from '@/utils/portion';
+import { ZERO_MACROS } from '@/utils/nutrition';
 
-const OZ_TO_G = 28.3495;
-
-export default function ProductDetail() {
+/**
+ * Food entry sheet. Serving-first: the product's own serving size is the default unit when
+ * it has one (most people think "2 biscuits", not "24 g"), with g/ml/oz one tap away.
+ * Works from a deep link too — the product is fetched by barcode if it isn't cached.
+ */
+export default function ProductEntry() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { units } = useUnitConverter();
-  const isImperial = units.weight === 'lbs';
+  const params = useLocalSearchParams<{ code: string; meal?: string }>();
+  const code = params.code ?? '';
+  const historyItem = useNutritionStore((s) => s.foods[code]);
+  const product = useProduct(code, historyItem);
+  const errorMessage = useApiErrorMessage(product.error);
 
-  const params = useLocalSearchParams();
-  // Robust param parsing
-  const meal = Array.isArray(params.meal) ? params.meal[0] : params.meal;
-  const initialData = Array.isArray(params.initialData) ? params.initialData[0] : params.initialData;
-
-  const addFood = useNutritionStore(s => s.addFood);
-
-  const product = initialData ? JSON.parse(initialData) : null;
-  const nutriments = product?.nutriments || {};
-
-  // State
-  // Default to 100g or ~3.5oz
-  const [amount, setAmount] = useState(isImperial ? '3.5' : '100');
-
-  // Dynamic step sizes
-  const stepSizes = isImperial ? [0.1, 1, 5] : [1, 10, 100];
-  const [stepSize, setStepSize] = useState<number>(stepSizes[1]); // Default middle step
-
-  // Reset step size if unit system changes (unlikely during session but good practice)
-  useEffect(() => {
-    setStepSize(isImperial ? 1 : 10);
-  }, [isImperial]);
-
-  // Calculate multiplier (convert to grams relative to 100g)
-  const multiplier = useMemo(() => {
-    const val = parseFloat(amount) || 0;
-    if (isImperial) {
-      return (val * OZ_TO_G) / 100;
-    }
-    return val / 100;
-  }, [amount, isImperial]);
-
-  // Derived macros
-  const calories = Math.round((nutriments["energy-kcal_100g"] || 0) * multiplier);
-  const protein = Math.round((nutriments.proteins_100g || 0) * multiplier);
-  const carbs = Math.round((nutriments.carbohydrates_100g || 0) * multiplier);
-  const fat = Math.round((nutriments.fat_100g || 0) * multiplier);
-
-  const totalMacroMass = protein + carbs + fat || 1;
-
-  const handleAdd = () => {
-    if (!product) return;
-    const foodItem: FoodItem = {
-      id: product.code,
-      name: product.product_name,
-      calories, protein, carbs, fat,
-      brand: product.brands,
-      image_url: product.image_url,
-    };
-    const targetMeal = (meal as Meal['name']) || 'Snack';
-    const today = new Date().toISOString().split('T')[0];
-    addFood(today, targetMeal, foodItem);
-    router.dismiss();
-  };
-
-  const adjustAmount = (direction: 1 | -1) => {
-    const current = parseFloat(amount) || 0;
-    // For float precision in oz
-    const next = Math.max(0, current + (direction * stepSize));
-    setAmount(isImperial ? next.toFixed(1) : Math.round(next).toString());
-  };
-
-  if (!product) return null;
+  const food: FoodRef | undefined = product.data ?? (historyItem?.per100 ? historyItem : undefined);
+  const initialMeal: MealType = isMealType(params.meal) ? params.meal : mealForTime();
 
   return (
-    <SafeAreaView className="flex-1 bg-black" edges={['top']}>
-      <View className="flex-1 relative">
-        {/* Background Blur */}
-        <View className="absolute top-0 w-full h-96 opacity-30">
-          {product.image_url && (
-            <Image source={{ uri: product.image_url }} className="w-full h-full" blurRadius={30} contentFit="cover" />
-          )}
-          <View className="absolute inset-0 bg-gradient-to-b from-transparent to-black" />
-        </View>
-
-        <View className="flex-1 px-6 pt-2">
-          {/* Header */}
-          <View className="flex-row items-center mb-6 mt-2">
-            <Button
-              size="icon"
-              variant="secondary"
-              icon={<Icon icon={ChevronLeft} size={24} color="white" />}
-              onPress={() => router.back()}
-              className="bg-zinc-800/80"
-            />
-            <View className="flex-1 ml-4 mr-10">
-              <Text className="text-white font-bold text-center text-lg shadow-black shadow-lg" numberOfLines={1}>{product.product_name}</Text>
-            </View>
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
-            {/* Image & Title */}
-            <View className="items-center mb-10">
-              <View className="shadow-2xl shadow-black/80">
-                {product.image_url ? (
-                  <Image
-                    source={{ uri: product.image_url }}
-                    className="w-48 h-48 rounded-[40px] bg-zinc-900 border-4 border-zinc-800"
-                    contentFit="contain"
-                    transition={200}
-                  />
-                ) : (
-                  <View className="w-48 h-48 rounded-[40px] bg-zinc-900 items-center justify-center border-4 border-zinc-800">
-                    <Utensils size={48} color="#52525b" />
-                  </View>
-                )}
-              </View>
-              <View className="mt-6 items-center px-4">
-                <Text className="text-3xl font-black text-white text-center leading-tight mb-1" numberOfLines={2} adjustsFontSizeToFit>{product.product_name}</Text>
-                <Text className="text-zinc-400 text-lg font-medium" numberOfLines={1}>{product.brands}</Text>
-              </View>
-            </View>
-
-            {/* Input Control */}
-            <View className="bg-zinc-900/90 p-6 rounded-3xl mb-8 border border-zinc-800">
-              {/* Step Selector */}
-              <View className="flex-row justify-center gap-2 mb-6">
-                {stepSizes.map((step) => (
-                  <TouchableOpacity
-                    key={step}
-                    onPress={() => setStepSize(step)}
-                    className={`px-4 py-2 rounded-full border ${stepSize === step ? 'bg-blue-600 border-blue-500' : 'bg-zinc-950 border-zinc-800'}`}
-                  >
-                    <Text className={`font-bold ${stepSize === step ? 'text-white' : 'text-zinc-500'}`}>{step}{isImperial ? t('food.oz') : 'g'}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Main Numeric Input */}
-              <View className="flex-row items-center justify-between gap-4">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  icon={<Icon icon={Minus} size={24} color="#a1a1aa" />}
-                  onPress={() => adjustAmount(-1)}
-                  className="h-14 w-14 rounded-2xl"
-                />
-
-                <View className="flex-1 items-center">
-                  <View className="flex-row items-baseline justify-center">
-                    <TextInput
-                      value={amount}
-                      onChangeText={setAmount}
-                      keyboardType="numeric"
-                      className="text-6xl font-black text-white text-center p-0 min-w-[100px]"
-                      selectTextOnFocus
-                    />
-                    <Text className="text-zinc-500 font-bold text-lg ml-1">{isImperial ? t('food.oz') : t('food.grams')}</Text>
-                  </View>
-                  <Text className="text-zinc-600 text-xs font-bold tracking-widest uppercase mt-1">{t('food.quantity')}</Text>
-                </View>
-
-                <Button
-                  size="icon"
-                  variant="outline"
-                  icon={<Icon icon={Plus} size={24} color="white" />}
-                  onPress={() => adjustAmount(1)}
-                  className="h-14 w-14 rounded-2xl"
-                />
-              </View>
-            </View>
-
-            {/* Macro Stats */}
-            <View className="flex-row gap-3 mb-6">
-              <MacroStat label={t('food.protein')} value={protein} color="text-blue-400" bg="bg-blue-500/10" border="border-blue-500/20" />
-              <MacroStat label={t('food.carbs')} value={carbs} color="text-yellow-400" bg="bg-yellow-500/10" border="border-yellow-500/20" />
-              <MacroStat label={t('food.fat')} value={fat} color="text-red-400" bg="bg-red-500/10" border="border-red-500/20" />
-            </View>
-
-            {/* Total Energy */}
-            <View className="items-center bg-zinc-900/50 p-4 rounded-3xl border border-zinc-800/50">
-              <Text className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-1">{t('food.totalEnergy')}</Text>
-              <Text className="text-5xl font-black text-white tracking-tighter shadow-lg shadow-blue-900/20">
-                {calories} <Text className="text-2xl text-zinc-600 font-bold">kcal</Text>
-              </Text>
-            </View>
-
-          </ScrollView>
-
-          {/* Floating Action Button */}
-          <View className="absolute left-6 right-6" style={{ bottom: insets.bottom + 16 }}>
-            <Button
-              variant="primary"
-              size="lg"
-              icon={<Icon icon={Plus} size={24} color="white" />}
-              label={`${t('food.addTo')} ${meal || 'Snack'}`}
-              onPress={handleAdd}
-              className="w-full h-16 rounded-[20px] shadow-lg shadow-blue-500/30"
-            />
-          </View>
-        </View>
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+      <View className="flex-row items-center justify-between px-4 py-2">
+        <Text accessibilityRole="header" className="text-lg font-bold text-foreground">
+          {t('food.addFood')}
+        </Text>
+        <IconButton
+          icon={X}
+          variant="ghost"
+          accessibilityLabel={t('common.close')}
+          onPress={() => router.back()}
+        />
       </View>
+
+      {food?.per100 ? (
+        <EntryForm food={food} initialMeal={initialMeal} lastPortion={historyItem?.lastPortion} />
+      ) : product.fetchStatus === 'fetching' ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" />
+          <Text className="mt-3 text-subtle">{t('food.loadingProduct')}</Text>
+        </View>
+      ) : (
+        <EmptyState
+          icon={AlertCircle}
+          tone="error"
+          title={product.isError ? (errorMessage ?? t('errors.generic')) : t('food.noNutritionData')}
+          message={t('food.quickAddInstead')}
+          action={
+            <View className="gap-3">
+              {product.isError && (
+                <Button label={t('common.tryAgain')} variant="secondary" onPress={() => product.refetch()} />
+              )}
+              <Button
+                label={t('food.quickAdd')}
+                variant="white"
+                onPress={() =>
+                  router.replace({
+                    pathname: '/nutrition/quick-add',
+                    params: { meal: initialMeal, name: historyItem?.name ?? '' },
+                  })
+                }
+              />
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
 
-interface MacroStatProps {
-  label: string;
-  value: number;
-  color: string;
-  bg: string;
-  border: string;
-}
+function EntryForm({
+  food,
+  initialMeal,
+  lastPortion,
+}: {
+  food: FoodRef;
+  initialMeal: MealType;
+  lastPortion?: { quantity: number; unit: PortionUnit };
+}) {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const prefersImperial = useUserStore((s) => s.units.weight === 'lbs');
+  const targets = useUserStore((s) => s.targets);
+  const today = useToday();
+  const todayTotals = useDailyTotals(today);
+  const addEntry = useNutritionStore((s) => s.addEntry);
 
-function MacroStat({ label, value, color, bg, border }: MacroStatProps) {
+  const units = useMemo(() => availableUnits(food, prefersImperial), [food, prefersImperial]);
+  const initial = useMemo(
+    () => defaultPortion(food, prefersImperial, lastPortion),
+    [food, prefersImperial, lastPortion],
+  );
+  const [unit, setUnit] = useState<PortionUnit>(initial.unit);
+  const [quantity, setQuantity] = useState<number | null>(initial.quantity);
+  const [meal, setMeal] = useState<MealType>(initialMeal);
+
+  const portion = (quantity !== null ? macrosForPortion(food, quantity, unit) : null) ?? ZERO_MACROS;
+  const canAdd = quantity !== null && quantity > 0;
+
+  const changeUnit = (next: PortionUnit) => {
+    // Keep the same amount of food when switching units (2 servings of 15 g → 30 g).
+    const base = quantity !== null ? portionToBase(quantity, unit, food) : null;
+    const converted = base !== null ? baseToPortion(base, next, food) : null;
+    setUnit(next);
+    setQuantity(converted ?? defaultPortion(food, prefersImperial, { quantity: 0, unit: next }).quantity);
+  };
+
+  const handleAdd = () => {
+    if (!canAdd || quantity === null) return;
+    addEntry(
+      today,
+      {
+        meal,
+        name: food.name,
+        brand: food.brand,
+        foodCode: food.code,
+        quantity,
+        unit,
+        amount: portionToBase(quantity, unit, food) ?? undefined,
+        macros: portion,
+      },
+      food,
+    );
+    successFeedback();
+    router.back();
+  };
+
   return (
-    <View className={`flex-1 ${bg} border ${border} rounded-2xl p-3 items-center justify-center min-h-[90px]`}>
-      <Text className={`text-2xl font-black ${color}`}>{value}g</Text>
-      <Text className="text-zinc-500 text-xs font-bold uppercase mt-1">{label}</Text>
-    </View>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
+      <ScrollView
+        className="flex-1 px-4"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 24, gap: 16 }}
+      >
+        <View className="flex-row items-center gap-4">
+          <FoodThumb uri={food.imageUrl} size={64} />
+          <View className="flex-1">
+            <Text className="text-xl font-bold text-foreground" numberOfLines={2}>
+              {food.name}
+            </Text>
+            {!!food.brand && (
+              <Text className="text-base text-muted" numberOfLines={1}>
+                {food.brand}
+              </Text>
+            )}
+            {!!food.servingLabel && (
+              <Text className="text-sm text-subtle" numberOfLines={1}>
+                {t('food.servingIs', { label: food.servingLabel })}
+              </Text>
+            )}
+          </View>
+        </View>
+
+        <PortionEditor
+          food={food}
+          units={units}
+          unit={unit}
+          quantity={quantity}
+          onChangeUnit={changeUnit}
+          onChangeQuantity={setQuantity}
+        />
+
+        <MacroImpact portion={portion} today={todayTotals} targets={targets} />
+
+        <View>
+          <Text className="mb-2 ml-1 font-medium text-muted">{t('food.meal')}</Text>
+          <MealPicker value={meal} onChange={setMeal} />
+        </View>
+      </ScrollView>
+
+      <View
+        className="border-t border-border bg-background px-4 pt-3"
+        style={{ paddingBottom: Math.max(insets.bottom, 12) }}
+      >
+        <Button
+          label={t('food.addToMeal', { meal: t(`meals.${meal}`) })}
+          size="lg"
+          onPress={handleAdd}
+          disabled={!canAdd}
+          className="w-full rounded-2xl"
+        />
+      </View>
+    </KeyboardAvoidingView>
   );
 }

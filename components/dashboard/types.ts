@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
-import type { Href } from 'expo-router';
+import type { TranslationKey } from '../../i18n/keys';
+import type { ExpandableRoute } from '../../hooks/useExpandableNavigation';
 import type { WidgetSize } from './widgetSizes';
 
 export type WidgetKind = 'card' | 'action';
@@ -25,8 +26,8 @@ export interface WidgetDefinition {
   defaultSize: WidgetSize;
   unique: boolean;
   defaultOnHome?: boolean;
-  titleKey: string;
-  detailPath?: Href;
+  titleKey: TranslationKey;
+  detailPath?: ExpandableRoute;
   gestureMode: WidgetGestureMode;
   Render: ComponentType<WidgetRenderProps>;
 }

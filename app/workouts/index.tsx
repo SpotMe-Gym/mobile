@@ -1,108 +1,128 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { memo, useCallback, useMemo } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Plus, Play, Dumbbell, Sparkles } from 'lucide-react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useWorkoutStore, Workout } from '../../store/workoutStore';
-import { useHasHydrated } from '../../hooks/useHasHydrated';
 import { useRouter } from 'expo-router';
-import { ScreenHeader } from '../../components/ScreenHeader';
-import { Icon } from '../../components/ui/Icon';
+import { ChevronRight, Dumbbell, Plus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { AiButton } from '@/components/AiButton';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Icon } from '@/components/ui/Icon';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { scheduledDays, useWorkoutStore, type Workout } from '@/store/workoutStore';
+import { useHasHydrated } from '@/hooks/useHasHydrated';
+import { weekdayLabel } from '@/utils/date';
+import { colors } from '@/theme/colors';
 
-// Helper to find which days a workout is assigned to.
-// A day maps to a list of workout ids, so this must test membership — comparing the
-// array to the id directly is always false, which silently hid every day badge.
-const getWorkoutDays = (workoutId: string, schedule: Record<string, string[]>) => {
-  return Object.entries(schedule)
-    .filter(([, ids]) => (ids ?? []).includes(workoutId))
-    .map(([day]) => day.substring(0, 3)); // Mon, Tue
-};
-
-const WorkoutItem = ({ item, scheduledDays, onPress }: { item: Workout, scheduledDays: string[], onPress: () => void }) => (
-  <Card className="mb-4 bg-zinc-900 border border-zinc-800">
-    <View className="flex-row justify-between items-center">
-      <TouchableOpacity className="flex-row items-center flex-1 pr-4" onPress={onPress}>
-        <View className="h-12 w-12 bg-zinc-800 rounded-lg items-center justify-center mr-4">
-          <Dumbbell size={24} color="#3b82f6" />
+const WorkoutItem = memo(function WorkoutItem({
+  item,
+  days,
+  onPress,
+}: {
+  item: Workout;
+  days: string;
+  onPress: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const exerciseCount = item.exercises.filter((e) => e.type !== 'rest').length;
+  const meta = `${t('workouts.exerciseCount', { count: exerciseCount })} • ${t('workouts.durationMinutes', { duration: item.duration })}`;
+  return (
+    <Pressable
+      onPress={() => onPress(item.id)}
+      accessibilityRole="button"
+      accessibilityLabel={[item.name, meta, days].filter(Boolean).join(', ')}
+      accessibilityHint={t('workouts.editHint')}
+      className="mb-4 flex-row items-center rounded-2xl border border-border bg-surface p-4 active:bg-surface-elevated"
+    >
+      <View className="mr-4 h-12 w-12 items-center justify-center rounded-lg bg-surface-elevated">
+        <Icon icon={Dumbbell} size={24} color={colors.accent} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-lg font-bold text-foreground">{item.name}</Text>
+        <View className="mt-1 flex-row flex-wrap items-center gap-2">
+          <Text className="text-sm text-subtle">{meta}</Text>
+          {!!days && (
+            <View className="rounded bg-primary/20 px-2 py-0.5">
+              <Text className="text-xs font-medium capitalize text-primary-text">{days}</Text>
+            </View>
+          )}
         </View>
-        <View className="flex-1">
-          <Text className="text-white font-bold text-lg">{item.name}</Text>
-          <View className="flex-row flex-wrap gap-2 mt-1">
-            <Text className="text-zinc-500 text-xs">{item.exercises.length} Ex • {item.duration} min</Text>
-            {scheduledDays.length > 0 && (
-              <View className="bg-blue-900/30 px-2 py-0.5 rounded">
-                <Text className="text-blue-400 text-[10px] font-medium">{scheduledDays.join(', ')}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </TouchableOpacity>
-      <Button
-        size="icon"
-        variant="secondary"
-        icon={<Icon icon={Play} size={20} color="white" fill="white" />}
-      />
-    </View>
-  </Card>
-);
+      </View>
+      <Icon icon={ChevronRight} size={20} color={colors.subtle} />
+    </Pressable>
+  );
+});
 
 export default function Workouts() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
-  const workouts = useWorkoutStore(s => s.workouts);
-  const schedule = useWorkoutStore(s => s.schedule);
+  const { t, i18n } = useTranslation();
+  const workouts = useWorkoutStore((s) => s.workouts);
+  const schedule = useWorkoutStore((s) => s.schedule);
+  const addSamplePlan = useWorkoutStore((s) => s.addSamplePlan);
   const isHydrated = useHasHydrated(useWorkoutStore);
+
+  // Precomputed once per schedule change instead of per row per render.
+  const daysById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const w of workouts) {
+      map.set(
+        w.id,
+        scheduledDays(schedule, w.id)
+          .map((d) => weekdayLabel(d, i18n.language, 'short'))
+          .join(', '),
+      );
+    }
+    return map;
+  }, [workouts, schedule, i18n.language]);
+
+  const openWorkout = useCallback(
+    (id: string) => router.push({ pathname: '/workouts/create', params: { id } }),
+    [router],
+  );
+  const renderItem = useCallback(
+    ({ item }: { item: Workout }) => (
+      <WorkoutItem item={item} days={daysById.get(item.id) ?? ''} onPress={openWorkout} />
+    ),
+    [daysById, openWorkout],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <View className="flex-1 px-4 relative">
-        <ScreenHeader
-          title={t('workouts.myWorkouts')}
-          className="mt-8"
-          rightAction={
-            <Button
-              size="icon"
-              variant="ai"
-              icon={<Icon icon={Sparkles} size={20} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />}
-              onPress={() => router.push('/chat')}
-            />
-          }
-        />
-
-        <View className="flex-1 w-full h-full">
-          <FlashList<Workout>
-            // Empty until hydrated: the seed workouts would otherwise flash before
-            // being replaced by the user's own, and the empty state would claim they
-            // have none at all.
-            data={isHydrated ? workouts : []}
-            keyExtractor={item => item.id}
-            estimatedItemSize={100}
-            renderItem={({ item }) => (
-              <WorkoutItem
-                item={item}
-                scheduledDays={getWorkoutDays(item.id, schedule)}
-                onPress={() => router.push(`/workouts/create?id=${item.id}`)}
+      <View className="flex-1 px-4">
+        <ScreenHeader title={t('workouts.myWorkouts')} className="mt-4" rightAction={<AiButton />} />
+        {isHydrated && (
+          <FlashList
+            data={workouts}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}
+            ListEmptyComponent={
+              <EmptyState
+                icon={Dumbbell}
+                title={t('workouts.noWorkoutsYet')}
+                message={t('workouts.createFirstWorkout')}
+                action={
+                  <View className="gap-3">
+                    <Button
+                      label={t('workouts.newWorkout')}
+                      variant="white"
+                      onPress={() => router.push('/workouts/create')}
+                    />
+                    <Button label={t('workouts.addSamplePlan')} variant="ghost" onPress={addSamplePlan} />
+                  </View>
+                }
               />
-            )}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={() => isHydrated ? (
-              <View className="items-center justify-center py-20 opacity-50">
-                <Dumbbell size={48} color="white" />
-                <Text className="text-white font-bold mt-4">{t('workouts.noWorkoutsYet')}</Text>
-                <Text className="text-zinc-500 text-center mt-2">{t('workouts.createFirstWorkout')}</Text>
-              </View>
-            ) : null}
+            }
           />
-        </View>
-
-        <Button
-          size="icon"
+        )}
+        <IconButton
+          icon={Plus}
           variant="primary"
-          icon={<Icon icon={Plus} color="white" size={28} />}
+          iconSize={28}
+          accessibilityLabel={t('workouts.newWorkout')}
           onPress={() => router.push('/workouts/create')}
           className="absolute right-6 h-14 w-14 shadow-lg"
           style={{ bottom: insets.bottom + 16 }}

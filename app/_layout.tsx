@@ -1,102 +1,89 @@
-import "../global.css";
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n'; // Import the instance
-import { Stack, useRouter, useSegments } from 'expo-router';
+import '../global.css';
+import '@/i18n';
+import { useEffect } from 'react';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { cssInterop } from 'nativewind';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { useEffect, useState } from 'react';
-import { useUserStore } from '../store/userStore';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { useUserStore } from '@/store/userStore';
+import { useNutritionStore } from '@/store/nutritionStore';
+import { useWorkoutStore } from '@/store/workoutStore';
+import { useWeightStore } from '@/store/weightStore';
+import { useHasHydrated } from '@/hooks/useHasHydrated';
+import { queryClient } from '@/lib/queryClient';
+import { colors } from '@/theme/colors';
+import { ErrorFallback } from '@/components/ErrorFallback';
 
-const queryClient = new QueryClient();
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 cssInterop(SafeAreaView, { className: 'style' });
 
+export { ErrorFallback as ErrorBoundary };
+
+// Expandable-card detail screens: the card itself animates, the navigator must not.
+const EXPANDABLE = {
+  presentation: 'transparentModal',
+  animation: 'none',
+  gestureEnabled: false,
+  contentStyle: { backgroundColor: 'transparent' },
+} as const;
+
 export default function RootLayout() {
-  const hasCompletedOnboarding = useUserStore(s => s.hasCompletedOnboarding);
-  const segments = useSegments();
-  const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
+  const hasCompletedOnboarding = useUserStore((s) => s.hasCompletedOnboarding);
+  const nutritionReady = useHasHydrated(useNutritionStore);
+  const workoutsReady = useHasHydrated(useWorkoutStore);
+  const weightReady = useHasHydrated(useWeightStore);
+  const ready = nutritionReady && workoutsReady && weightReady;
 
+  // Keep the native splash up until AsyncStorage stores are read, so no screen ever
+  // renders seed/empty state first.
   useEffect(() => {
-    setIsMounted(true);
+    if (ready) void SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
+
+  // Safety net: never keep the splash up forever if a storage read hangs or fails.
+  useEffect(() => {
+    const timer = setTimeout(() => void SplashScreen.hideAsync().catch(() => {}), 4000);
+    return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (!isMounted) return;
-
-    const inOnboarding = segments[0] === 'onboarding';
-
-    if (!hasCompletedOnboarding && !inOnboarding) {
-      router.replace('/onboarding');
-    } else if (hasCompletedOnboarding && inOnboarding) {
-      router.replace('/');
-    }
-  }, [hasCompletedOnboarding, segments, isMounted]);
-
-  if (!isMounted) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <I18nextProvider i18n={i18n}>
-          <QueryClientProvider client={queryClient}>
-            <StatusBar style="light" />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0A0A0A' } }}>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-              <Stack.Screen name="profile/index" options={{ headerShown: false }} />
-              <Stack.Screen name="workouts/index" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
-              <Stack.Screen name="nutrition/search" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
-              <Stack.Screen name="workouts/create" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
-              <Stack.Screen
-                name="nutrition/detail"
-                options={{
-                  headerShown: false,
-                  presentation: 'transparentModal',
-                  animation: 'none',
-                  animationDuration: 250,
-                  gestureEnabled: false,
-                  contentStyle: { backgroundColor: 'transparent' },
-                }}
-              />
-              <Stack.Screen
-                name="body-weight/index"
-                options={{
-                  presentation: 'transparentModal',
-                  animation: 'none',
-                  animationDuration: 250,
-                  gestureEnabled: false,
-                  contentStyle: { backgroundColor: 'transparent' },
-                }}
-              />
-              <Stack.Screen
-                name="workouts/today"
-                options={{
-                  headerShown: false,
-                  presentation: 'transparentModal',
-                  animation: 'none',
-                  animationDuration: 250,
-                  gestureEnabled: false,
-                  contentStyle: { backgroundColor: 'transparent' },
-                }}
-              />
+        <QueryClientProvider client={queryClient}>
+          <StatusBar style="light" />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+            <Stack.Protected guard={!hasCompletedOnboarding}>
+              <Stack.Screen name="onboarding" />
+            </Stack.Protected>
+
+            <Stack.Protected guard={hasCompletedOnboarding}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="profile/index" />
+              <Stack.Screen name="settings/units" />
+              <Stack.Screen name="settings/language" />
+              <Stack.Screen name="workouts/index" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="workouts/create" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="nutrition/search" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="nutrition/product/[code]" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="nutrition/quick-add" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="nutrition/detail" options={EXPANDABLE} />
+              <Stack.Screen name="body-weight/index" options={EXPANDABLE} />
+              <Stack.Screen name="workouts/today" options={EXPANDABLE} />
               <Stack.Screen
                 name="chat"
                 options={{
-                  headerShown: false,
                   presentation: 'modal',
-                  contentStyle: { backgroundColor: '#09090b' },
+                  contentStyle: { backgroundColor: colors['surface-sunken'] },
                 }}
               />
-            </Stack>
-          </QueryClientProvider>
-        </I18nextProvider>
+            </Stack.Protected>
+          </Stack>
+        </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
-
-// Force route refresh

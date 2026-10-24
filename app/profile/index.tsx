@@ -1,125 +1,143 @@
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUserStore } from '../../store/userStore';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Settings, ChevronRight, ChevronLeft, User, Hash, Ruler, Weight, Languages } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { Hash, Languages, Ruler, Share2, Weight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { useUnitConverter } from '@/hooks/useUnitConverter';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
+import { ListGroup, ListRow } from '@/components/ui/ListRow';
+import { useUserStore } from '@/store/userStore';
+import { useUnitConverter } from '@/hooks/useUnitConverter';
+import { eraseAllData, shareExport } from '@/lib/userData';
+import { colors } from '@/theme/colors';
+import { formatNumber } from '@/utils/number';
 
 export default function Profile() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
-  const name = useUserStore(s => s.name);
-  const age = useUserStore(s => s.age);
+  const { t, i18n } = useTranslation();
+  const name = useUserStore((s) => s.name);
+  const age = useUserStore((s) => s.age);
+  const targets = useUserStore((s) => s.targets);
   const { currentWeight, currentHeight } = useUnitConverter();
+  const f = (n: number) => formatNumber(n, i18n.language, 0);
 
-  const settingsItems = [
-    { icon: User, label: t('settings.accountDetails'), path: null },
-    { icon: Hash, label: t('settings.units'), path: '/settings/units' },
-    { icon: Languages, label: t('settings.language'), path: '/settings/language' },
-  ];
+  const confirmReset = () =>
+    Alert.alert(t('profile.resetDataTitle'), t('profile.resetDataMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.reset'), style: 'destructive', onPress: eraseAllData },
+    ]);
+
+  const exportData = () => {
+    shareExport().catch(() => Alert.alert(t('errors.generic')));
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
-        {/* Header */}
-        <View className="flex-row justify-between items-center mb-6 mt-2">
-          <View className="flex-row items-center">
-            <Button
-              size="icon"
-              variant="secondary"
-              icon={<Icon icon={ChevronLeft} color="white" size={24} />}
-              onPress={() => router.back()}
-              className="mr-3"
-            />
-            <Text className="text-3xl font-bold text-white">{t('tabs.profile')}</Text>
+        <ScreenHeader title={t('profile.title')} />
+
+        <View className="mb-8 flex-row items-center">
+          <View className="mr-4 h-20 w-20 items-center justify-center rounded-full border border-border-strong bg-surface-elevated">
+            <Text className="text-3xl font-bold text-foreground">{name ? name[0]?.toUpperCase() : 'U'}</Text>
           </View>
-          <Button
-            size="icon"
-            variant="ghost"
-            icon={<Icon icon={Settings} color="white" size={24} />}
+          <View className="flex-1">
+            <Text className="text-xl font-bold text-foreground">{name || t('common.user')}</Text>
+            <Text className="text-subtle">
+              {t('profile.dailyTargets', {
+                kcal: f(targets.kcal),
+                protein: f(targets.protein),
+                carbs: f(targets.carbs),
+                fat: f(targets.fat),
+              })}
+            </Text>
+          </View>
+        </View>
+
+        <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
+          {t('profile.statsTitle')}
+        </Text>
+        <View className="mb-8 flex-row gap-3">
+          <Stat
+            icon={Weight}
+            color={colors.accent}
+            value={currentWeight.formatted}
+            label={currentWeight.unit}
+          />
+          <Stat
+            icon={Ruler}
+            color={colors.highlight}
+            value={currentHeight.formatted}
+            label={currentHeight.unit}
+          />
+          <Stat
+            icon={Hash}
+            color={colors.success}
+            value={age !== null ? String(age) : '--'}
+            label={t('common.age')}
           />
         </View>
 
-        {/* User Card */}
-        <View className="flex-row items-center mb-8">
-          <View className="h-20 w-20 bg-zinc-800 rounded-full items-center justify-center border border-zinc-700 mr-4">
-            <Text className="text-white text-3xl font-bold">{name ? name[0].toUpperCase() : 'U'}</Text>
-          </View>
-          <View>
-            <Text className="text-white text-xl font-bold">{name || t('common.user')}</Text>
-            <Text className="text-zinc-500">{t('profile.premiumMember')}</Text>
-          </View>
-        </View>
+        <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
+          {t('settings.appPreferences')}
+        </Text>
+        <ListGroup>
+          <ListRow
+            icon={Hash}
+            title={t('settings.units')}
+            chevron
+            onPress={() => router.push('/settings/units')}
+          />
+          <ListRow
+            icon={Languages}
+            title={t('settings.language')}
+            chevron
+            onPress={() => router.push('/settings/language')}
+            isLast
+          />
+        </ListGroup>
 
-        {/* Stats Grid */}
-        <Text className="text-white text-lg font-bold mb-4">{t('profile.statsTitle')}</Text>
-        <View className="flex-row gap-3 mb-8">
-          <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
-            <Weight color="#3b82f6" size={24} />
-            <Text className="text-white text-xl font-bold mt-2">{currentWeight.formatted}</Text>
-            <Text className="text-zinc-500 text-xs">{currentWeight.unit}</Text>
-          </Card>
-          <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
-            <Ruler color="#f97316" size={24} />
-            <Text className="text-white text-xl font-bold mt-2">{currentHeight.formatted}</Text>
-            <Text className="text-zinc-500 text-xs">{currentHeight.unit}</Text>
-          </Card>
-          <Card className="flex-1 bg-zinc-900 border border-zinc-800 items-center py-6">
-            <Hash color="#22c55e" size={24} />
-            <Text className="text-white text-xl font-bold mt-2">{age || '--'}</Text>
-            <Text className="text-zinc-500 text-xs">{t('common.age')}</Text>
-          </Card>
-        </View>
+        <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
+          {t('profile.yourData')}
+        </Text>
+        <ListGroup>
+          <ListRow
+            icon={Share2}
+            title={t('profile.exportData')}
+            subtitle={t('profile.exportDataHint')}
+            onPress={exportData}
+            isLast
+          />
+        </ListGroup>
 
-        {/* Settings List */}
-        <Text className="text-white text-lg font-bold mb-4">{t('settings.appPreferences')}</Text>
-        <View className="bg-zinc-900 rounded-2xl overflow-hidden mb-10">
-          {settingsItems.map((item, i) => (
-            <TouchableOpacity
-              key={i}
-              onPress={() => item.path && router.push(item.path as any)}
-              className={`flex-row items-center justify-between p-4 ${i !== settingsItems.length - 1 ? 'border-b border-zinc-800' : ''}`}
-            >
-              <View className="flex-row items-center">
-                <item.icon size={20} color="white" />
-                <Text className="text-white ml-3 font-medium">{item.label}</Text>
-              </View>
-              <ChevronRight size={20} color="#52525B" />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Reset Data Button */}
-        <Button
-          variant="danger"
-          label={t('profile.resetAllData')}
-          onPress={() => {
-            const { resetUser } = useUserStore.getState();
-            Alert.alert(
-              t('profile.resetDataTitle'),
-              t('profile.resetDataMessage'),
-              [
-                { text: t('common.cancel'), style: "cancel" },
-                {
-                  text: t('common.reset'),
-                  style: "destructive",
-                  onPress: () => {
-                    resetUser();
-                    router.replace('/onboarding');
-                  }
-                }
-              ]
-            );
-          }}
-          className="mb-10"
-        />
-
+        <Button variant="danger" label={t('profile.resetAllData')} onPress={confirmReset} className="mb-10" />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function Stat({
+  icon,
+  color,
+  value,
+  label,
+}: {
+  icon: typeof Weight;
+  color: string;
+  value: string;
+  label: string;
+}) {
+  return (
+    <Card
+      className="flex-1 items-center border border-border py-6"
+      accessible
+      accessibilityLabel={`${value} ${label}`}
+    >
+      <Icon icon={icon} size={24} color={color} />
+      <Text className="mt-2 text-xl font-bold text-foreground">{value}</Text>
+      <Text className="text-xs text-subtle">{label}</Text>
+    </Card>
   );
 }

@@ -8,7 +8,8 @@ import { AddWidgetSheet } from './AddWidgetSheet';
 import { getWidgetDimensions, GRID_GAP } from './widgetSizes';
 import { findDropTarget, type WidgetFrame } from './dropTarget';
 import { WIDGET_REGISTRY } from './catalog';
-import { useDashboardStore, WidgetId } from '../../store/dashboardStore';
+import { useDashboardStore, type WidgetId } from '../../store/dashboardStore';
+import { colors } from '../../theme/colors';
 
 interface DashboardGridProps {
   isEditing: boolean;
@@ -39,24 +40,20 @@ export function DashboardGrid({
 
   const frames = useRef<Record<string, WidgetFrame>>({});
   const frozenFrames = useRef<Record<string, WidgetFrame>>({});
-  const draggingIdRef = useRef<WidgetId | null>(null);
   const [draggingId, setDraggingId] = useState<WidgetId | null>(null);
 
   const registerFrame = useCallback((id: WidgetId, frame: WidgetFrame) => {
-    // The dragged cell's window rect follows the finger — never use that as home.
-    if (draggingIdRef.current === id) return;
     frames.current[id] = frame;
   }, []);
 
   const handleDragStart = useCallback((id: WidgetId) => {
-    draggingIdRef.current = id;
+    // Snapshot the board so a reflow mid-gesture can't move the goalposts.
     frozenFrames.current = { ...frames.current };
     setDraggingId(id);
     onDraggingChange?.(true);
   }, [onDraggingChange]);
 
   const handleDragEnd = useCallback(() => {
-    draggingIdRef.current = null;
     setDraggingId(null);
     onDraggingChange?.(false);
   }, [onDraggingChange]);
@@ -79,9 +76,22 @@ export function DashboardGrid({
     [widgets, reorderWidgets, handleDragEnd],
   );
 
+  const handleMove = useCallback(
+    (id: WidgetId, direction: -1 | 1) => {
+      const index = widgets.findIndex((w) => w.id === id);
+      const neighbour = widgets[index + direction];
+      if (index < 0 || !neighbour) return;
+      reorderWidgets(id, neighbour.id);
+      lightImpact();
+    },
+    [widgets, reorderWidgets],
+  );
+
   const handleAdd = useCallback(
     (id: WidgetId) => {
-      addWidget(id, WIDGET_REGISTRY[id].defaultSize);
+      const def = WIDGET_REGISTRY[id];
+      if (!def) return;
+      addWidget(id, def.defaultSize);
       setSheetOpen(false);
       lightImpact();
     },
@@ -134,6 +144,9 @@ export function DashboardGrid({
                 onDragCancel={handleDragEnd}
                 onDrop={handleDrop}
                 onRegisterFrame={registerFrame}
+                onMove={handleMove}
+                isFirst={index === 0}
+                isLast={index === widgets.length - 1}
                 layoutLocked={draggingId !== null}
               />
             );
@@ -145,10 +158,10 @@ export function DashboardGrid({
             accessibilityRole="button"
             accessibilityLabel={t('dashboard.editAddCard')}
             style={{ width: colWidth, height: colWidth }}
-            className="rounded-2xl border border-dashed border-zinc-700 items-center justify-center"
+            className="rounded-2xl border border-dashed border-border-strong items-center justify-center"
           >
             <View className="h-12 w-12 items-center justify-center">
-              <Plus size={28} color="#71717a" />
+              <Plus size={28} color={colors.subtle} />
             </View>
           </Pressable>
         )}

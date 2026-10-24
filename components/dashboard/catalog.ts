@@ -10,6 +10,7 @@ import {
 } from './cards';
 import { logMealAction, addWeightAction } from './quick-actions';
 import type { WidgetDefinition, WidgetCategory } from './types';
+import type { TranslationKey } from '../../i18n/keys';
 
 export type { WidgetDefinition, WidgetRenderProps, WidgetCategory, WidgetGestureMode, WidgetKind } from './types';
 
@@ -34,7 +35,7 @@ export const WIDGET_CATALOG = WIDGETS;
 
 export const CATEGORY_ORDER: WidgetCategory[] = ['health', 'training', 'nutrition', 'general'];
 
-export const CATEGORY_TITLE_KEYS: Record<WidgetCategory, string> = {
+export const CATEGORY_TITLE_KEYS: Record<WidgetCategory, TranslationKey> = {
   health: 'dashboard.editCategoryHealth',
   training: 'dashboard.editCategoryTraining',
   nutrition: 'dashboard.editCategoryNutrition',

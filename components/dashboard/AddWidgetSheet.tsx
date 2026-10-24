@@ -3,20 +3,16 @@ import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react-native';
-import { Button } from '../ui/Button';
-import { Icon } from '../ui/Icon';
-import { WIDGET_CATALOG, CATEGORY_ORDER, CATEGORY_TITLE_KEYS } from './widgetRegistry';
+import { cn } from '@/lib/utils';
+import type { TranslationKey } from '@/i18n/keys';
+import { IconButton } from '../ui/IconButton';
+import { WIDGET_CATALOG, CATEGORY_ORDER, CATEGORY_TITLE_KEYS } from './catalog';
 import type { WidgetId } from '../../store/dashboardStore';
-import type { WidgetCategory } from './widgetRegistry';
+import type { WidgetCategory } from './types';
 
-interface CatalogRow {
-  type: 'header' | 'widget';
-  key: string;
-  category?: WidgetCategory;
-  id?: WidgetId;
-  titleKey?: string;
-  placed?: boolean;
-}
+type CatalogRow =
+  | { type: 'header'; key: string; category: WidgetCategory }
+  | { type: 'widget'; key: string; id: WidgetId; titleKey: TranslationKey; placed: boolean };
 
 interface AddWidgetSheetProps {
   visible: boolean;
@@ -28,7 +24,7 @@ interface AddWidgetSheetProps {
 function buildRows(placedIds: WidgetId[]): CatalogRow[] {
   const rows: CatalogRow[] = [];
   for (const category of CATEGORY_ORDER) {
-    const widgets = WIDGET_CATALOG.filter(w => w.category === category);
+    const widgets = WIDGET_CATALOG.filter((w) => w.category === category);
     if (widgets.length === 0) continue;
     rows.push({ type: 'header', key: `h-${category}`, category });
     for (const widget of widgets) {
@@ -51,51 +47,52 @@ export function AddWidgetSheet({ visible, placedIds, onClose, onAdd }: AddWidget
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-zinc-950" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-        <View className="flex-row items-center justify-between px-4 py-3 border-b border-zinc-800">
-          <Text className="text-white text-xl font-bold">{t('dashboard.editAddCard')}</Text>
-          <Button
-            size="icon"
-            variant="ghost"
-            icon={<Icon icon={X} size={22} color="white" />}
-            onPress={onClose}
-            accessibilityLabel={t('common.cancel')}
-          />
+      <View
+        className="flex-1 bg-surface-sunken"
+        style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      >
+        <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+          <Text accessibilityRole="header" className="text-xl font-bold text-foreground">
+            {t('dashboard.editAddCard')}
+          </Text>
+          <IconButton icon={X} variant="ghost" accessibilityLabel={t('common.close')} onPress={onClose} />
         </View>
 
         <FlashList
           data={rows}
-          estimatedItemSize={56}
           keyExtractor={(item) => item.key}
+          getItemType={(item) => item.type}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => {
-            if (item.type === 'header' && item.category) {
+            if (item.type === 'header') {
               return (
-                <Text className="text-zinc-500 text-xs font-bold uppercase tracking-wider mt-4 mb-2">
+                <Text
+                  accessibilityRole="header"
+                  className="mb-2 mt-4 text-xs font-bold uppercase tracking-wider text-subtle"
+                >
                   {t(CATEGORY_TITLE_KEYS[item.category])}
                 </Text>
               );
             }
-            if (!item.id || !item.titleKey) return null;
-            const disabled = item.placed;
             return (
               <Pressable
-                onPress={() => {
-                  if (disabled) return;
-                  onAdd(item.id as WidgetId);
-                }}
-                disabled={disabled}
+                onPress={() => onAdd(item.id)}
+                disabled={item.placed}
                 accessibilityRole="button"
                 accessibilityLabel={t(item.titleKey)}
-                className={`flex-row items-center justify-between py-4 px-4 mb-2 rounded-2xl border ${
-                  disabled ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-900 border-zinc-800'
-                }`}
+                accessibilityState={{ disabled: item.placed }}
+                className={cn(
+                  'mb-2 min-h-14 flex-row items-center justify-between rounded-2xl border border-border px-4 py-4',
+                  item.placed ? 'bg-surface/50' : 'bg-surface active:bg-surface-elevated',
+                )}
               >
-                <Text className={`text-base font-medium ${disabled ? 'text-zinc-600' : 'text-white'}`}>
+                <Text
+                  className={cn('text-base font-medium', item.placed ? 'text-subtle' : 'text-foreground')}
+                >
                   {t(item.titleKey)}
                 </Text>
-                {disabled && (
-                  <Text className="text-zinc-600 text-xs">{t('dashboard.editAlreadyAdded')}</Text>
+                {item.placed && (
+                  <Text className="text-xs text-subtle">{t('dashboard.editAlreadyAdded')}</Text>
                 )}
               </Pressable>
             );
