@@ -44,7 +44,7 @@
         devShells.default = pkgs.mkShellNoCC {
           packages = with pkgs; [
             bun
-            nodejs_20
+            nodejs_22 # Expo SDK 58 requires Node >= 22.13
             watchman
             jdk17
             gradle

@@ -32,6 +32,7 @@ void i18next.use(initReactI18next).init({
   fallbackLng: 'en',
   interpolation: { escapeValue: false }, // React escapes output
   returnNull: false,
+  showSupportNotice: false, // i18next >= 25.8 logs a promotional notice on every launch
 });
 
 useUserStore.subscribe((state, prev) => {

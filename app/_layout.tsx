@@ -1,6 +1,7 @@
 import '../global.css';
 import '@/i18n';
 import { useEffect } from 'react';
+import { LogBox } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -18,6 +19,11 @@ import { colors } from '@/theme/colors';
 import { ErrorFallback } from '@/components/ErrorFallback';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// NativeWind's runtime (react-native-css-interop) touches React Native's deprecated
+// ImageBackground export when it loads, which logs a deprecation warning we can't fix here.
+// The app itself never uses ImageBackground. Remove once NativeWind stops referencing it.
+LogBox.ignoreLogs(['ImageBackground is deprecated']);
 
 cssInterop(SafeAreaView, { className: 'style' });
 
