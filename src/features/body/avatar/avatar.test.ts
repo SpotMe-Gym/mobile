@@ -58,7 +58,17 @@ describe('solveMorphs', () => {
     const s = solveMorphs(male.calibration, snap({ heightCm: 190, weightKg: 92 }));
     const h = (base.heightCm + (s.weights.macro_height_up ?? 0) * (male.calibration.morphs.macro_height_up?.heightCm ?? 0)) * s.scale;
     expect(h).toBeCloseTo(190, 1);
-    expect(s.predictedKg).toBeCloseTo(92, 0);
+    expect(Math.abs(s.predictedKg - 92) / 92).toBeLessThan(0.05);
+  });
+
+  it('a heavy body without measurements gains girth where mass goes', () => {
+    const lean = solveMorphs(male.calibration, snap({ heightCm: 183, weightKg: 78 }));
+    const heavy = solveMorphs(male.calibration, snap({ heightCm: 183, weightKg: 103 }));
+    expect((heavy.predictedCm.waist ?? 0) - (lean.predictedCm.waist ?? 0)).toBeGreaterThan(8);
+    expect(Math.abs(heavy.predictedKg - 103) / 103).toBeLessThan(0.12);
+    // Logged values still win over the mass-derived guess.
+    const logged = solveMorphs(male.calibration, snap({ heightCm: 183, weightKg: 103, measurements: { waist: 90 } }));
+    expect(Math.abs((logged.predictedCm.waist ?? 0) - 90)).toBeLessThan(1);
   });
 
   it('matches logged circumferences', () => {

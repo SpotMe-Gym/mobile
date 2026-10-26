@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as THREE from 'three';
 import { colors as theme } from '@/theme/colors';
 import { OrbitController } from '@/features/body/components/orbit';
@@ -33,7 +33,10 @@ function Body({ positions, colors, indices }: Pick<BodyViewerProps, 'positions' 
       (pos.array as Float32Array).set(positions);
       pos.needsUpdate = true;
     } else {
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions.slice(), 3).setUsage(THREE.DynamicDrawUsage));
+      geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(positions.slice(), 3).setUsage(THREE.DynamicDrawUsage),
+      );
     }
     geometry.computeVertexNormals();
     geometry.computeBoundingSphere();
@@ -46,7 +49,10 @@ function Body({ positions, colors, indices }: Pick<BodyViewerProps, 'positions' 
       (col.array as Float32Array).set(colors);
       col.needsUpdate = true;
     } else {
-      geometry.setAttribute('color', new THREE.BufferAttribute(colors.slice(), 3).setUsage(THREE.DynamicDrawUsage));
+      geometry.setAttribute(
+        'color',
+        new THREE.BufferAttribute(colors.slice(), 3).setUsage(THREE.DynamicDrawUsage),
+      );
     }
     invalidate();
   }, [geometry, colors, invalidate]);
@@ -77,7 +83,14 @@ function OrbitRig({ controller }: { controller: OrbitController }) {
  * Zoom and tilt are clamped (see orbit.ts) so the camera can't enter the mesh or lose it.
  * Renders on demand — nothing is drawn while the body and camera are still.
  */
-export function BodyViewer({ positions, colors, indices, heightM, style, accessibilityLabel }: BodyViewerProps) {
+export function BodyViewer({
+  positions,
+  colors,
+  indices,
+  heightM,
+  style,
+  accessibilityLabel,
+}: BodyViewerProps) {
   const [controller] = useState(() => new OrbitController(heightM));
   useEffect(() => controller.setHeight(heightM), [controller, heightM]);
 
@@ -99,28 +112,32 @@ export function BodyViewer({ positions, colors, indices, heightM, style, accessi
     return Gesture.Exclusive(reset, Gesture.Simultaneous(pan, pinch));
   }, [controller]);
 
+  // The Body screen is a native modal: on iOS it's presented in its own view controller,
+  // outside the app root's GestureHandlerRootView, so gestures need a root of their own here.
   return (
-    <GestureDetector gesture={gesture}>
-      <View
-        style={[styles.container, style]}
-        accessible
-        accessibilityRole="image"
-        accessibilityLabel={accessibilityLabel}
-      >
-        <Canvas
-          frameloop="demand"
-          camera={{ fov: 35, near: 0.05, far: 50 }}
-          onCreated={(state) => state.gl.setClearColor(theme.surface)}
+    <GestureHandlerRootView style={[styles.container, style]}>
+      <GestureDetector gesture={gesture}>
+        <View
+          style={styles.container}
+          accessible
+          accessibilityRole="image"
+          accessibilityLabel={accessibilityLabel}
         >
-          <ambientLight intensity={0.55} />
-          <hemisphereLight args={['#fff4e8', '#1b1f27', 0.6]} />
-          <directionalLight position={[2.5, 4, 3]} intensity={1.6} />
-          <directionalLight position={[-3, 2.5, -2.5]} intensity={0.7} color="#9ec5ff" />
-          <OrbitRig controller={controller} />
-          <Body positions={positions} colors={colors} indices={indices} />
-        </Canvas>
-      </View>
-    </GestureDetector>
+          <Canvas
+            frameloop="demand"
+            camera={{ fov: 35, near: 0.05, far: 50 }}
+            onCreated={(state) => state.gl.setClearColor(theme.surface)}
+          >
+            <ambientLight intensity={0.55} />
+            <hemisphereLight args={['#fff4e8', '#1b1f27', 0.6]} />
+            <directionalLight position={[2.5, 4, 3]} intensity={1.6} />
+            <directionalLight position={[-3, 2.5, -2.5]} intensity={0.7} color="#9ec5ff" />
+            <OrbitRig controller={controller} />
+            <Body positions={positions} colors={colors} indices={indices} />
+          </Canvas>
+        </View>
+      </GestureDetector>
+    </GestureHandlerRootView>
   );
 }
 

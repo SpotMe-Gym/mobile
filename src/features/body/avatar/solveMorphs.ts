@@ -19,6 +19,43 @@ export const MAX_MACRO_WEIGHT: Record<MacroName, number> = { height: 1.3, weight
 /** Ridge term: keeps unmeasured regions near the base body and splits work between morphs. */
 const LAMBDA = 0.5;
 const SWEEPS = 80;
+/** Mass mismatch (fraction) tolerated before girth is adjusted to make up the difference. */
+const MASS_TOLERANCE = 0.03;
+/** Soft (mass-derived) targets count this much relative to a logged measurement. */
+const SOFT_IMPORTANCE = 0.25;
+/** Regions whose circumferences move together (soft targets follow logged neighbours). */
+const REGIONS = {
+  core: ['waist', 'upperAbdomen', 'lowerAbdomen', 'hips'],
+  upper: ['chest', 'shoulders', 'neck'],
+  armL: ['bicepsL', 'forearmL'],
+  armR: ['bicepsR', 'forearmR'],
+  legL: ['thighL', 'calfL'],
+  legR: ['thighR', 'calfR'],
+} as const satisfies Record<string, readonly MeasurementKey[]>;
+const REGION_OF: Partial<Record<MeasurementKey, keyof typeof REGIONS>> = Object.fromEntries(
+  (Object.entries(REGIONS) as [keyof typeof REGIONS, readonly MeasurementKey[]][]).flatMap(([region, keys]) =>
+    keys.map((k) => [k, region]),
+  ),
+);
+
+/** Girth ∝ (mass ratio)^exponent — where body mass is gained and lost. */
+const GIRTH_EXPONENT: Partial<Record<MeasurementKey, number>> = {
+  waist: 0.6,
+  upperAbdomen: 0.6,
+  lowerAbdomen: 0.6,
+  hips: 0.45,
+  thighL: 0.4,
+  thighR: 0.4,
+  chest: 0.4,
+  bicepsL: 0.35,
+  bicepsR: 0.35,
+  neck: 0.3,
+  shoulders: 0.25,
+  calfL: 0.25,
+  calfR: 0.25,
+  forearmL: 0.2,
+  forearmR: 0.2,
+};
 
 /** Typical skeletal-muscle-mass / body-weight ratio at the base phenotype (BIA norms). */
 const SMM_RATIO_REF = { male: 0.42, female: 0.34, neutral: 0.38 } as const;
@@ -27,6 +64,9 @@ const SMM_RATIO_SPAN = 0.08;
 
 const MEASURE_MORPHS: MeasureMorph[] = MEASUREMENT_KEYS.flatMap((k) => [`${k}_incr`, `${k}_decr`] as const);
 
+const opposite = (n: MeasureMorph): MeasureMorph =>
+  (n.endsWith('_incr') ? n.replace(/_incr$/, '_decr') : n.replace(/_decr$/, '_incr')) as MeasureMorph;
+
 /** Positive weight → `<macro>_up`, negative → `<macro>_down`. */
 function macroWeights(name: MacroName, signed: number): Partial<Record<MorphName, number>> {
   const max = MAX_MACRO_WEIGHT[name];
@@ -34,7 +74,11 @@ function macroWeights(name: MacroName, signed: number): Partial<Record<MorphName
   return w >= 0 ? { [`macro_${name}_up`]: w } : { [`macro_${name}_down`]: -w };
 }
 
-function effect(cal: AvatarCalibration, weights: Partial<Record<MorphName, number>>, pick: 'heightCm' | 'massKg') {
+function effect(
+  cal: AvatarCalibration,
+  weights: Partial<Record<MorphName, number>>,
+  pick: 'heightCm' | 'massKg',
+) {
   let sum = 0;
   for (const [name, w] of Object.entries(weights)) {
     if (!w) continue;
@@ -54,7 +98,11 @@ function signedStep(base: number, target: number, up: number, down: number): num
 }
 
 /** Muscle macro from a BIA report: more skeletal muscle per kg than the reference → up. */
-export function muscleFromBia(gender: BodySnapshot['gender'], bia: BiaReport | undefined, weightKg: number): number {
+export function muscleFromBia(
+  gender: BodySnapshot['gender'],
+  bia: BiaReport | undefined,
+  weightKg: number,
+): number {
   if (!bia?.skeletalMuscleKg || weightKg <= 0) return 0;
   return (bia.skeletalMuscleKg / weightKg - SMM_RATIO_REF[gender]) / SMM_RATIO_SPAN;
 }
@@ -68,7 +116,8 @@ export function muscleFromBia(gender: BodySnapshot['gender'], bia: BiaReport | u
  * 3. Weight: the weight macro matches the body mass (mesh volume × density, measured at
  *    build time), after accounting for the scale.
  * 4. Circumferences: bounded least squares over the measure morphs (coordinate descent with
- *    a small ridge term) against every measurement the user has logged. Each morph's effect
+ *    a small ridge term) against every measurement the user has logged, plus soft girth
+ *    targets that carry whatever mass the weight macro couldn't reach. Each morph's effect
  *    on every circumference is in the calibration, so couplings (e.g. the waist morph also
  *    moving the upper abdomen) are handled instead of fought.
  */
@@ -85,7 +134,10 @@ export function solveMorphs(cal: AvatarCalibration, snapshot: BodySnapshot): Mor
   const scale = morphedHeight > 0 ? snapshot.heightCm / morphedHeight : 1;
 
   // 2. Muscle
-  Object.assign(weights, macroWeights('muscle', muscleFromBia(snapshot.gender, snapshot.composition, snapshot.weightKg)));
+  Object.assign(
+    weights,
+    macroWeights('muscle', muscleFromBia(snapshot.gender, snapshot.composition, snapshot.weightKg)),
+  );
 
   // 3. Weight — mass scales with the cube of the uniform scale.
   const targetMass = snapshot.weightKg / scale ** 3;
@@ -104,32 +156,63 @@ export function solveMorphs(cal: AvatarCalibration, snapshot: BodySnapshot): Mor
     predicted[key] = v;
   }
 
-  const measured = MEASUREMENT_KEYS.filter((k) => {
+  // Targets: logged values (hard), plus soft girth targets when the macros alone can't reach
+  // the body mass. MPFB2's weight macro tops out early, so for a heavier (or lighter) body the
+  // missing mass goes into the circumferences people actually gain and lose it in. At a fixed
+  // height, cross-section area tracks mass, so girth scales with ratio^exponent; the belly
+  // takes most of it, wrists and ankles almost none. Logged values always win.
+  const target: Partial<Record<MeasurementKey, number>> = {};
+  const importance: Partial<Record<MeasurementKey, number>> = {};
+  for (const k of MEASUREMENT_KEYS) {
     const v = snapshot.measurements[k];
-    return typeof v === 'number' && v > 0 && (base.measurementsCm[k] ?? 0) > 0;
-  });
-  if (measured.length > 0) {
-    const target: Partial<Record<MeasurementKey, number>> = {};
-    for (const k of measured) target[k] = (snapshot.measurements[k] ?? 0) / scale;
+    if (typeof v === 'number' && v > 0 && (base.measurementsCm[k] ?? 0) > 0) {
+      target[k] = v / scale;
+      importance[k] = 1;
+    }
+  }
+  const massAfterMacros = base.massKg + effect(cal, weights, 'massKg');
+  const massRatio = massAfterMacros > 0 ? targetMass / massAfterMacros : 1;
+  if (Math.abs(massRatio - 1) > MASS_TOLERANCE) {
+    for (const [k, exponent] of Object.entries(GIRTH_EXPONENT) as [MeasurementKey, number][]) {
+      if (importance[k] !== undefined) continue;
+      // A logged neighbour (same region) is better evidence than body mass: follow its ratio,
+      // so e.g. a logged waist isn't dragged back up by mass-derived abdomen targets.
+      const neighbours = (REGION_OF[k] ? REGIONS[REGION_OF[k]] : []).filter((n) => importance[n] === 1);
+      const ratio =
+        neighbours.length > 0
+          ? neighbours.reduce((sum, n) => sum + (target[n] ?? 0) / Math.max(predicted[n] ?? 1, 1), 0) /
+            neighbours.length
+          : massRatio ** exponent;
+      target[k] = (predicted[k] ?? 0) * ratio;
+      importance[k] = SOFT_IMPORTANCE;
+    }
+  }
 
+  const keys = MEASUREMENT_KEYS.filter((k) => importance[k] !== undefined);
+  if (keys.length > 0) {
     const vars = MEASURE_MORPHS.filter((n) => {
       const cm = cal.morphs[n]?.cm;
-      return cm && measured.some((k) => Math.abs(cm[k] ?? 0) > 0.1);
+      return cm && keys.some((k) => Math.abs(cm[k] ?? 0) > 0.1);
     });
     const w = new Map<MeasureMorph, number>(vars.map((n) => [n, 0]));
-    const residual = new Map<MeasurementKey, number>(measured.map((k) => [k, (predicted[k] ?? 0) - (target[k] ?? 0)]));
+    const residual = new Map<MeasurementKey, number>(
+      keys.map((k) => [k, (predicted[k] ?? 0) - (target[k] ?? 0)]),
+    );
 
     for (let sweep = 0; sweep < SWEEPS; sweep++) {
       let moved = 0;
       for (const n of vars) {
+        // incr / decr of one region are one signed control: only one side may be active.
+        if ((w.get(opposite(n)) ?? 0) > 0) continue;
         const cm = cal.morphs[n]?.cm ?? {};
         let g = 0;
         let h = LAMBDA;
-        for (const k of measured) {
+        for (const k of keys) {
           const j = cm[k] ?? 0;
           if (!j) continue;
-          g += j * (residual.get(k) ?? 0);
-          h += j * j;
+          const imp = importance[k] ?? 0;
+          g += imp * j * (residual.get(k) ?? 0);
+          h += imp * j * j;
         }
         const old = w.get(n) ?? 0;
         g += LAMBDA * old;
@@ -138,7 +221,7 @@ export function solveMorphs(cal: AvatarCalibration, snapshot: BodySnapshot): Mor
         if (step === 0) continue;
         w.set(n, next);
         moved = Math.max(moved, Math.abs(step));
-        for (const k of measured) {
+        for (const k of keys) {
           const j = cm[k] ?? 0;
           if (j) residual.set(k, (residual.get(k) ?? 0) + step * j);
         }

@@ -17,6 +17,8 @@ export const BAD: Rgb = [0.91, 0.18, 0.18];
 export const MIN_CHANGE_CM = 0.3;
 /** A change this large paints the zone at full strength. */
 const FULL_CHANGE_CM = 2.5;
+/** Any real change is clearly visible, even a small one. */
+const MIN_STRENGTH = 0.45;
 /** Segment overlays (BIA) are fainter than tape zones. */
 const SEGMENT_STRENGTH = 0.55;
 const FULL_SEGMENT_CHANGE_KG = 0.5;
@@ -51,7 +53,8 @@ export function zoneHighlights(
   for (const [key, delta] of Object.entries(deltas) as [MeasurementKey, number][]) {
     const tone = toneFor(key, delta, mode, goal);
     if (tone === 'neutral') continue;
-    out.push({ key, tone, strength: Math.min(1, Math.abs(delta) / FULL_CHANGE_CM) });
+    const t = Math.min(1, Math.abs(delta) / FULL_CHANGE_CM);
+    out.push({ key, tone, strength: MIN_STRENGTH + (1 - MIN_STRENGTH) * t });
   }
   return out;
 }
@@ -67,7 +70,10 @@ export function segmentHighlights(
   changes: Partial<Record<BodySegment, { leanKg?: number; fatKg?: number }>>,
 ): SegmentHighlight[] {
   const out: SegmentHighlight[] = [];
-  for (const [segment, c] of Object.entries(changes) as [BodySegment, { leanKg?: number; fatKg?: number }][]) {
+  for (const [segment, c] of Object.entries(changes) as [
+    BodySegment,
+    { leanKg?: number; fatKg?: number },
+  ][]) {
     const score = (c.leanKg ?? 0) - (c.fatKg ?? 0);
     if (Math.abs(score) < 0.1) continue;
     out.push({
@@ -112,7 +118,8 @@ export function buildVertexColors(
   for (const z of zones) {
     const zone = model.zones[z.key];
     if (!zone) continue;
-    for (let i = 0; i < zone.indices.length; i++) paint(zone.indices[i] ?? 0, (zone.weights[i] ?? 0) * z.strength, z.tone);
+    for (let i = 0; i < zone.indices.length; i++)
+      paint(zone.indices[i] ?? 0, (zone.weights[i] ?? 0) * z.strength, z.tone);
   }
 
   for (let v = 0; v < n; v++) {

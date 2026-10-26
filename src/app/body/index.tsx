@@ -1,5 +1,13 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react-native';
@@ -8,7 +16,10 @@ import { IconButton } from '@/shared/ui/IconButton';
 import { Icon } from '@/shared/ui/Icon';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { colors } from '@/theme/colors';
-import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '@/shared/expandable-card/ExpandableCardLayout';
+import {
+  ExpandableCardLayoutWithContext,
+  useExpandableCardContext,
+} from '@/shared/expandable-card/ExpandableCardLayout';
 import { BodyCardContent } from '@/features/body/components/BodyCardContent';
 import { BodyViewer } from '@/features/body/components/BodyViewer';
 import { LogMeasurementsSheet } from '@/features/body/components/LogMeasurementsSheet';
@@ -71,10 +82,21 @@ function BodyDetailContent() {
   const removeMeasurements = useBodyStore((s) => s.removeMeasurements);
   const { unit, format } = useLengthUnit();
   const { convertWeight, convertHeight } = useUnitConverter();
-  const { model, failed, current, baseline, deltas, solution, positions, colors: vertexColors, goal } =
-    useBodyAvatar(compare, mode);
+  const {
+    model,
+    failed,
+    current,
+    baseline,
+    deltas,
+    solution,
+    positions,
+    colors: vertexColors,
+    goal,
+  } = useBodyAvatar(compare, mode);
 
-  const since = baseline ? formatDayKey(baseline.day, i18n.language, { day: 'numeric', month: 'short' }) : undefined;
+  const since = baseline
+    ? formatDayKey(baseline.day, i18n.language, { day: 'numeric', month: 'short' })
+    : undefined;
   const weight = convertWeight(current.weightKg);
   const height = convertHeight(current.heightCm);
 
@@ -115,7 +137,8 @@ function BodyDetailContent() {
 
   // The 3D canvas mounts once the card has finished expanding: GL setup during the morph
   // would cost frames, and the canvas can't be clipped by the growing card anyway.
-  const viewerHeight = Math.round(windowHeight * 0.5);
+  // Fixed above the scrolling list: drags on the body always rotate it, never scroll the page.
+  const viewerHeight = Math.round(windowHeight * 0.42);
 
   return (
     <View className="flex-1">
@@ -126,7 +149,7 @@ function BodyDetailContent() {
         <ScreenHeader title={t('body.title')} subtitle={t('body.subtitle')} onBack={handleClose} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 96 }}>
+      <View className="px-4">
         <View
           className="items-center justify-center overflow-hidden rounded-3xl border border-border bg-surface"
           style={{ height: viewerHeight }}
@@ -138,7 +161,7 @@ function BodyDetailContent() {
               positions={positions}
               colors={vertexColors}
               indices={model.indices}
-              heightM={(current.heightCm / 100)}
+              heightM={current.heightCm / 100}
               accessibilityLabel={t('body.viewerA11y')}
               style={{ width: '100%', height: '100%' }}
             />
@@ -146,7 +169,9 @@ function BodyDetailContent() {
             <ActivityIndicator color={colors.muted} />
           )}
         </View>
+      </View>
 
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 96 }}>
         <Text className="mt-2 text-center text-sm text-muted">
           {t('body.heightWeight', {
             height: `${height.formatted} ${height.unit}`,
@@ -228,7 +253,11 @@ function BodyDetailContent() {
             </Text>
             <View className="overflow-hidden rounded-2xl border border-border bg-surface">
               {[...entries].reverse().map((entry, i, list) => {
-                const date = formatDayKey(entry.day, i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
+                const date = formatDayKey(entry.day, i18n.language, {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
+                });
                 return (
                   <View
                     key={entry.id}
