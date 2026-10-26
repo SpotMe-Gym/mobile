@@ -58,6 +58,11 @@ export function DashboardGrid({
     onDraggingChange?.(false);
   }, [onDraggingChange]);
 
+  // After a committed drop the card keeps its drop transition until it has landed.
+  const handleDragSettled = useCallback((id: WidgetId) => {
+    setDraggingId((current) => (current === id ? null : current));
+  }, []);
+
   const handleDrop = useCallback(
     (fromId: WidgetId, translationX: number, translationY: number) => {
       const targetId = findDropTarget(
@@ -67,13 +72,17 @@ export function DashboardGrid({
         widgets,
         frozenFrames.current,
       );
-      handleDragEnd();
-      if (!targetId) return false;
+      if (!targetId) {
+        handleDragEnd();
+        return false;
+      }
+      // Scrolling comes back now; draggingId stays until the card reports it has landed.
+      onDraggingChange?.(false);
       reorderWidgets(fromId, targetId);
       lightImpact();
       return true;
     },
-    [widgets, reorderWidgets, handleDragEnd],
+    [widgets, reorderWidgets, handleDragEnd, onDraggingChange],
   );
 
   const handleMove = useCallback(
@@ -142,12 +151,13 @@ export function DashboardGrid({
                 onSetSize={setWidgetSize}
                 onDragStart={handleDragStart}
                 onDragCancel={handleDragEnd}
+                onDragSettled={handleDragSettled}
                 onDrop={handleDrop}
                 onRegisterFrame={registerFrame}
                 onMove={handleMove}
                 isFirst={index === 0}
                 isLast={index === widgets.length - 1}
-                layoutLocked={draggingId !== null}
+                isDragSource={draggingId === widget.id}
               />
             );
           })}

@@ -34,8 +34,6 @@ export interface CardDimensions {
   cardY: number;
   cardWidth: number;
   cardHeight: number;
-  scaleX: number;
-  scaleY: number;
 }
 
 type AnimatedStyle = ReturnType<typeof useAnimatedStyle>;
@@ -44,6 +42,8 @@ export interface ExpandableCardResult {
   /** 0 = card, 1 = expanded. */
   progress: SharedValue<number>;
   isClosing: boolean;
+  /** True once the open animation has finished (immediately under Reduce Motion). */
+  isExpanded: boolean;
   handleClose: () => void;
   containerStyle: AnimatedStyle;
   backdropStyle: AnimatedStyle;
@@ -72,6 +72,7 @@ export function useExpandableCard(config: ExpandableCardConfig = {}): Expandable
   const params = useLocalSearchParams<CardParams & Record<string, string>>();
   const [isClosing, setIsClosing] = useState(false);
   const shouldReduceMotion = useReducedMotion();
+  const [isExpanded, setIsExpanded] = useState(shouldReduceMotion);
   // Reactive (iPad split view, foldables); 'window' matches measureInWindow coordinates.
   const { width: W, height: H } = useWindowDimensions();
 
@@ -85,17 +86,10 @@ export function useExpandableCard(config: ExpandableCardConfig = {}): Expandable
   const cardY = parseParam(params.cardY) ?? Math.round((H - cardHeight) / 2);
   const widgetSize = parseWidgetSize(params.widgetSize);
 
-  const geometry = useMemo(() => {
-    const scaleX = cardWidth / W;
-    const scaleY = cardHeight / H;
-    return {
-      scaleX,
-      scaleY,
-      translateX: cardX + cardWidth / 2 - W / 2,
-      translateY: cardY + cardHeight / 2 - H / 2,
-    };
-  }, [cardX, cardY, cardWidth, cardHeight, W, H]);
-  const { scaleX, scaleY, translateX, translateY } = geometry;
+  const cardDimensions = useMemo(
+    () => ({ cardX, cardY, cardWidth, cardHeight }),
+    [cardX, cardY, cardWidth, cardHeight],
+  );
 
   const progress = useSharedValue(0);
 
@@ -104,7 +98,13 @@ export function useExpandableCard(config: ExpandableCardConfig = {}): Expandable
       progress.set(1);
       return;
     }
-    progress.set(withTiming(1, { duration: openDuration, easing: Easing.out(Easing.cubic) }));
+    progress.set(withTiming(
+      1,
+      { duration: openDuration, easing: Easing.out(Easing.cubic) },
+      (finished) => {
+        if (finished) scheduleOnRN(setIsExpanded, true);
+      },
+    ));
     // Runs once on mount: the open animation must not restart on re-render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -136,17 +136,21 @@ export function useExpandableCard(config: ExpandableCardConfig = {}): Expandable
     return () => sub.remove();
   }, [handleClose]);
 
+  /*
+   * The card morphs its real frame (left/top/width/height) from the home card's rect to the
+   * window, instead of scaling a window-sized view. Nothing inside is ever scaled, so text
+   * can't stretch and the corner radius stays a true circle (16 -> 0) for the whole morph.
+   * Only this one view re-lays out per frame; both children have fixed sizes.
+   */
   const containerStyle = useAnimatedStyle(() => {
     const offsetY = containerOffsetY ? containerOffsetY.value : 0;
     const p = progress.value;
     return {
-      transform: [
-        { translateX: interpolate(p, [0, 1], [translateX, 0]) },
-        { translateY: interpolate(p, [0, 1], [translateY - offsetY, 0]) },
-        { scaleX: interpolate(p, [0, 1], [scaleX, 1]) },
-        { scaleY: interpolate(p, [0, 1], [scaleY, 1]) },
-      ],
-      borderRadius: interpolate(p, [0, 1], [cardBorderRadius / scaleX, 0]),
+      left: interpolate(p, [0, 1], [cardX, 0]),
+      top: interpolate(p, [0, 1], [cardY - offsetY, 0]),
+      width: interpolate(p, [0, 1], [cardWidth, W]),
+      height: interpolate(p, [0, 1], [cardHeight, H]),
+      borderRadius: interpolate(p, [0, 1], [cardBorderRadius, 0]),
     };
   });
 
@@ -154,29 +158,41 @@ export function useExpandableCard(config: ExpandableCardConfig = {}): Expandable
     opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0.2, 0.7]),
   }));
 
-  const detailContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0.35, 0.65], [0, 1]),
-    pointerEvents: progress.value > 0.5 ? 'auto' : 'none',
-  }));
+  /*
+   * "Blank slate": the card content fades out first (0 -> 0.15), the empty card grows, and the
+   * detail fades in last (0.6 -> 1), so the two layers are never visible together. The detail
+   * is laid out at window size and pinned to the screen (offset by the card's own position),
+   * so the growing card reveals it like a window instead of sliding it around.
+   */
+  const detailContentStyle = useAnimatedStyle(() => {
+    const offsetY = containerOffsetY ? containerOffsetY.value : 0;
+    const p = progress.value;
+    return {
+      opacity: interpolate(p, [0.6, 1], [0, 1], 'clamp'),
+      transform: [
+        { translateX: -interpolate(p, [0, 1], [cardX, 0]) },
+        { translateY: -interpolate(p, [0, 1], [cardY - offsetY, 0]) },
+      ],
+      pointerEvents: p > 0.6 ? 'auto' : 'none',
+    };
+  });
 
-  // Constant inverse scale: the preview is laid out at the closed-card size and always fills
-  // the morphing rectangle. Interpolating it toward 1 made content shrink into the centre on
-  // close, then pop back when the modal unmounted.
+  // Laid out at the closed-card size and centred in the morphing card: no counter-scaling.
   const previewContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.4, 0.7], [1, 1, 0]),
-    transform: [{ scaleX: 1 / scaleX }, { scaleY: 1 / scaleY }],
+    opacity: interpolate(progress.value, [0, 0.15], [1, 0], 'clamp'),
     pointerEvents: 'none',
   }));
 
   return {
     progress,
     isClosing,
+    isExpanded,
     handleClose,
     containerStyle,
     backdropStyle,
     detailContentStyle,
     previewContentStyle,
-    cardDimensions: { cardX, cardY, cardWidth, cardHeight, scaleX, scaleY },
+    cardDimensions,
     widgetSize,
     window: { width: W, height: H },
   };

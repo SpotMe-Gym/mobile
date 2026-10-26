@@ -11,6 +11,7 @@ import Animated, {
   cancelAnimation,
   useReducedMotion,
   LinearTransition,
+  type LayoutAnimationFunction,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -25,14 +26,18 @@ import { Icon } from '@/shared/ui/Icon';
 import { lightImpact } from '@/shared/lib/haptics';
 import { colors } from '@/theme/colors';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 /** 48pt edges — smaller strips were untappable, especially on action bars. */
 const RESIZE_EDGE = 48;
 const RESIZE_CORNER = 56;
 const EDIT_BORDER = 3;
 /** Standard press/drag spring (animations rule). */
 const SPRING = { damping: 15, stiffness: 400 } as const;
+/** Settling after a drop: near-critically damped so a long flight doesn't overshoot its slot. */
+const SETTLE = { damping: 26, stiffness: 260 } as const;
+/** Lift while dragging in edit mode. */
+const DRAG_SCALE = 1.04;
+/** If a committed drop didn't move the card's frame, no layout transition runs — settle anyway. */
+const SETTLE_FALLBACK_MS = 120;
 
 interface WidgetCellProps {
   id: WidgetId;
@@ -42,12 +47,15 @@ interface WidgetCellProps {
   containerWidth: number;
   index: number;
   isEditing: boolean;
-  layoutLocked?: boolean;
+  /** This cell is being dragged, or is flying into its slot after a drop. */
+  isDragSource?: boolean;
   onEnterEdit: () => void;
   onRemove: (id: WidgetId) => void;
   onSetSize: (id: WidgetId, next: WidgetSize) => void;
   onDragStart: (id: WidgetId) => void;
   onDragCancel: () => void;
+  /** The dragged cell has landed in its new slot (or sprung back). */
+  onDragSettled: (id: WidgetId) => void;
   onDrop: (fromId: WidgetId, translationX: number, translationY: number) => boolean;
   onRegisterFrame: (id: WidgetId, frame: { x: number; y: number; width: number; height: number }) => void;
   /** Non-gesture reorder for assistive tech (WCAG 2.5.7 dragging alternative). */
@@ -64,12 +72,13 @@ export function WidgetCell({
   containerWidth,
   index,
   isEditing,
-  layoutLocked = false,
+  isDragSource = false,
   onEnterEdit,
   onRemove,
   onSetSize,
   onDragStart,
   onDragCancel,
+  onDragSettled,
   onDrop,
   onRegisterFrame,
   onMove,
@@ -94,7 +103,10 @@ export function WidgetCell({
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const rotate = useSharedValue(0);
-  const isDragging = useSharedValue(false);
+  /** Stays true from pick-up until the card has settled, so it flies above its neighbours. */
+  const isRaised = useSharedValue(false);
+  const dropPending = useSharedValue(false);
+  const lift = useSharedValue(1);
   const isResizing = useSharedValue(false);
   const previewW = useSharedValue(width);
   const previewH = useSharedValue(height);
@@ -105,6 +117,11 @@ export function WidgetCell({
     previewW.set(width);
     previewH.set(height);
   }, [width, height, previewW, previewH]);
+
+  // A long-press enters edit mode mid-press, so the press-out may never arrive: release it here.
+  useEffect(() => {
+    if (isEditing) cardScale.set(withSpring(1, SPRING));
+  }, [isEditing, cardScale]);
 
   useEffect(() => {
     if (!isEditing || shouldReduceMotion) {
@@ -130,9 +147,8 @@ export function WidgetCell({
   }, [isEditing, shouldReduceMotion, index, rotate]);
 
   const animatedStyle = useAnimatedStyle(() => {
-    const dragging = isDragging.value;
-    const pressScale = isEditing ? (dragging ? 1.04 : 1) : cardScale.value;
-    const jiggling = isEditing && !dragging && !isResizing.value;
+    const pressScale = isEditing ? lift.value : cardScale.value;
+    const jiggling = isEditing && !isRaised.value && !isResizing.value;
     return {
       transform: [
         { translateX: translateX.value },
@@ -146,37 +162,74 @@ export function WidgetCell({
   const slotStyle = useAnimatedStyle(() => ({
     width: previewW.value,
     height: previewH.value,
-    zIndex: isDragging.value || isResizing.value ? 30 : 0,
-    elevation: isDragging.value || isResizing.value ? 24 : 0,
+    zIndex: isRaised.value || isResizing.value ? 30 : 0,
+    elevation: isRaised.value || isResizing.value ? 24 : 0,
   }));
 
   const handleDragStartJS = useCallback(() => {
     onDragStart(id);
   }, [onDragStart, id]);
 
+  const settledJS = useCallback(() => onDragSettled(id), [onDragSettled, id]);
+
+  /** Spring the drag offset home; the card lands, drops its lift and leaves the top layer. */
+  const settle = useCallback(() => {
+    'worklet';
+    lift.set(withSpring(1, SETTLE));
+    translateX.set(withSpring(0, SETTLE));
+    translateY.set(withSpring(0, SETTLE, (finished) => {
+      if (!finished) return;
+      isRaised.set(false);
+      scheduleOnRN(settledJS);
+    }));
+  }, [lift, translateX, translateY, isRaised, settledJS]);
+
+  /*
+   * Layout transition for the dragged card only. When the reorder commits, the card's frame
+   * jumps to its new slot while the drag offset is still applied. Starting the frame from its
+   * old origin and springing both the frame (old -> new slot) and the offset (drop point -> 0)
+   * together keeps "frame + offset" continuous: the card flies from where the finger let go
+   * straight into its new slot, with no snap back to the old one.
+   */
+  const dropTransition = useCallback<LayoutAnimationFunction>(
+    (values) => {
+      'worklet';
+      dropPending.set(false);
+      settle();
+      return {
+        initialValues: { originX: values.currentOriginX, originY: values.currentOriginY },
+        animations: {
+          originX: withSpring(values.targetOriginX, SETTLE),
+          originY: withSpring(values.targetOriginY, SETTLE),
+        },
+      };
+    },
+    [dropPending, settle],
+  );
+
   const handleDropJS = useCallback(
     (translationX: number, translationY: number) => {
       const committed = onDrop(id, translationX, translationY);
-      if (committed) {
-        isDragging.set(false);
-        translateX.set(0);
-        translateY.set(0);
+      if (!committed) {
+        settle();
+        onDragCancel();
         return;
       }
-      isDragging.set(false);
-      translateX.set(withSpring(0, SPRING));
-      translateY.set(withSpring(0, SPRING));
-      onDragCancel();
+      // Keep the offset: dropTransition picks it up when the reordered layout commits.
+      dropPending.set(true);
+      setTimeout(() => {
+        if (!dropPending.get()) return;
+        dropPending.set(false);
+        settle();
+      }, SETTLE_FALLBACK_MS);
     },
-    [id, onDrop, onDragCancel, isDragging, translateX, translateY],
+    [id, onDrop, onDragCancel, dropPending, settle],
   );
 
   const handleCancelJS = useCallback(() => {
-    isDragging.set(false);
-    translateX.set(withSpring(0, SPRING));
-    translateY.set(withSpring(0, SPRING));
+    settle();
     onDragCancel();
-  }, [onDragCancel, isDragging, translateX, translateY]);
+  }, [onDragCancel, settle]);
 
   const commitResizeJS = useCallback(
     (liveW: number, liveH: number) => {
@@ -201,7 +254,8 @@ export function WidgetCell({
     .minDistance(8)
     .onStart(() => {
       scheduleOnRN(handleDragStartJS);
-      isDragging.set(true);
+      isRaised.set(true);
+      lift.set(withSpring(DRAG_SCALE, SPRING));
     })
     .onUpdate((e) => {
       translateX.set(e.translationX);
@@ -275,10 +329,11 @@ export function WidgetCell({
   }, [onNavLayout, width, height, id, onRegisterFrame]);
 
   const detailPath = def?.detailPath;
+  const detailParams = def?.detailParams;
   const openDetail = useCallback(() => {
     if (isEditing || !detailPath) return;
-    navigateToDetail(detailPath, { widgetSize: size });
-  }, [isEditing, detailPath, navigateToDetail, size]);
+    navigateToDetail(detailPath, { widgetSize: size, ...detailParams });
+  }, [isEditing, detailPath, detailParams, navigateToDetail, size]);
 
   const canResize = def ? def.sizes.length > 1 : false;
   const editActions = [
@@ -389,67 +444,54 @@ export function WidgetCell({
     </View>
   ) : null;
 
-  if (isEditing) {
-    return (
-      <Animated.View
-        collapsable={false}
-        ref={cardRef}
-        onLayout={handleLayout}
-        accessible
-        accessibilityLabel={`${t(def.titleKey)}, ${t(`dashboard.size.${size}`)}`}
-        accessibilityHint={t('dashboard.a11yEditHint')}
-        accessibilityActions={editActions}
-        onAccessibilityAction={handleEditAction}
-        layout={layoutLocked ? undefined : LinearTransition}
-        style={[{ borderRadius: 16, overflow: 'visible' }, slotStyle]}
-      >
-        <Animated.View
-          collapsable={false}
-          style={[StyleSheet.absoluteFill, { borderRadius: 16, overflow: 'hidden' }, animatedStyle]}
-        >
-          <View style={{ flex: 1 }} pointerEvents="none">
-            {content}
-          </View>
-          {chrome}
-        </Animated.View>
-      </Animated.View>
-    );
-  }
-
-  if (def.gestureMode === 'inner') {
-    return (
-      <Animated.View
-        collapsable={false}
-        ref={cardRef}
-        onLayout={handleLayout}
-        style={[{ overflow: 'hidden', borderRadius: 16, width, height }, animatedStyle]}
-      >
-        <View style={{ flex: 1 }}>{content}</View>
-      </Animated.View>
-    );
-  }
+  // One element tree for every mode: switching it between edit / wrapper / inner used to
+  // remount the card's content on every edit toggle (flicker, lost state such as the
+  // Today's Plan page). Only props change between modes now.
+  const isWrapper = def.gestureMode === 'wrapper';
+  const pressable = !isEditing && isWrapper;
 
   return (
-    <AnimatedPressable
+    <Animated.View
       collapsable={false}
       ref={cardRef}
       onLayout={handleLayout}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={openDetail}
-      onLongPress={onEnterEdit}
-      delayLongPress={400}
-      accessibilityRole="button"
-      accessibilityLabel={t(def.titleKey)}
-      accessibilityActions={[{ name: 'longpress', label: t('dashboard.editLayout') }]}
-      onAccessibilityAction={(e) => {
-        if (e.nativeEvent.actionName === 'longpress') onEnterEdit();
-      }}
-      style={[{ overflow: 'hidden', borderRadius: 16, width, height }, animatedStyle]}
+      accessible={isEditing}
+      accessibilityLabel={isEditing ? `${t(def.titleKey)}, ${t(`dashboard.size.${size}`)}` : undefined}
+      accessibilityHint={isEditing ? t('dashboard.a11yEditHint') : undefined}
+      accessibilityActions={isEditing ? editActions : undefined}
+      onAccessibilityAction={isEditing ? handleEditAction : undefined}
+      layout={isEditing ? (isDragSource ? dropTransition : LinearTransition) : undefined}
+      style={[styles.slot, slotStyle]}
     >
-      <View style={{ flex: 1 }} pointerEvents="none">
-        {content}
-      </View>
-    </AnimatedPressable>
+      <Animated.View collapsable={false} style={[StyleSheet.absoluteFill, styles.clip, animatedStyle]}>
+        <Pressable
+          style={styles.fill}
+          disabled={!pressable}
+          accessible={pressable}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={openDetail}
+          onLongPress={onEnterEdit}
+          delayLongPress={400}
+          accessibilityRole="button"
+          accessibilityLabel={t(def.titleKey)}
+          accessibilityActions={pressable ? [{ name: 'longpress', label: t('dashboard.editLayout') }] : undefined}
+          onAccessibilityAction={(e) => {
+            if (e.nativeEvent.actionName === 'longpress') onEnterEdit();
+          }}
+        >
+          <View style={styles.fill} pointerEvents={isEditing || isWrapper ? 'none' : 'auto'}>
+            {content}
+          </View>
+        </Pressable>
+        {chrome}
+      </Animated.View>
+    </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  slot: { borderRadius: 16, overflow: 'visible' },
+  clip: { borderRadius: 16, overflow: 'hidden' },
+  fill: { flex: 1 },
+});

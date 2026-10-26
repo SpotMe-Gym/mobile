@@ -10,6 +10,7 @@ import { AiButton } from '@/shared/components/AiButton';
 import { IconButton } from '@/shared/ui/IconButton';
 import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '@/shared/expandable-card/ExpandableCardLayout';
 import { BodyWeightCardContent } from '@/features/body-weight/components/BodyWeightCardContent';
+import { ActionButton } from '@/features/dashboard/widgets/quickActions';
 import { WeightChart } from '@/features/body-weight/components/WeightChart';
 import { AddWeightModal } from '@/features/body-weight/components/AddWeightModal';
 import { TrendBadge } from '@/features/body-weight/components/TrendBadge';
@@ -21,12 +22,19 @@ import { successFeedback } from '@/shared/lib/haptics';
 import { formatDayKey } from '@/shared/utils/date';
 
 // Preview renders the same component as the home grid card so the two can never drift.
+// Opened from the "Add weight" quick action, the preview is that button instead.
 function WeightCardPreview() {
+  const { t } = useTranslation();
   const { cardDimensions, widgetSize } = useExpandableCardContext();
+  const fromAddAction = useLocalSearchParams<{ add?: string }>().add === '1';
   const { cardWidth, cardHeight } = cardDimensions;
   return (
     <View style={{ width: cardWidth, height: cardHeight }}>
-      <BodyWeightCardContent size={widgetSize} style={{ width: cardWidth, height: cardHeight }} />
+      {fromAddAction ? (
+        <ActionButton label={t('dashboard.addWeight')} />
+      ) : (
+        <BodyWeightCardContent size={widgetSize} style={{ width: cardWidth, height: cardHeight }} />
+      )}
     </View>
   );
 }
@@ -35,15 +43,18 @@ function WeightDetailContent() {
   const insets = useSafeAreaInsets();
   const { t, i18n } = useTranslation();
   const params = useLocalSearchParams<{ add?: string }>();
-  const { handleClose } = useExpandableCardContext();
+  const { handleClose, isExpanded } = useExpandableCardContext();
   const entries = useWeightStore((s) => s.entries);
   const addEntry = useWeightStore((s) => s.addEntry);
   const removeEntry = useWeightStore((s) => s.removeEntry);
   const isHydrated = useHasHydrated(useWeightStore);
   const { currentWeight, convertWeight, toKg, units } = useUnitConverter();
   const trend = useWeightTrend();
-  // Quick action "Add weight" opens the sheet straight away.
-  const [modalVisible, setModalVisible] = useState(params.add === '1');
+  const [modalVisible, setModalVisible] = useState(false);
+  // From the "Add weight" quick action the sheet opens by itself, but only once the card has
+  // finished expanding, so the two animations don't run on top of each other.
+  const [autoAddHandled, setAutoAddHandled] = useState(false);
+  const showModal = modalVisible || (params.add === '1' && isExpanded && !autoAddHandled);
 
   const newestFirst = useMemo(() => [...entries].reverse(), [entries]);
   const chartData = useMemo(
@@ -141,8 +152,11 @@ function WeightDetailContent() {
       )}
 
       <AddWeightModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        visible={showModal}
+        onClose={() => {
+          setModalVisible(false);
+          setAutoAddHandled(true);
+        }}
         unit={units.weight}
         initialWeight={currentWeight.formatted === '--' ? null : Number(currentWeight.formatted)}
         onSave={(w, day) => {

@@ -113,17 +113,25 @@ The app's signature animation: cards on the home screen expand to fill the scree
 
 ### How It Works
 - Card position is measured with `measureInWindow` and passed as route params
-- Detail screen renders at full screen size, then applies scale+translate transforms to shrink to card position
+- The card view animates its real frame (`left/top/width/height`) from the card rect to the window, and its corner radius 16 → 0. Nothing is scaled, so content never stretches and corners stay round
 - Animation progress goes from 0 (card) to 1 (fullscreen)
-- Preview content (card appearance) fades out at 0→0.15
-- Detail content fades in at 0.6→1.0
-- This creates a "blank slate" expanding effect between the two states
+- Preview content (the home card component, laid out at the card size and centred) fades out at 0→0.15
+- Detail content (laid out at window size, pinned to the screen so the growing card reveals it) fades in at 0.6→1.0
+- This creates a "blank slate" expanding effect: the two layers are never visible together
+- `isExpanded` (context) turns true when the open animation finishes; start follow-up UI such as sheets from it, never alongside the expand
 
 ### Key Constraints
 - Animation math and card container MUST use `Dimensions.get('window')` — this matches `measureInWindow` coordinates
 - On Android, the backdrop extends to `Dimensions.get('screen').height` to cover the nav bar, but the card container itself stays at window dimensions
-- Preview content MUST use counter-scale transforms (`1/scaleX`, `1/scaleY`) to maintain correct size while the container is scaled. Without this, the preview appears as a tiny doubly-scaled square.
+- Never scale the card with separate `scaleX`/`scaleY`: a non-uniform scale distorts its content and corners. Animate the frame instead (only this one view re-lays out per frame; its children have fixed sizes)
 - Navigation lock prevents double-tap opening multiple cards
+
+## Dashboard edit mode
+
+- `WidgetCell` renders ONE element tree in every mode (normal / edit, wrapper / inner); only props change. Swapping the root element type remounts the card content (flicker, lost state)
+- Dragged card: lifts to 1.04 and stays above its neighbours (`isRaised`) until it has landed
+- Committed drop: the drag offset is NOT reset. The dragged cell uses a custom layout transition (`dropTransition`) that starts its frame at the old slot and springs frame → new slot and offset → 0 together, so it flies from the finger into the new slot. Neighbours use `LinearTransition`
+- Settling spring: `damping 26, stiffness 260` (near-critical, no overshoot on long flights); the press spring stays `15/400`
 
 ## Calling JS from worklets (scheduleOnRN)
 

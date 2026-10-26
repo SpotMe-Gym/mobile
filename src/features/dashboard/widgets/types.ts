@@ -28,6 +28,8 @@ export interface WidgetDefinition {
   defaultOnHome?: boolean;
   titleKey: TranslationKey;
   detailPath?: ExpandableRoute;
+  /** Extra route params sent with detailPath (e.g. open a sheet once the card has expanded). */
+  detailParams?: Record<string, string>;
   gestureMode: WidgetGestureMode;
   Render: ComponentType<WidgetRenderProps>;
 }

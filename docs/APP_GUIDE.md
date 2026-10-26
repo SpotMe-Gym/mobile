@@ -264,6 +264,8 @@ touches     detail receives touches when progress > 0.5
 
 Each issue has a file reference, ordered by how visible it is.
 
+> **Status (26 Oct 2026):** A1–A7 are fixed. §7 above still describes the pre-fix behaviour for those rows; the new behaviour is in `.cursor/rules/animations.mdc` ("Expandable Card Animation System" and "Dashboard edit mode").
+
 | # | Issue | Where | Why it looks wrong |
 |---|---|---|---|
 | **A1** | Fade windows don't match the intended "blank slate"; preview and detail overlap from 0.35 to 0.7 | `useExpandableCard.ts` (`detailContentStyle`, `previewContentStyle`) | Two layers are half-visible at once, which reads as a muddy double image mid-expand |

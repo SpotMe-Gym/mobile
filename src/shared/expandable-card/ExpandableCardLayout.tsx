@@ -30,6 +30,8 @@ interface ExpandableCardContextValue {
   cardDimensions: CardDimensions;
   progress: SharedValue<number>;
   widgetSize: CardSize;
+  /** True once the open animation has finished — start follow-up UI (sheets) after this. */
+  isExpanded: boolean;
 }
 
 const ExpandableCardContext = createContext<ExpandableCardContextValue | null>(null);
@@ -68,6 +70,7 @@ export function ExpandableCardLayoutWithContext({
     cardDimensions,
     progress,
     widgetSize,
+    isExpanded,
     window,
   } = useExpandableCard({ ...config, containerOffsetY: offsetY });
 
@@ -77,8 +80,8 @@ export function ExpandableCardLayoutWithContext({
     Platform.OS === 'android' ? Math.max(Dimensions.get('screen').height, window.height) : window.height;
 
   const contextValue = useMemo(
-    () => ({ handleClose, cardDimensions, progress, widgetSize }),
-    [handleClose, cardDimensions, progress, widgetSize],
+    () => ({ handleClose, cardDimensions, progress, widgetSize, isExpanded }),
+    [handleClose, cardDimensions, progress, widgetSize, isExpanded],
   );
 
   return (
@@ -99,11 +102,7 @@ export function ExpandableCardLayoutWithContext({
         <Animated.View
           collapsable={false}
           accessibilityViewIsModal
-          style={[
-            styles.card,
-            { width: window.width, height: window.height, backgroundColor },
-            containerStyle,
-          ]}
+          style={[styles.card, { backgroundColor }, containerStyle]}
         >
           {/* Inset lives on the detail wrapper only — padding here would shift the
               absolutely-positioned preview against the padding box. */}
@@ -119,7 +118,11 @@ export function ExpandableCardLayoutWithContext({
 
             <Animated.View
               collapsable={false}
-              style={[styles.fill, { paddingTop: insets.top }, detailContentStyle]}
+              style={[
+                styles.detail,
+                { width: window.width, height: window.height, paddingTop: insets.top },
+                detailContentStyle,
+              ]}
             >
               {children}
             </Animated.View>
@@ -148,5 +151,6 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   card: { position: 'absolute', overflow: 'hidden' },
   preview: { ...StyleSheet.absoluteFill, justifyContent: 'center', alignItems: 'center' },
+  detail: { position: 'absolute', top: 0, left: 0 },
   bottomFill: { position: 'absolute', left: 0, right: 0 },
 });
