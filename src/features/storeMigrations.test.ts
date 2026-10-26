@@ -93,3 +93,15 @@ describe('workoutStore v0–v4 → v5', () => {
     expect(s.workouts?.[0]?.exercises[0]).toMatchObject({ restTime: 60, executionTime: 45, type: 'exercise' });
   });
 });
+
+describe('userStore v1 → v2', () => {
+  it("renames gender 'other' to 'neutral'", () => {
+    expect(migrateUserState({ name: 'A', gender: 'other' }, 1)).toMatchObject({ name: 'A', gender: 'neutral' });
+  });
+  it('keeps other genders untouched', () => {
+    expect(migrateUserState({ gender: 'female' }, 1)).toMatchObject({ gender: 'female' });
+  });
+  it("maps v0 'Other' straight to 'neutral'", () => {
+    expect(migrateUserState({ gender: 'Other' }, 0)).toMatchObject({ gender: 'neutral' });
+  });
+});

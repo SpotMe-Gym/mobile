@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const onboardingSchema = z.object({
   name: z.string().trim().min(1, 'required').max(50, 'tooLong'),
   gender: z
-    .enum(['male', 'female', 'other'], { message: 'required' })
+    .enum(['male', 'female', 'neutral'], { message: 'required' })
     .nullable()
     .refine((v) => v !== null, 'required'),
   age: z.number({ message: 'required' }).int().min(13, 'range').max(100, 'range'),

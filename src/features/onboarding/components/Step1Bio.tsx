@@ -10,7 +10,7 @@ import { Stepper } from '@/shared/ui/Stepper';
 import type { OnboardingValues } from '@/features/onboarding/onboardingSchema';
 import { useFieldError } from '@/features/onboarding/hooks/useFieldError';
 
-const GENDERS = ['male', 'female', 'other'] as const;
+const GENDERS = ['male', 'female', 'neutral'] as const;
 
 export function Step1Bio({ control }: { control: Control<OnboardingValues> }) {
   const { t } = useTranslation();
@@ -63,7 +63,7 @@ export function Step1Bio({ control }: { control: Control<OnboardingValues> }) {
         render={({ field, fieldState }) => (
           <View className="mb-5">
             <Text className="mb-2 ml-1 font-medium text-muted">{t('common.gender')}</Text>
-            <View className="flex-row gap-3" accessibilityRole="radiogroup">
+            <View className="flex-row flex-wrap gap-3" accessibilityRole="radiogroup">
               {GENDERS.map((g) => {
                 const selected = field.value === g;
                 return (
@@ -73,7 +73,9 @@ export function Step1Bio({ control }: { control: Control<OnboardingValues> }) {
                     accessibilityRole="radio"
                     accessibilityState={{ checked: selected }}
                     className={cn(
-                      'h-12 flex-1 items-center justify-center rounded-xl border',
+                      // Neutral / prefer not to say gets its own full-width row: the label is long.
+                      'h-12 items-center justify-center rounded-xl border',
+                      g === 'neutral' ? 'w-full' : 'flex-1',
                       selected ? 'border-primary bg-primary' : 'border-border bg-surface',
                     )}
                   >

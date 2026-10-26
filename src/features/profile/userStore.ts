@@ -3,7 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { mmkvStateStorage, userMMKV, LEGACY_WEIGHT_KEY } from '@/shared/lib/storage';
 import type { Macros } from '@/features/nutrition/utils/nutrition';
 
-export type Gender = 'male' | 'female' | 'other';
+/** 'neutral' = "Neutral / prefer not to say" (formerly 'other'). */
+export type Gender = 'male' | 'female' | 'neutral';
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very' | 'super';
 export type Goal = 'lose' | 'maintain' | 'gain';
 export type LanguagePref = 'system' | 'en' | 'it';
@@ -75,7 +76,7 @@ export const useUserStore = create<UserState>()(
     {
       name: 'user-storage',
       storage: createJSONStorage(() => mmkvStateStorage(userMMKV)),
-      version: 1,
+      version: 2,
       migrate: (persisted, version) => migrateUserState(persisted, version),
     },
   ),
@@ -85,7 +86,7 @@ export const useUserStore = create<UserState>()(
 // Migrations (exported for tests)
 // ---------------------------------------------------------------------------
 
-const GENDER_V0: Record<string, Gender> = { Male: 'male', Female: 'female', Other: 'other' };
+const GENDER_V0: Record<string, Gender> = { Male: 'male', Female: 'female', Other: 'neutral' };
 const ACTIVITY_V0: Record<string, ActivityLevel> = {
   Sedentary: 'sedentary',
   'Lightly Active': 'light',
@@ -108,7 +109,9 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 
 export function migrateUserState(persisted: unknown, version: number): Partial<UserState> {
   const s = isRecord(persisted) ? persisted : {};
-  if (version >= 1) return s as Partial<UserState>;
+  if (version >= 2) return s as Partial<UserState>;
+  // v1 → v2: 'other' became 'neutral' ("Neutral / prefer not to say").
+  if (version === 1) return { ...s, gender: s.gender === 'other' ? 'neutral' : s.gender } as Partial<UserState>;
 
   // v0 → v1: string numbers → numbers, display labels → enum ids, calories → kcal,
   // weight history moves to its own store (handed off through a one-shot MMKV key).
