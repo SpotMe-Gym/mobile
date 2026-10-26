@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "avatars": [
+    {
+      "gender": "male",
+      "file": "male.glb",
+      "bytes": 1190612,
+      "base": {
+        "heightCm": 172.976,
+        "massKg": 62.277,
+        "measurementsCm": {
+          "neck": 37.293,
+          "chest": 96.069,
+          "waist": 76.754,
+          "hips": 93.34,
+          "bicepsL": 27.033,
+          "wristL": 14.878,
+          "thighL": 54.385,
+          "calfL": 38.381,
+          "ankleL": 22.663,
+          "kneeL": 36.301,
+          "bicepsR": 27.033,
+          "wristR": 14.878,
+          "thighR": 54.385,
+          "calfR": 38.381,
+          "ankleR": 22.663,
+          "kneeR": 36.301,
+          "shoulders": 124.791,
+          "upperAbdomen": 77.52,
+          "lowerAbdomen": 83.019,
+          "forearmL": 25.163,
+          "forearmR": 25.163
+        }
+      }
+    },
+    {
+      "gender": "female",
+      "file": "female.glb",
+      "bytes": 1178748,
+      "base": {
+        "heightCm": 159.05,
+        "massKg": 47.308,
+        "measurementsCm": {
+          "neck": 28.576,
+          "chest": 82.459,
+          "waist": 71.173,
+          "hips": 94.163,
+          "bicepsL": 22.95,
+          "wristL": 12.311,
+          "thighL": 50.887,
+          "calfL": 35.322,
+          "ankleL": 17.325,
+          "kneeL": 34.081,
+          "bicepsR": 22.95,
+          "wristR": 12.311,
+          "thighR": 50.887,
+          "calfR": 35.322,
+          "ankleR": 17.325,
+          "kneeR": 34.081,
+          "shoulders": 110.379,
+          "upperAbdomen": 65.192,
+          "lowerAbdomen": 83.303,
+          "forearmL": 20.485,
+          "forearmR": 20.485
+        }
+      }
+    },
+    {
+      "gender": "neutral",
+      "file": "neutral.glb",
+      "bytes": 1204900,
+      "base": {
+        "heightCm": 165.938,
+        "massKg": 54.085,
+        "measurementsCm": {
+          "neck": 32.853,
+          "chest": 87.959,
+          "waist": 72.734,
+          "hips": 92.834,
+          "bicepsL": 24.953,
+          "wristL": 13.594,
+          "thighL": 52.371,
+          "calfL": 36.548,
+          "ankleL": 19.732,
+          "kneeL": 34.535,
+          "bicepsR": 24.953,
+          "wristR": 13.594,
+          "thighR": 52.371,
+          "calfR": 36.548,
+          "ankleR": 19.732,
+          "kneeR": 34.535,
+          "shoulders": 117.003,
+          "upperAbdomen": 70.563,
+          "lowerAbdomen": 82.849,
+          "forearmL": 22.838,
+          "forearmR": 22.838
+        }
+      }
+    }
+  ]
+}
