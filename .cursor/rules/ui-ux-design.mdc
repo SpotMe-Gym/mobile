@@ -11,7 +11,7 @@ When generating UI components, act as an elite UI/UX designer. Prioritize visual
 
 ## Design Tokens & Styling (NativeWind)
 - NEVER invent random hex codes or inline colors (e.g., `#FF5733`), and don't use Tailwind's raw palette (`zinc-800`, `blue-600`).
-- ALWAYS use the tokens defined in `theme/colors.ts` (exposed to Tailwind): `bg-background`, `bg-surface`, `bg-surface-elevated`, `bg-surface-sunken`, `border-border`, `border-border-strong`, `text-foreground`, `text-muted`, `text-subtle`, `bg-primary`, `text-primary-text`, `text-danger-text`, `text-success-text`, `text-warning-text`, and macro colours `protein` / `carbs` / `fat`.
+- ALWAYS use the tokens defined in `src/theme/colors.ts` (exposed to Tailwind): `bg-background`, `bg-surface`, `bg-surface-elevated`, `bg-surface-sunken`, `border-border`, `border-border-strong`, `text-foreground`, `text-muted`, `text-subtle`, `bg-primary`, `text-primary-text`, `text-danger-text`, `text-success-text`, `text-warning-text`, and macro colours `protein` / `carbs` / `fat`.
 - In JS (icon `color` props, Reanimated, native config) import `colors` from `@/theme/colors` instead of writing hex.
 - Adhere strictly to the 4pt grid system for spacing. Use Tailwind's default spacing scale (`p-4` = 16px, `gap-2` = 8px). Avoid arbitrary values like `p-[13px]`.
 
@@ -21,7 +21,7 @@ When generating UI components, act as an elite UI/UX designer. Prioritize visual
 - Avoid center-aligned text for paragraphs; only use center alignment for short titles or empty states.
 
 ## Accessibility (A11y)
-- **Tap Targets**: interactive elements MUST be at least **44×44 pt on iOS and 48×48 dp on Android** (`MIN_TOUCH`, `TOUCH_SIZE_CLASS` in `lib/platform.ts`). `Button` and `IconButton` already comply — prefer them over hand-rolled touchables.
+- **Tap Targets**: interactive elements MUST be at least **44×44 pt on iOS and 48×48 dp on Android** (`MIN_TOUCH`, `TOUCH_SIZE_CLASS` in `src/shared/lib/platform.ts`). `Button` and `IconButton` already comply — prefer them over hand-rolled touchables.
 - **Screen Readers**: icon-only controls use `IconButton`, whose `accessibilityLabel` is required by its type.
 - **Roles & state**: set roles (`button`, `header`, `radio`, `tab`, `switch`, `adjustable`) and `accessibilityState` (`selected`, `checked`, `disabled`). Steppers are a single `adjustable` element with increment/decrement actions.
 - **Gesture alternatives**: anything done by drag (dashboard reorder/resize) also needs `accessibilityActions` (WCAG 2.5.7).

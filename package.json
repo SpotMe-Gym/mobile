@@ -85,7 +85,15 @@
     "globalSetup": "./jest.global-setup.js",
     "moduleNameMapper": {
       "\\.css$": "<rootDir>/jest/styleMock.js"
-    }
+    },
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/ios/",
+      "/android/"
+    ],
+    "roots": [
+      "<rootDir>/src"
+    ]
   },
   "engines": {
     "node": ">=22.13.0"

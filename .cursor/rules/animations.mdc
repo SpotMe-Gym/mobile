@@ -143,4 +143,4 @@ if (finished) runOnJS(router.back)();
 
 ## Gestures
 
-Gesture Handler 3 deprecates the `Gesture.Pan()` builder in favour of hooks (`usePanGesture`). `WidgetCell.tsx` still uses the builder (it remains supported); new gesture code should use the hook API, and the dashboard should be migrated once it can be tested on a device.
+Gesture Handler 3 deprecates the `Gesture.Pan()` builder in favour of hooks (`usePanGesture`). `src/features/dashboard/components/WidgetCell.tsx` still uses the builder (it remains supported); new gesture code should use the hook API, and the dashboard should be migrated once it can be tested on a device.

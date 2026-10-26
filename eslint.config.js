@@ -37,6 +37,36 @@ module.exports = defineConfig([
     },
   },
   {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    rules: {
+      // Hermes (the app's JS engine) doesn't implement these — they work in Jest/Node and
+      // crash on device. Use i18n keys or helpers in src/shared/utils instead.
+      'no-restricted-properties': [
+        'error',
+        { object: 'Intl', property: 'RelativeTimeFormat', message: 'Not available in Hermes. Use calendarDaysAgo() + i18n plural keys.' },
+      ],
+    },
+  },
+  {
+    // Layering: shared code is feature-agnostic and must never import from a feature.
+    files: ['src/shared/**/*.ts', 'src/shared/**/*.tsx', 'src/theme/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react-native',
+              importNames: ['Image', 'FlatList', 'Animated', 'TouchableOpacity'],
+              message: 'Use expo-image, @shopify/flash-list, react-native-reanimated and Pressable (or @/shared/ui) instead.',
+            },
+          ],
+          patterns: [{ group: ['@/features/*', '@/app/*'], message: 'src/shared must not depend on features or routes.' }],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.test.ts', '**/*.test.tsx', 'jest.setup.js', 'jest.global-setup.js', 'scripts/**'],
     rules: { 'no-console': 'off' },
   },

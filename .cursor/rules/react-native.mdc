@@ -10,7 +10,7 @@ alwaysApply: false
 
 - **Framework**: Expo SDK 58, React Native 0.88, New Architecture, React 19.3, TypeScript 6
 - **Navigation**: Expo Router (SDK 58; bundles React Navigation — import hooks such as `usePreventRemove` from `expo-router`) (file-based routing in `app/`, typed routes, `Stack.Protected` for the onboarding gate)
-- **Styling**: NativeWind (Tailwind CSS via className) with tokens from `theme/colors.ts`
+- **Styling**: NativeWind (Tailwind CSS via className) with tokens from `src/theme/colors.ts`
 - **State**: Zustand with persist middleware (see Persistence below); TanStack Query for remote data
 - **Animation**: React Native Reanimated 4.7 + react-native-worklets 0.13 (`scheduleOnRN`, not `runOnJS`) (NEVER use RN's built-in Animated API). The worklets Babel plugin is added by `babel-preset-expo` — don't list it in `babel.config.js`.
 - **Forms**: React Hook Form + Zod
@@ -20,23 +20,36 @@ alwaysApply: false
 
 - **Lists**: NEVER use `FlatList` or `ScrollView` mapped arrays. Use `@shopify/flash-list`.
 - **Images**: NEVER use `Image` from `react-native`. Use `expo-image`.
-- **Touchables**: NEVER use `TouchableOpacity`. Use `Pressable` or the primitives in `components/ui` (`Button`, `IconButton`, `ListRow`, `SegmentedControl`, `Stepper`, `NumberField`). ESLint enforces the restricted imports.
+- **Touchables**: NEVER use `TouchableOpacity`. Use `Pressable` or the primitives in `src/shared/ui` (`Button`, `IconButton`, `ListRow`, `SegmentedControl`, `Stepper`, `NumberField`). ESLint enforces the restricted imports.
 - **Safe Area**: Do not hardcode padding for safe areas; rely on `SafeAreaView` and context hooks.
 - **Data Fetching**: NEVER use `useEffect` for API calls. Use `@tanstack/react-query`.
 
 ## Project Structure
 
-app/           → Expo Router screens only (no tests, no shared helpers — every file is a route)
-components/    → Reusable UI components, grouped by feature (food/, nutrition/, workouts/, …)
-  ui/          → Primitives (Button, IconButton, Card, Icon, ListRow, SegmentedControl, Stepper, NumberField, EmptyState, Badge)
-hooks/         → Custom React hooks (incl. TanStack Query hooks such as useFood)
-store/         → Zustand stores (+ their exported, tested migrate functions)
-services/      → Network clients (fetchJson, Open Food Facts) — no React here
-utils/         → Pure, unit-tested functions (date, number, nutrition, portion, unitConversion)
-theme/         → colors.ts — the single colour palette (feeds Tailwind and JS)
-i18n/          → i18next init, typed keys, locale JSON
-lib/           → App helpers (cn, haptics, ids, storage, platform, queryClient, reporting, userData)
-__tests__/     → Jest tests
+Full explanation: `docs/FOLDER_STRUCTURE.md`. In short:
+
+```
+src/
+  app/          → Expo Router routes ONLY (each file is a screen/URL; no shared helpers, no tests)
+  features/     → one folder per product area: dashboard, nutrition, body-weight, workouts, onboarding, profile
+    <feature>/
+      components/   UI used by this feature
+      hooks/        feature hooks (incl. TanStack Query hooks)
+      api/          network clients for this feature
+      utils/        pure, unit-tested logic
+      schemas/      zod schemas (or <name>Schema.ts at the feature root)
+      <name>Store.ts  the feature's Zustand store (+ exported migrate function)
+  shared/       → feature-agnostic code; MUST NOT import from features or app (ESLint enforces)
+    ui/             design-system primitives (Button, IconButton, Card, …)
+    components/     app-wide composites (ScreenHeader, AiButton, ErrorFallback)
+    expandable-card/  the card → fullscreen transition system
+    hooks/  lib/  utils/
+  i18n/         → i18next init, typed keys, locales
+  theme/        → colors.ts, the single palette
+  global.css    → NativeWind entry
+```
+- Imports always use the `@/` alias (→ `src/`). No relative imports.
+- Tests live next to the code they test (`foo.ts` + `foo.test.ts`).
 
 ## Android-Specific Rules
 
@@ -87,19 +100,19 @@ The app uses a custom card-to-fullscreen animation system:
 ### Persistence
 - Use MMKV (`react-native-mmkv`) for small synchronous data: `userStore` (profile, units, language, targets) and `dashboardStore`.
 - Use AsyncStorage for growing data: `nutritionStore`, `weightStore`, `workoutStore` (SQLite is the planned next step).
-- Always increment `version` and add an exported `migrate…State(persisted, version)` function with a test in `__tests__/migrations.test.ts`.
+- Always increment `version` and add an exported `migrate…State(persisted, version)` function with a test next to the store (cross-store cases in `src/features/storeMigrations.test.ts`).
 
 ## Component Patterns
 
 ### Styling
 - Use NativeWind `className` for all styling.
 - Use `StyleSheet.create()` only for dynamic styles or styles that need numeric values.
-- The `cn()` utility from `lib/utils.ts` merges Tailwind classes safely.
+- The `cn()` utility from `@/shared/lib/cn` merges Tailwind classes safely.
 
 ### Icons
-- Decorative icons: the `Icon` wrapper from `components/ui/Icon` (hidden from screen readers).
+- Decorative icons: the `Icon` wrapper from `@/shared/ui/Icon` (hidden from screen readers).
 - Tappable icons: `IconButton` (its `accessibilityLabel` prop is required).
-- Import icons from `lucide-react-native`; colours from `theme/colors.ts`.
+- Import icons from `lucide-react-native`; colours from `src/theme/colors.ts`.
 
 ### Safe Area
 - Use `<SafeAreaView edges={['top']}>` for screens — avoid `edges={['bottom']}` since the TabBar handles bottom spacing.

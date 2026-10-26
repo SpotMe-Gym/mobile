@@ -7,7 +7,7 @@ alwaysApply: false
 # Dates & Numbers
 
 ## Calendar days
-- A log's "day" is the user's LOCAL civil day. Use `toDayKey()` / `fromDayKey()` from `utils/date.ts`.
+- A log's "day" is the user's LOCAL civil day. Use `toDayKey()` / `fromDayKey()` from `src/shared/utils/date.ts`.
 - NEVER derive a day from `new Date().toISOString()` (UTC — in Italy it files late-night entries under yesterday) and NEVER parse a `YYYY-MM-DD` key with `new Date(key)` (also UTC).
 - Components that show "today" use `useToday()` so they roll over at midnight and on app resume.
 - Weekdays are ISO numbers (Mon = 1 … Sun = 7). Labels come from `weekdayLabel(day, i18n.language)`.
@@ -18,5 +18,5 @@ alwaysApply: false
 - Display with `formatNumber(value, i18n.language, decimals)`.
 
 ## Nutrition maths
-- Foods are stored **per 100 g / 100 ml** (`FoodRef.per100`); portions are converted with `utils/portion.ts`. Log entries keep a macro snapshot.
+- Foods are stored **per 100 g / 100 ml** (`FoodRef.per100`); portions are converted with `src/features/nutrition/utils/portion.ts`. Log entries keep a macro snapshot.
 - Energy from macros uses Atwater factors (`kcalFromMacros`).

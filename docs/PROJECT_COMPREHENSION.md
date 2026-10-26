@@ -5,6 +5,8 @@
 > **Companion document:** [`IMPROVEMENT_PLAN.md`](./IMPROVEMENT_PLAN.md) — what to change and in what order.
 >
 > ⚠️ **This describes the codebase *before* the improvement work.** Most defects in §8 are fixed on branch `chore/improvement-plan`; the up-to-date status table is at the top of the improvement plan, and the current conventions are in `.cursor/rules/`.
+>
+> 📁 **Paths in this document predate the move to `src/`.** See [`FOLDER_STRUCTURE.md`](./FOLDER_STRUCTURE.md) for the old → new mapping.
 
 ---
 

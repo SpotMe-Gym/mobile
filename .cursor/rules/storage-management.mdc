@@ -18,7 +18,7 @@ alwaysApply: false
 - When using Zustand's `persist` middleware, ALWAYS define a `version` number.
 - ALWAYS provide a `migrate` function to handle state shape changes between versions to prevent app crashes for updating users.
 - Handle the rehydration lifecycle: Do not render data-dependent UI until `useHasHydrated()` (or equivalent hydration check) returns true.
-- The root layout keeps the native splash screen up until the AsyncStorage stores have hydrated (`app/_layout.tsx`); screens still gate on `useHasHydrated()` for safety.
+- The root layout keeps the native splash screen up until the AsyncStorage stores have hydrated (`src/app/_layout.tsx`); screens still gate on `useHasHydrated()` for safety.
 - Migrations are exported, pure functions (`migrateUserState`, `migrateNutritionState`, `migrateWorkoutState`) that accept `unknown` and never throw — every one has a test.
 - Moving data between stores (e.g. weight history out of the MMKV user store into `weightStore`) goes through a one-shot hand-off key, imported in `onRehydrateStorage`.
 

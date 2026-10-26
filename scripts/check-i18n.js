@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const dir = path.join(__dirname, '..', 'i18n', 'locales');
+const dir = path.join(__dirname, '..', 'src', 'i18n', 'locales');
 const flatten = (obj, prefix = '') =>
   Object.entries(obj).flatMap(([k, v]) =>
     v && typeof v === 'object' ? flatten(v, `${prefix}${k}.`) : [`${prefix}${k}`],

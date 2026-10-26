@@ -3,6 +3,8 @@
 > **Input:** [`PROJECT_COMPREHENSION.md`](./PROJECT_COMPREHENSION.md) (architecture, rule inventory, defect list).
 > **Basis:** the project's own rules (Antigravity `.agent/rules` + Cursor `.cursor/rules`) plus current mobile best practice for Expo SDK 54 / React Native New Architecture: platform HIG / Material 3, WCAG 2.2 for mobile, offline-first data, CNG + EAS delivery, and test pyramid.
 > **Written:** 23 Oct 2026, against head `d9230be`.
+>
+> 📁 **Paths in this document predate the move to `src/`.** See [`FOLDER_STRUCTURE.md`](./FOLDER_STRUCTURE.md) for the old → new mapping.
 
 ## Implementation status — 24 Oct 2026 (branch `chore/improvement-plan`)
 

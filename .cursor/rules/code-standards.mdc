@@ -122,25 +122,21 @@ setExercises(exercises.filter(e => e.id !== id));
 
 ## Error Handling
 
-- Network calls throw typed `ApiError`s (`services/http.ts`); never turn failures into empty results. Show them with `useApiErrorMessage`.
-- Report unexpected errors with `reportError()` (`lib/reporting.ts`) — never `console.log`, never swallow silently. Never attach health data to reports.
-- Routes are wrapped by the `ErrorBoundary` exported from `app/_layout.tsx`.
+- Network calls throw typed `ApiError`s (`src/shared/lib/http.ts`); never turn failures into empty results. Show them with `useApiErrorMessage`.
+- Report unexpected errors with `reportError()` (`src/shared/lib/reporting.ts`) — never `console.log`, never swallow silently. Never attach health data to reports.
+- Routes are wrapped by the `ErrorBoundary` exported from `src/app/_layout.tsx`.
 - Use inline messages for form/validation errors; `Alert.alert()` for confirmations and blocking errors.
 
 ## Imports
 
 ### Path Aliases
-- Use `@/` alias for imports from the project root.
-- Prefer relative imports for files in the same directory or one level up.
+- ALWAYS import through the `@/` alias, which points at `src/` — including files in the same folder. One import style everywhere, and moving a file never breaks its neighbours' imports.
+- Never use relative paths (`./`, `../`).
 
 ```tsx
-// From app/ screens — use alias
-import { Card } from '@/components/ui/Card';
-import { useWorkoutStore } from '@/store/workoutStore';
-
-// From components/ or hooks/ — relative is fine
-import { CalorieGauge } from './CalorieGauge';
-import { useExpandableCard } from '../hooks/useExpandableCard';
+import { Button } from '@/shared/ui/Button';
+import { useWorkoutStore } from '@/features/workouts/workoutStore';
+import { CalorieGauge } from '@/features/nutrition/components/CalorieGauge';
 ```
 
 ### Import Ordering

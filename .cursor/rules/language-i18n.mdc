@@ -11,7 +11,7 @@ alwaysApply: false
 - ALL text must be routed through `react-i18next`.
 
 ## Typed keys & parity
-- Keys are type-checked (`i18n/i18next.d.ts`): an unknown key is a compile error. For keys stored in config objects use the `TranslationKey` type from `i18n/keys.ts`.
+- Keys are type-checked (`src/i18n/i18next.d.ts`): an unknown key is a compile error. For keys stored in config objects use the `TranslationKey` type from `src/i18n/keys.ts`.
 - Every key must exist in **both** `en.json` and `it.json` — `bun run i18n:check` fails CI otherwise.
 - Format dates and numbers with `Intl` using `i18n.language` (`formatDayKey`, `formatNumber`); never hard-code `'en-US'`.
 - Store enums, translate at render: meals are `breakfast|lunch|dinner|snack` → `t('meals.<id>')`.
