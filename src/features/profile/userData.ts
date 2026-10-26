@@ -4,6 +4,7 @@ import { useUserStore } from '@/features/profile/userStore';
 import { useWeightStore } from '@/features/body-weight/weightStore';
 import { useNutritionStore } from '@/features/nutrition/nutritionStore';
 import { useWorkoutStore } from '@/features/workouts/workoutStore';
+import { useBodyStore } from '@/features/body/bodyStore';
 import { useDashboardStore, DEFAULT_WIDGETS } from '@/features/dashboard/dashboardStore';
 import { reportError } from '@/shared/lib/reporting';
 
@@ -19,6 +20,7 @@ export function buildExport() {
     weight: pick(useWeightStore.getState()),
     nutrition: pick(useNutritionStore.getState()),
     workouts: pick(useWorkoutStore.getState()),
+    body: pick(useBodyStore.getState()),
     dashboard: pick(useDashboardStore.getState()),
   };
 }
@@ -38,6 +40,7 @@ export function eraseAllData(): void {
   useNutritionStore.getState().reset();
   useWeightStore.getState().reset();
   useWorkoutStore.getState().reset();
+  useBodyStore.getState().reset();
   useDashboardStore.setState({ widgets: DEFAULT_WIDGETS });
   useUserStore.getState().resetUser(); // last: flips the onboarding guard
 }
