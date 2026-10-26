@@ -89,7 +89,7 @@ export const useDashboardStore = create<DashboardState>()(
     {
       name: 'dashboard-storage',
       storage: createJSONStorage(() => mmkvStorage),
-      version: 3,
+      version: 4,
       migrate: (persistedState: unknown, version: number) => {
         const state = (persistedState ?? {}) as { widgets?: unknown };
         let raw: unknown[] = Array.isArray(state.widgets) ? state.widgets : [];
@@ -118,6 +118,13 @@ export const useDashboardStore = create<DashboardState>()(
               widgets = [...widgets, extra];
             }
           }
+        }
+
+        // v4: the Body card (3D measurements) joins existing layouts once, before Recent Activity.
+        if (version < 4 && !widgets.some(w => w.id === 'body')) {
+          const at = widgets.findIndex(w => w.id === 'recentActivity');
+          const body: DashboardWidget = { id: 'body', size: 'half' };
+          widgets = at < 0 ? [...widgets, body] : [...widgets.slice(0, at), body, ...widgets.slice(at)];
         }
 
         return { widgets };

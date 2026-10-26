@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSharedValue, withSpring, type WithSpringConfig } from 'react-native-reanimated';
 
 /** Routes registered with the expandable-card presentation in app/_layout.tsx. */
-export type ExpandableRoute = '/nutrition/detail' | '/body-weight' | '/workouts/today';
+export type ExpandableRoute = '/nutrition/detail' | '/body-weight' | '/body' | '/workouts/today';
 
 interface UseExpandableNavigationOptions {
   pressScale?: number;

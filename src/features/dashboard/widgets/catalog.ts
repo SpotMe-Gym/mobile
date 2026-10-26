@@ -1,9 +1,10 @@
 /**
- * Home catalog. Cards live in `cards/`, short buttons in `quick-actions/`.
- * Add a file there and append it here.
+ * Home catalog. Each widget lives in its own file in this folder (quick actions share
+ * `quickActions.tsx`). Add a file and append it here.
  */
 import {
   bodyWeightWidget,
+  bodyWidget,
   todaysPlanWidget,
   nutritionWidget,
   recentActivityWidget,
@@ -20,6 +21,7 @@ export const WIDGETS: WidgetDefinition[] = [
   nutritionWidget,
   logMealAction,
   addWeightAction,
+  bodyWidget,
   recentActivityWidget,
 ];
 

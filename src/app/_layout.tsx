@@ -78,6 +78,7 @@ export default function RootLayout() {
               <Stack.Screen name="nutrition/quick-add" options={{ presentation: 'modal' }} />
               <Stack.Screen name="nutrition/detail" options={EXPANDABLE} />
               <Stack.Screen name="body-weight/index" options={EXPANDABLE} />
+              <Stack.Screen name="body/index" options={EXPANDABLE} />
               <Stack.Screen name="workouts/today" options={EXPANDABLE} />
               <Stack.Screen
                 name="chat"
