@@ -10,7 +10,8 @@
     "backgroundColor": "#0A0A0A",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.spotme.app",
+      "bundleIdentifier": "com.damianoshushku.spotme",
+      "appleTeamId": "VEK66395CZ",
       "infoPlist": {
         "NSCameraUsageDescription": "Allow SpotMe to scan food barcodes."
       },
