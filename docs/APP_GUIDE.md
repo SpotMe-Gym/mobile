@@ -19,7 +19,7 @@ SpotMe is a **personal gym and nutrition companion**: one place to plan workouts
 
 The design is dark-only, high-contrast and iOS-flavoured. It's bilingual (English and Italian) and respects accessibility settings: Dynamic Type, VoiceOver/TalkBack and Reduce Motion.
 
-**On the roadmap** (README): live workout tracking (the "Start workout" button is currently disabled), an AI coach (the ✨ buttons open a "coming soon" screen), body measurements with a 3D body model (prototype in `/Humanoide`), and exercise search.
+**On the roadmap** (README): live workout tracking (the "Start workout" button is currently disabled), an AI coach (the ✨ buttons open a "coming soon" screen), and exercise search. The 3D body tracker (Body card → `/body`) is documented in [`BODY_TRACKER.md`](./BODY_TRACKER.md); the old `/Humanoide` prototype is superseded by `tools/avatar/`.
 
 ---
 

@@ -17,9 +17,10 @@ The new layout is **feature-first**:
 ```
 mobile/
 ├── src/                  ← all application source (the `@/` alias points here)
-├── assets/               ← icons, splash, images referenced by app.json
+├── assets/               ← icons, splash, images referenced by app.json; avatar/*.glb = 3D bodies
 ├── docs/                 ← project docs (this file, comprehension, improvement plan)
 ├── scripts/              ← dev scripts (i18n parity check, clean iOS rebuild)
+├── tools/avatar/         ← MPFB2 pipeline that builds assets/avatar (Python, not shipped) + optional service
 ├── jest/                 ← Jest helpers (CSS stub)
 ├── .cursor/rules/        ← agent coding rules (Antigravity rules live in ../.agent/rules)
 ├── .github/              ← CI workflow, PR template
@@ -37,7 +38,7 @@ src/
 │   ├── _layout.tsx             providers, onboarding gate (Stack.Protected), error boundary
 │   ├── index.tsx               home dashboard
 │   ├── onboarding.tsx, chat.tsx
-│   ├── body-weight/  nutrition/  workouts/  profile/  settings/
+│   ├── body/  body-weight/  nutrition/  workouts/  profile/  settings/
 │
 ├── features/                   one folder per product area
 │   ├── dashboard/              home grid: edit mode, drag/resize, widget catalog
@@ -52,6 +53,11 @@ src/
 │   │   ├── schemas/            quickAddSchema (+ test)
 │   │   ├── utils/              nutrition maths, portion conversion (+ tests)
 │   │   └── nutritionStore.ts   (+ test)
+│   ├── body/                   3D body + measurements + BIA (see docs/BODY_TRACKER.md)
+│   │   ├── avatar/             GLB reader, morph solver, mesh deformation, zone colours, generator
+│   │   ├── components/         BodyViewer (+ orbit.ts), BodyCardContent, LogMeasurementsSheet, MeasurementRow
+│   │   ├── hooks/              useBodyAvatar, useLengthUnit
+│   │   └── types.ts, measurementCatalog.ts, bodyStore.ts, snapshots.ts, bia.ts
 │   ├── body-weight/            components/, hooks/useWeightTrend, weightStore.ts
 │   ├── workouts/               components/, hooks/useTodaysWorkouts, workoutSchema.ts, workoutStore.ts
 │   ├── onboarding/             components/ (3 steps), hooks/useFieldError, onboardingSchema.ts

@@ -19,7 +19,7 @@ bun run android
 | `bun run i18n:check` | fails if `en.json` and `it.json` keys differ |
 | `bun run doctor` | expo-doctor |
 
-Docs: [`docs/APP_GUIDE.md`](docs/APP_GUIDE.md) · [`docs/FOLDER_STRUCTURE.md`](docs/FOLDER_STRUCTURE.md) · [`docs/PROJECT_COMPREHENSION.md`](docs/PROJECT_COMPREHENSION.md) · [`docs/IMPROVEMENT_PLAN.md`](docs/IMPROVEMENT_PLAN.md). Coding rules: `.cursor/rules/` (+ `../.agent/rules/` for Antigravity).
+Docs: [`docs/APP_GUIDE.md`](docs/APP_GUIDE.md) · [`docs/BODY_TRACKER.md`](docs/BODY_TRACKER.md) · [`docs/FOLDER_STRUCTURE.md`](docs/FOLDER_STRUCTURE.md) · [`docs/PROJECT_COMPREHENSION.md`](docs/PROJECT_COMPREHENSION.md) · [`docs/IMPROVEMENT_PLAN.md`](docs/IMPROVEMENT_PLAN.md). Coding rules: `.cursor/rules/` (+ `../.agent/rules/` for Antigravity).
 
 ## Roadmap & Todo
 
@@ -30,10 +30,12 @@ The primary goal is to build out the Workout features.
 - [x] Add workout schedule management
 
 ### 2. Body Measurements & 3D Visualization
-Enhance the Body Weight Details screen.
-- [ ] Add a Carousel to the Body Weight Details screen.
-- [ ] **Second Item**: integrate a 3D Body Model visualization.
-- [ ] Allow users to tap on body parts to add specific measurements (biceps, chest, waist, etc.).
+See [`docs/BODY_TRACKER.md`](docs/BODY_TRACKER.md).
+- [x] 3D body from MPFB2 (male / female / neutral), morphed from height, weight and tape measurements.
+- [x] Primary + advanced circumferences, L/R, with green / red regional change highlighting.
+- [x] BIA data model and import hook.
+- [ ] BIA importers (InBody, Tanita, Withings…) and fat-distribution morphs.
+- [ ] Tap a body part to log that measurement.
 
 ### 3. Profile Enhancements
 - [ ] Add a section to Edit Macros & Calories directly in the Profile (targets are now shown in the profile header).
