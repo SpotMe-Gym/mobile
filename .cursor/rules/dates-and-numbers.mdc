@@ -1,0 +1,22 @@
+---
+description: Calendar-day, time-zone and numeric-input rules
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Dates & Numbers
+
+## Calendar days
+- A log's "day" is the user's LOCAL civil day. Use `toDayKey()` / `fromDayKey()` from `src/shared/utils/date.ts`.
+- NEVER derive a day from `new Date().toISOString()` (UTC — in Italy it files late-night entries under yesterday) and NEVER parse a `YYYY-MM-DD` key with `new Date(key)` (also UTC).
+- Components that show "today" use `useToday()` so they roll over at midnight and on app resume.
+- Weekdays are ISO numbers (Mon = 1 … Sun = 7). Labels come from `weekdayLabel(day, i18n.language)`.
+
+## Numbers
+- Decimal keypads show the locale separator (Italian: `,`). Parse with `parseDecimal()`, filter keystrokes with `sanitizeDecimalInput()`; never `parseFloat(text)` user input.
+- Prefer the `NumberField` primitive: it keeps the raw text while typing (no cursor jumps) and reports `number | null`.
+- Display with `formatNumber(value, i18n.language, decimals)`.
+
+## Nutrition maths
+- Foods are stored **per 100 g / 100 ml** (`FoodRef.per100`); portions are converted with `src/features/nutrition/utils/portion.ts`. Log entries keep a macro snapshot.
+- Energy from macros uses Atwater factors (`kcalFromMacros`).

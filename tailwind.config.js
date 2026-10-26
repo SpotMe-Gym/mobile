@@ -1,20 +1,14 @@
 /** @type {import('tailwindcss').Config} */
+// Tokens come from src/theme/colors.ts (Tailwind loads configs through jiti, which handles .ts) so JS and className share one palette.
+const { colors } = require('./src/theme/colors.ts');
+
 module.exports = {
-  // NOTE: Configure the content for all your components
-  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
-  presets: [require("nativewind/preset")],
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],
+  presets: [require('nativewind/preset')],
   theme: {
     extend: {
-      colors: {
-        background: '#0A0A0A',
-        card: '#1C1C1E',
-        text: '#FFFFFF',
-        textSecondary: '#A1A1AA',
-      },
-      fontFamily: {
-        // We can add custom fonts here later
-      },
+      colors,
     },
   },
   plugins: [],
-}
+};

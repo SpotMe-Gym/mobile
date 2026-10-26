@@ -8,11 +8,11 @@ alwaysApply: false
 
 ## Stack
 
-- **Framework**: Expo SDK 54, React Native 0.81, New Architecture enabled
-- **Navigation**: Expo Router (file-based routing in `app/`)
-- **Styling**: NativeWind (Tailwind CSS via className)
-- **State**: Zustand with persist middleware
-- **Animation**: React Native Reanimated (NEVER use RN's built-in Animated API)
+- **Framework**: Expo SDK 58, React Native 0.88, New Architecture, React 19.3, TypeScript 6
+- **Navigation**: Expo Router (SDK 58; bundles React Navigation — import hooks such as `usePreventRemove` from `expo-router`) (file-based routing in `app/`, typed routes, `Stack.Protected` for the onboarding gate)
+- **Styling**: NativeWind (Tailwind CSS via className) with tokens from `src/theme/colors.ts`
+- **State**: Zustand with persist middleware (see Persistence below); TanStack Query for remote data
+- **Animation**: React Native Reanimated 4.7 + react-native-worklets 0.13 (`scheduleOnRN`, not `runOnJS`) (NEVER use RN's built-in Animated API). The worklets Babel plugin is added by `babel-preset-expo` — don't list it in `babel.config.js`.
 - **Forms**: React Hook Form + Zod
 - **i18n**: i18next + react-i18next
 
@@ -20,20 +20,36 @@ alwaysApply: false
 
 - **Lists**: NEVER use `FlatList` or `ScrollView` mapped arrays. Use `@shopify/flash-list`.
 - **Images**: NEVER use `Image` from `react-native`. Use `expo-image`.
+- **Touchables**: NEVER use `TouchableOpacity`. Use `Pressable` or the primitives in `src/shared/ui` (`Button`, `IconButton`, `ListRow`, `SegmentedControl`, `Stepper`, `NumberField`). ESLint enforces the restricted imports.
 - **Safe Area**: Do not hardcode padding for safe areas; rely on `SafeAreaView` and context hooks.
 - **Data Fetching**: NEVER use `useEffect` for API calls. Use `@tanstack/react-query`.
 
 ## Project Structure
 
-app/           → Expo Router screens (file-based routing)
-components/    → Reusable UI components
-  ui/          → Primitives (Button, Card, Icon)
-hooks/         → Custom React hooks
-store/         → Zustand stores
-services/      → API/external service calls (React Query hooks go here)
-utils/         → Pure utility functions
-i18n/          → Internationalization config + locale JSON
-lib/           → Shared helpers (cn utility)
+Full explanation: `docs/FOLDER_STRUCTURE.md`. In short:
+
+```
+src/
+  app/          → Expo Router routes ONLY (each file is a screen/URL; no shared helpers, no tests)
+  features/     → one folder per product area: dashboard, nutrition, body-weight, workouts, onboarding, profile
+    <feature>/
+      components/   UI used by this feature
+      hooks/        feature hooks (incl. TanStack Query hooks)
+      api/          network clients for this feature
+      utils/        pure, unit-tested logic
+      schemas/      zod schemas (or <name>Schema.ts at the feature root)
+      <name>Store.ts  the feature's Zustand store (+ exported migrate function)
+  shared/       → feature-agnostic code; MUST NOT import from features or app (ESLint enforces)
+    ui/             design-system primitives (Button, IconButton, Card, …)
+    components/     app-wide composites (ScreenHeader, AiButton, ErrorFallback)
+    expandable-card/  the card → fullscreen transition system
+    hooks/  lib/  utils/
+  i18n/         → i18next init, typed keys, locales
+  theme/        → colors.ts, the single palette
+  global.css    → NativeWind entry
+```
+- Imports always use the `@/` alias (→ `src/`). No relative imports.
+- Tests live next to the code they test (`foo.ts` + `foo.test.ts`).
 
 ## Android-Specific Rules
 
@@ -47,7 +63,7 @@ lib/           → Shared helpers (cn utility)
 - Add `collapsable={false}` to any `Animated.View` that participates in native animations — Android's view flattening can collapse intermediate views and break Reanimated's native driver.
 
 ### Edge-to-Edge
-- `edgeToEdgeEnabled: true` is set in app.json — always account for safe area insets using `useSafeAreaInsets()`.
+- Android is always edge-to-edge (mandatory since SDK 55; the `edgeToEdgeEnabled` flag no longer exists) — always account for safe area insets using `useSafeAreaInsets()`.
 - Ensure bottom content (tabs, FABs, sheets) accounts for the navigation bar height.
 
 ### LayoutAnimation
@@ -82,20 +98,21 @@ The app uses a custom card-to-fullscreen animation system:
   ```
 
 ### Persistence
-- Use MMKV (`react-native-mmkv`) for fast synchronous storage (user preferences).
-- Use AsyncStorage for larger data (nutrition logs).
-- Always increment `version` and add migration when changing persisted state shape.
+- Use MMKV (`react-native-mmkv`) for small synchronous data: `userStore` (profile, units, language, targets) and `dashboardStore`.
+- Use AsyncStorage for growing data: `nutritionStore`, `weightStore`, `workoutStore` (SQLite is the planned next step).
+- Always increment `version` and add an exported `migrate…State(persisted, version)` function with a test next to the store (cross-store cases in `src/features/storeMigrations.test.ts`).
 
 ## Component Patterns
 
 ### Styling
 - Use NativeWind `className` for all styling.
 - Use `StyleSheet.create()` only for dynamic styles or styles that need numeric values.
-- The `cn()` utility from `lib/utils.ts` merges Tailwind classes safely.
+- The `cn()` utility from `@/shared/lib/cn` merges Tailwind classes safely.
 
 ### Icons
-- Always use the `Icon` wrapper component from `components/ui/Icon`.
-- Import icons from `lucide-react-native`.
+- Decorative icons: the `Icon` wrapper from `@/shared/ui/Icon` (hidden from screen readers).
+- Tappable icons: `IconButton` (its `accessibilityLabel` prop is required).
+- Import icons from `lucide-react-native`; colours from `src/theme/colors.ts`.
 
 ### Safe Area
 - Use `<SafeAreaView edges={['top']}>` for screens — avoid `edges={['bottom']}` since the TabBar handles bottom spacing.

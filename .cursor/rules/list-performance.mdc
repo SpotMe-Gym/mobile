@@ -8,16 +8,19 @@ alwaysApply: false
 
 ## Core Principles
 
-- NEVER use React Native's built-in `FlatList` or `ScrollView` with `.map()` for unbounded or dynamic arrays (e.g., exercise lists, nutrition history).
-- Use `@shopify/flash-list` for all lists.
+- NEVER use React Native's built-in `FlatList` or `ScrollView` with `.map()` for unbounded or growing arrays (e.g., weight history, food search results, workout library).
+- Use `@shopify/flash-list` **v2** for those lists.
+- **Allowed exception:** small, bounded lists that are full of focused inputs (the exercises of one workout in the editor, the four meals of a day) may use `ScrollView` + `.map()`. Leave a one-line comment saying so.
 
 ## FlashList Constraints
 
 ### Configuration Essentials
-- Always provide `estimatedItemSize` (compute the median height of items in pixels).
+- FlashList v2 measures items itself: do **not** pass `estimatedItemSize` (removed in v2 — it's a type error).
+- Refs are typed `FlashListRef<T>`, not `FlashList<T>`.
+- For a page that mixes a header/chart with a list, render ONE FlashList with `ListHeaderComponent` instead of nesting a list inside a `ScrollView`.
 - When list items vary drastically in layout (e.g., headers vs. workout cards), provide `getItemType` to allow recycling across multiple view types:
   ```tsx
-  <FlashList data="{items}" estimatedItemSize="{72}" getItemType="{(item)"> item.type}
+  <FlashList data={items} getItemType={(item) => item.type}
     renderItem={renderItem}
     keyExtractor={(item) => item.id}
   />

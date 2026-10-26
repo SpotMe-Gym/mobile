@@ -8,7 +8,7 @@ alwaysApply: false
 
 ## TypeScript
 
-- Strict mode is enabled — never use `any` unless absolutely necessary (prefer `unknown` + type guards).
+- `strict` and `noUncheckedIndexedAccess` are enabled — never use `any` (ESLint errors on it); prefer `unknown` + type guards. Indexed access returns `T | undefined`: handle it, don't `!` it away in app code.
 - Always define interfaces for component props.
 - Export types alongside their implementations from the same file.
 - Use `as const` for literal arrays and objects that shouldn't be mutated.
@@ -81,10 +81,18 @@ const todaysWorkouts = useMemo(() => {
 
 ## State Management Architecture
 
-### Client vs. Server State Separation (CRITICAL)
-- **Zustand** is ONLY for local client UI state (e.g., active tabs, user preferences, theme).
-- **TanStack Query** is ONLY for server state (e.g., database records, API responses).
-- NEVER duplicate server data inside a Zustand store.
+### State Ownership (CRITICAL)
+SpotMe is local-first: there is no backend, and the user's records are owned by the device.
+
+| Kind | Owner |
+|---|---|
+| Preferences, settings, dashboard layout | Zustand + persist (MMKV) |
+| User records: food log, weight log, workouts | Zustand + persist (AsyncStorage; SQLite later) |
+| Remote data (Open Food Facts, future APIs) | TanStack Query only |
+| Ephemeral UI state | `useState` |
+
+- NEVER copy remote API responses into a Zustand store. The one exception is the food a user actually logs: its per-100 g reference is saved in `nutritionStore.foods` as part of their history.
+- Expose derived data as selector hooks (`useDailyTotals(day)`), not store methods called during render.
 
 ### Zustand Selectors
 ALWAYS use atomic selectors to minimize re-renders:
@@ -114,25 +122,21 @@ setExercises(exercises.filter(e => e.id !== id));
 
 ## Error Handling
 
-- Use `try/catch` in all async operations (API calls, storage).
-- Log errors with `console.error` in development.
-- Never swallow errors silently — at minimum, log them.
-- For user-facing errors, use `Alert.alert()` on mobile.
+- Network calls throw typed `ApiError`s (`src/shared/lib/http.ts`); never turn failures into empty results. Show them with `useApiErrorMessage`.
+- Report unexpected errors with `reportError()` (`src/shared/lib/reporting.ts`) — never `console.log`, never swallow silently. Never attach health data to reports.
+- Routes are wrapped by the `ErrorBoundary` exported from `src/app/_layout.tsx`.
+- Use inline messages for form/validation errors; `Alert.alert()` for confirmations and blocking errors.
 
 ## Imports
 
 ### Path Aliases
-- Use `@/` alias for imports from the project root.
-- Prefer relative imports for files in the same directory or one level up.
+- ALWAYS import through the `@/` alias, which points at `src/` — including files in the same folder. One import style everywhere, and moving a file never breaks its neighbours' imports.
+- Never use relative paths (`./`, `../`).
 
 ```tsx
-// From app/ screens — use alias
-import { Card } from '@/components/ui/Card';
-import { useWorkoutStore } from '@/store/workoutStore';
-
-// From components/ or hooks/ — relative is fine
-import { CalorieGauge } from './CalorieGauge';
-import { useExpandableCard } from '../hooks/useExpandableCard';
+import { Button } from '@/shared/ui/Button';
+import { useWorkoutStore } from '@/features/workouts/workoutStore';
+import { CalorieGauge } from '@/features/nutrition/components/CalorieGauge';
 ```
 
 ### Import Ordering

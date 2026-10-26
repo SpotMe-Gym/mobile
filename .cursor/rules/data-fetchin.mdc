@@ -9,6 +9,11 @@ alwaysApply: false
 ## Core Principles
 
 - NEVER use `useEffect` for data fetching.
+- The reference implementation is `src/features/nutrition/hooks/useFood.ts` (`foodKeys`, `useFoodSearch`, `useProduct`) over `src/features/nutrition/api/foodApi.ts`.
+- Validate every remote payload with zod before it reaches the UI; map it to app types (`FoodRef`).
+- Pass `signal` from the query function to `fetchJson` so unmounted queries cancel.
+- Navigate by id (`/nutrition/product/[code]`), not by serialising objects into params; seed the cache with `setQueryData` before navigating so the screen opens instantly and still works from a deep link.
+- Respect API rate limits: Open Food Facts search runs on submit, not per keystroke; local history filters live.
 - Use `@tanstack/react-query` for all asynchronous server state.
 - Keep Zustand strictly for local client/UI state. Never duplicate server responses in global client stores.
 
@@ -27,7 +32,7 @@ alwaysApply: false
   ```
 
 ### Custom Hooks
-- Encapsulate all queries and mutations within dedicated custom hooks inside `hooks/` or `services/`:
+- Encapsulate all queries and mutations within dedicated custom hooks inside the feature's `hooks/` folder (network clients in the feature's `api/` folder):
   ```tsx
   // GOOD
   export function useWorkoutDetail(id: string) {
