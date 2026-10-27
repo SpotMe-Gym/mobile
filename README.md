@@ -28,6 +28,7 @@ People can sign in with Apple, Google or email and password, using the same Supa
    - add `spotme://auth/callback` to Supabase's redirect URLs;
    - put the bundle ID in the Apple provider's Client IDs;
    - turn on the Sign In with Apple capability for the App ID.
+   On a free Apple **Personal Team**, Xcode stops with *"Missing Sign In with Apple"*: free teams can't have that capability. Add `EXPO_PUBLIC_NATIVE_APPLE_SIGN_IN=false` to `.env.local` and rebuild. The build then leaves the capability out, and "Continue with Apple" opens the browser sheet instead of the native one. On a paid account, enable Sign In with Apple on the App ID and remove the line.
 3. Rebuild the native app, because new native modules were added (`expo-apple-authentication`, `expo-web-browser`, `expo-crypto`): `bun run prebuild:clean && bun run ios`.
 
 | | iPhone | Android |

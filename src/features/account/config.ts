@@ -9,6 +9,9 @@ export const SUPABASE_KEY =
 /** The website, for email links, password reset and account deletion. No trailing slash. */
 export const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL ?? '').replace(/\/$/, '');
 
+/** False for builds without the Sign In with Apple capability (see app.config.ts): Apple then uses the browser flow. */
+export const NATIVE_APPLE_SIGN_IN = process.env.EXPO_PUBLIC_NATIVE_APPLE_SIGN_IN !== 'false';
+
 export const isAccountConfigured = SUPABASE_URL !== '' && SUPABASE_KEY !== '';
 
 /** Where Supabase sends the browser back after Google / Apple (web flow). Add it to Supabase's redirect URLs. */

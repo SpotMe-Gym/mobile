@@ -4,7 +4,7 @@ import * as Crypto from 'expo-crypto';
 import * as WebBrowser from 'expo-web-browser';
 import type { AuthError, SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/features/account/supabase';
-import { AUTH_REDIRECT_URL, SITE_URL } from '@/features/account/config';
+import { AUTH_REDIRECT_URL, NATIVE_APPLE_SIGN_IN, SITE_URL } from '@/features/account/config';
 import { formatAppleName, parseAuthRedirect } from '@/features/account/authRedirect';
 
 export type AccountErrorKind =
@@ -76,7 +76,8 @@ export function signInWithGoogle(): Promise<void> {
 }
 
 export async function isNativeAppleAvailable(): Promise<boolean> {
-  return Platform.OS === 'ios' && (await AppleAuthentication.isAvailableAsync().catch(() => false));
+  if (Platform.OS !== 'ios' || !NATIVE_APPLE_SIGN_IN) return false;
+  return AppleAuthentication.isAvailableAsync().catch(() => false);
 }
 
 /** Native Sign in with Apple on iOS (ID token + nonce); the browser flow elsewhere. */
