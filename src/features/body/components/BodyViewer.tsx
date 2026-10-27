@@ -95,21 +95,30 @@ export function BodyViewer({
   useEffect(() => controller.setHeight(heightM), [controller, heightM]);
 
   const gesture = useMemo(() => {
+    // Everything runs side by side. The double tap used to sit in an Exclusive in front of
+    // pan/pinch, which made every drag wait for the tap to time out (~0.5 s) before the body
+    // moved. Now a finger stops any coast the instant it lands (onBegin), a drag activates
+    // after a couple of points, and the double tap fails as soon as the finger travels.
     const pan = Gesture.Pan()
       .runOnJS(true)
       .maxPointers(1)
-      .onStart(() => controller.grab())
+      .minDistance(2)
+      .onBegin(() => controller.grab())
       .onChange((e) => controller.rotate(e.changeX, e.changeY))
       .onEnd((e) => controller.release(e.velocityX, e.velocityY));
     const pinch = Gesture.Pinch()
       .runOnJS(true)
+      .onBegin(() => controller.grab())
       .onStart(() => controller.pinchStart())
       .onUpdate((e) => controller.pinch(e.scale));
     const reset = Gesture.Tap()
       .runOnJS(true)
       .numberOfTaps(2)
-      .onEnd(() => controller.reset());
-    return Gesture.Exclusive(reset, Gesture.Simultaneous(pan, pinch));
+      .maxDistance(12)
+      .onEnd((_e, success) => {
+        if (success) controller.reset();
+      });
+    return Gesture.Simultaneous(pan, pinch, reset);
   }, [controller]);
 
   // The Body screen is a native modal: on iOS it's presented in its own view controller,
