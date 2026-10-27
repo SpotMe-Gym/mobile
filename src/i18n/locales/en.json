@@ -418,7 +418,7 @@
     "signOutConfirm": "Sign out?",
     "signOutMessage": "Your logs stay on this phone. Syncing stops until you sign in again.",
     "deleteAccount": "Delete account",
-    "deleteAccountHint": "Opens the website, where you can delete the account and everything stored in it.",
+    "deleteAccountHint": "Opens the website. Closing the account removes the sign-in only: your data is kept unless you delete it there first.",
     "errors": {
       "notConfigured": "Accounts aren't available in this build yet.",
       "invalidEmail": "Enter a valid email address.",

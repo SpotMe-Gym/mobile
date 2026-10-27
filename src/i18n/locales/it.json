@@ -418,7 +418,7 @@
     "signOutConfirm": "Vuoi uscire?",
     "signOutMessage": "I tuoi dati restano su questo telefono. La sincronizzazione si ferma finché non accedi di nuovo.",
     "deleteAccount": "Elimina account",
-    "deleteAccountHint": "Apre il sito, dove puoi eliminare l'account e tutto ciò che contiene.",
+    "deleteAccountHint": "Apre il sito. Chiudere l'account rimuove solo l'accesso: i tuoi dati restano, a meno che tu non li elimini prima lì.",
     "errors": {
       "notConfigured": "Gli account non sono ancora disponibili in questa versione.",
       "invalidEmail": "Inserisci un indirizzo email valido.",
