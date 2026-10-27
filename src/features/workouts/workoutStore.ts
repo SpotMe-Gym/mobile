@@ -54,7 +54,11 @@ export function calculateDuration(exercises: readonly Exercise[]): number {
   return Math.max(1, Math.ceil(seconds / 60));
 }
 
-function withDays(schedule: WeekSchedule, workoutId: string, days: readonly IsoWeekday[]): WeekSchedule {
+export function withDays(
+  schedule: WeekSchedule,
+  workoutId: string,
+  days: readonly IsoWeekday[],
+): WeekSchedule {
   const next = emptySchedule();
   for (const day of ISO_WEEKDAYS) {
     const others = schedule[day].filter((id) => id !== workoutId);
@@ -164,7 +168,7 @@ const DAY_NAMES: Record<string, IsoWeekday> = {
   Sunday: 7,
 };
 
-function normaliseExercise(raw: unknown): Exercise | null {
+export function normaliseExercise(raw: unknown): Exercise | null {
   if (!isRecord(raw)) return null;
   const n = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
   const s = (v: unknown) => (typeof v === 'string' && v.length > 0 ? v : undefined);

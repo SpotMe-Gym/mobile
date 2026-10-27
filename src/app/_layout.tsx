@@ -18,6 +18,7 @@ import { queryClient } from '@/shared/lib/queryClient';
 import { colors } from '@/theme/colors';
 import { ErrorFallback } from '@/shared/components/ErrorFallback';
 import { watchAccount } from '@/features/account/accountStore';
+import { startSyncLoop } from '@/features/sync/syncLoop';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -53,6 +54,8 @@ export default function RootLayout() {
 
   // Keep the account state in sync with the Supabase session (no-op when accounts aren't configured).
   useEffect(() => watchAccount(), []);
+  // Two-way sync with the website while signed in with sync on (no-op otherwise).
+  useEffect(() => startSyncLoop(), []);
 
   // Safety net: never keep the splash up forever if a storage read hangs or fails.
   useEffect(() => {

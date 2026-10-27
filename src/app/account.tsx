@@ -1,7 +1,7 @@
-import { Alert, KeyboardAvoidingView, Linking, Platform, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, Platform, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Globe, LogOut, Trash2, UserRound } from 'lucide-react-native';
+import { Globe, LogOut, RefreshCw, Trash2, UserRound } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '@/shared/components/ScreenHeader';
 import { ListGroup, ListRow } from '@/shared/ui/ListRow';
@@ -10,6 +10,8 @@ import { colors } from '@/theme/colors';
 import { AccountPanel } from '@/features/account/components/AccountPanel';
 import { accountProviders, useAccountStore } from '@/features/account/accountStore';
 import { signOut, websiteUrl } from '@/features/account/auth';
+import { turnSyncOff, useSyncStore } from '@/features/sync/syncStore';
+import { requestSync } from '@/features/sync/syncLoop';
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -86,7 +88,7 @@ function SignedIn({
         </View>
       </View>
 
-      <Text className="mb-6 text-sm leading-5 text-subtle">{t('account.syncNote')}</Text>
+      <SyncSection />
 
       <ListGroup>
         {manage && (
@@ -108,6 +110,75 @@ function SignedIn({
           />
         )}
       </ListGroup>
+    </>
+  );
+}
+
+function SyncSection() {
+  const { t, i18n } = useTranslation();
+  const enabled = useSyncStore((s) => s.enabled);
+  const status = useSyncStore((s) => s.status);
+  const errorKind = useSyncStore((s) => s.errorKind);
+  const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
+
+  const toggle = (on: boolean) => {
+    if (on) {
+      useSyncStore.getState().setEnabled(true);
+      return;
+    }
+    Alert.alert(t('account.sync.offConfirmTitle'), t('account.sync.offConfirmMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('account.sync.offConfirm'), style: 'destructive', onPress: turnSyncOff },
+    ]);
+  };
+
+  const when = lastSyncedAt
+    ? new Date(lastSyncedAt).toLocaleString(i18n.language, {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null;
+  const subtitle = !enabled
+    ? t('account.sync.off')
+    : status === 'syncing'
+      ? t('account.sync.syncing')
+      : status === 'error'
+        ? errorKind === 'network'
+          ? t('account.sync.errorNetwork')
+          : t('account.sync.errorFailed')
+        : when
+          ? t('account.sync.lastSynced', { time: when })
+          : t('account.sync.never');
+
+  return (
+    <>
+      <ListGroup>
+        <ListRow
+          icon={RefreshCw}
+          title={t('account.sync.title')}
+          subtitle={subtitle}
+          right={
+            <Switch
+              value={enabled}
+              onValueChange={toggle}
+              trackColor={{ true: colors.primary, false: colors['surface-elevated'] }}
+              accessibilityLabel={t('account.sync.title')}
+            />
+          }
+          isLast={!enabled}
+        />
+        {enabled && (
+          <ListRow
+            title={t('account.sync.syncNow')}
+            onPress={() => requestSync()}
+            disabled={status === 'syncing'}
+            isLast
+          />
+        )}
+      </ListGroup>
+      <Text className="-mt-6 mb-8 px-1 text-xs leading-5 text-subtle">{t('account.sync.explainer')}</Text>
     </>
   );
 }

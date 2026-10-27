@@ -161,7 +161,8 @@
     "exportDataHint": "Condividi in JSON tutto ciò che SpotMe salva",
     "resetAllData": "Cancella tutti i dati",
     "resetDataTitle": "Cancellare tutti i dati?",
-    "resetDataMessage": "Elimina profilo, registri e allenamenti da questo dispositivo e riavvia la configurazione iniziale. Non si può annullare."
+    "resetDataMessage": "Elimina profilo, registri e allenamenti da questo dispositivo e riavvia la configurazione iniziale. Non si può annullare.",
+    "resetDataMessageSync": "Elimina profilo, dati e allenamenti da questo dispositivo e riavvia la configurazione iniziale. Prima viene disattivata la sincronizzazione, quindi il tuo account SpotMe ne conserva una copia."
   },
   "bodyWeight": {
     "title": "Peso corporeo",
@@ -382,9 +383,9 @@
   "account": {
     "section": "Account",
     "title": "Il tuo account SpotMe",
-    "intro": "Facoltativo. Usa lo stesso account sul sito di SpotMe e, a breve, per sincronizzare i tuoi dati e condividerli con il tuo trainer, nutrizionista o medico.",
+    "intro": "Facoltativo. Accedi per sincronizzare i tuoi dati con il sito di SpotMe e usare lo stesso account anche lì, dove puoi condividere i tuoi progressi con il tuo trainer, nutrizionista o medico.",
     "onboardingTitle": "Crea il tuo account",
-    "onboardingIntro": "Facoltativo. Con un account puoi usare SpotMe anche dal sito e, a breve, sincronizzare i tuoi dati tra dispositivi. Senza account funziona tutto offline.",
+    "onboardingIntro": "Facoltativo. Con un account i tuoi dati si sincronizzano con il sito di SpotMe e restano al sicuro se cambi telefono. Senza account funziona tutto offline.",
     "skip": "Continua senza account",
     "continueWithApple": "Continua con Apple",
     "continueWithGoogle": "Continua con Google",
@@ -405,7 +406,6 @@
     "unavailable": "Gli account non sono ancora disponibili in questa versione. Sul dispositivo continua a funzionare tutto.",
     "signInRow": "Accedi o crea un account",
     "signInRowHint": "Facoltativo · usa SpotMe anche dal sito",
-    "signedInRowHint": "Accesso effettuato",
     "unavailableRowHint": "Non configurato in questa versione",
     "signedInWith": "Accesso con {{providers}}",
     "providers": {
@@ -413,11 +413,10 @@
       "apple": "Apple",
       "google": "Google"
     },
-    "syncNote": "Per ora i tuoi dati restano su questo telefono. La sincronizzazione con l'account e il sito arriverà presto.",
     "manageOnWeb": "Gestisci l'account sul sito",
     "signOut": "Esci",
     "signOutConfirm": "Vuoi uscire?",
-    "signOutMessage": "I tuoi dati restano su questo telefono.",
+    "signOutMessage": "I tuoi dati restano su questo telefono. La sincronizzazione si ferma finché non accedi di nuovo.",
     "deleteAccount": "Elimina account",
     "deleteAccountHint": "Apre il sito, dove puoi eliminare l'account e tutto ciò che contiene.",
     "errors": {
@@ -430,6 +429,23 @@
       "network": "Impossibile raggiungere il server. Controlla la connessione e riprova.",
       "failed": "Accesso non riuscito. Riprova.",
       "cancelled": "Accesso annullato."
+    },
+    "syncChoice": "Sincronizza i miei dati con il sito di SpotMe",
+    "sync": {
+      "title": "Sincronizza con il sito",
+      "off": "Disattivata · i dati restano su questo telefono",
+      "syncing": "Sincronizzazione…",
+      "lastSynced": "Ultima sincronizzazione {{time}}",
+      "never": "Non ancora sincronizzato",
+      "errorNetwork": "Sincronizzazione non riuscita: nessuna connessione. Riprovo a breve.",
+      "errorFailed": "Sincronizzazione non riuscita. Riprovo a breve.",
+      "syncNow": "Sincronizza ora",
+      "explainer": "Peso, misure del corpo, pasti, allenamenti e profilo. Le modifiche fatte sul sito tornano qui.",
+      "offConfirmTitle": "Interrompere la sincronizzazione?",
+      "offConfirmMessage": "I tuoi dati restano su questo telefono e nel tuo account. Le nuove modifiche non verranno condivise finché non la riattivi.",
+      "offConfirm": "Interrompi",
+      "rowOn": "Accesso effettuato · Sincronizzazione attiva",
+      "rowOff": "Accesso effettuato · Sincronizzazione disattivata"
     }
   }
 }

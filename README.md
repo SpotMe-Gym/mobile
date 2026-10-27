@@ -37,6 +37,15 @@ People can sign in with Apple, Google or email and password, using the same Supa
 | Google | Supabase OAuth in the browser sheet (PKCE) | same |
 | Email | email and password; confirmation and password-reset links open the website | same |
 
+**Sync.** When the person is signed in and sync is on, the app syncs at startup, when it returns to the foreground, every 5 minutes, and a few seconds after each edit.
+
+- **How changes are found.** Each synced record keeps a fingerprint of the version both sides last agreed on, so the app sends only what changed.
+- **Each run.** The app first pulls changes and deletions from the website, then pushes the phone's changes.
+- **Conflicts.** If the same record changed on both sides, the website wins.
+- **What can delete online.** Only records the phone itself synced and then deleted are deleted online. A new phone, a reinstall or "Erase all data" therefore never wipes the account. "Erase all data" and signing out turn sync off first.
+- **Database.** The website migration `20261028090000_app_sync.sql` adds `updated_at`, `client_id` and the `sync_deletions` log.
+- **End-to-end test.** `src/features/sync/engine.integration.test.ts` runs the engine against a real backend. It's skipped unless `SYNC_IT_URL`, `SYNC_IT_JWT` and `SYNC_IT_USER` are set, for example to a local `supabase start` and a test user's access token.
+
 The code is in `src/features/account/`. The session is stored in its own MMKV file, so "Erase all data" doesn't sign you out. Account deletion opens the website's settings page.
 
 Docs: [`docs/APP_GUIDE.md`](docs/APP_GUIDE.md) · [`docs/BODY_TRACKER.md`](docs/BODY_TRACKER.md) · [`docs/FOLDER_STRUCTURE.md`](docs/FOLDER_STRUCTURE.md) · [`docs/PROJECT_COMPREHENSION.md`](docs/PROJECT_COMPREHENSION.md) · [`docs/IMPROVEMENT_PLAN.md`](docs/IMPROVEMENT_PLAN.md). Coding rules: `.cursor/rules/` (+ `../.agent/rules/` for Antigravity).
@@ -65,16 +74,12 @@ See [`docs/BODY_TRACKER.md`](docs/BODY_TRACKER.md).
 - [ ] Gradually introduce AI features throughout the app.
 - [ ] Start with simple recommendations and expand to full coaching.
 
-### 5. Account & website sync — **needed**
-The website (`SpotMe-Gym/website`, Next.js + Supabase) already has accounts, a web version of the dashboard, and a portal where verified trainers, nutritionists and doctors follow the clients who invite them. The app is still local-only, so until this is built **nothing logged on the phone reaches the website or the professionals**.
+### 5. Account & website sync
 - [x] Sign in / sign up in the app with the same Supabase project: Apple, Google, email. Optional, the app works without an account (`src/features/account/`).
-- [ ] Sync the local stores two ways with the website tables: `profiles` (gender, birth year, height, goal, targets, units), `weight_entries`, `measurement_entries`, `bia_reports`, `food_entries`, `workouts`. Each table has a `client_id` column, unique per user, so the app can upsert its own local ids idempotently. Last-write-wins on `updated_at` is enough to start.
-- [ ] Map the existing MMKV data on first sign-in (one-off upload), then sync incrementally.
-- [ ] Care team in the app: enter an invite code (`accept_invite` RPC), see who has access and to what, pause/end sharing, accept or decline target suggestions (`decide_recommendation` RPC).
-- [ ] Deep link `spotme://invite/<code>` / universal link from `https://<site>/invite/<code>`.
-- [ ] Remove the "app and website keep separate logs" notices on the website once this ships.
-
-See the website README for the schema (`supabase/migrations/`) and the access rules (`can_access`).
+- [x] Two-way sync with the website: profile, weight, measurements, BIA, food log, workouts (`src/features/sync/`). It's opt-in, through a checkbox on the sign-in screen (ticked by default) or Profile → Account.
+- [ ] Care team in the app: enter an invite code (`accept_invite` RPC), see who has access and to what, pause or end sharing, and accept or decline target suggestions (`decide_recommendation` RPC).
+- [ ] Deep link `spotme://invite/<code>` and a universal link from `https://<site>/invite/<code>`.
+- [ ] Food history, the dashboard layout and settings like language stay on the device for now.
 
 ### 6. Future Enhancements
 - [ ] Implement local search for exercises using **ExerciseDB API** (https://www.exercisedb.io/).

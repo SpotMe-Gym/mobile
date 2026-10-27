@@ -13,6 +13,7 @@ import { useUnitConverter } from '@/features/profile/hooks/useUnitConverter';
 import { eraseAllData, shareExport } from '@/features/profile/userData';
 import { colors } from '@/theme/colors';
 import { useAccountStore } from '@/features/account/accountStore';
+import { useSyncStore } from '@/features/sync/syncStore';
 import { formatNumber } from '@/shared/utils/number';
 
 export default function Profile() {
@@ -25,13 +26,18 @@ export default function Profile() {
   const { currentWeight, currentHeight } = useUnitConverter();
   const accountStatus = useAccountStore((s) => s.status);
   const accountEmail = useAccountStore((s) => s.user?.email);
+  const syncOn = useSyncStore((s) => s.enabled);
   const f = (n: number) => formatNumber(n, i18n.language, 0);
 
   const confirmReset = () =>
-    Alert.alert(t('profile.resetDataTitle'), t('profile.resetDataMessage'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.reset'), style: 'destructive', onPress: eraseAllData },
-    ]);
+    Alert.alert(
+      t('profile.resetDataTitle'),
+      syncOn ? t('profile.resetDataMessageSync') : t('profile.resetDataMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.reset'), style: 'destructive', onPress: eraseAllData },
+      ],
+    );
 
   const exportData = () => {
     shareExport().catch(() => Alert.alert(t('errors.generic')));
@@ -70,7 +76,9 @@ export default function Profile() {
             }
             subtitle={
               accountStatus === 'signedIn'
-                ? t('account.signedInRowHint')
+                ? syncOn
+                  ? t('account.sync.rowOn')
+                  : t('account.sync.rowOff')
                 : accountStatus === 'unavailable'
                   ? t('account.unavailableRowHint')
                   : t('account.signInRowHint')

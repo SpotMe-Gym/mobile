@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Linking, Pressable, Text, TextInput, View } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Lock, Mail } from 'lucide-react-native';
+import { Check, Lock, Mail } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui/Button';
 import { Icon } from '@/shared/ui/Icon';
@@ -19,6 +19,7 @@ import {
   websiteUrl,
 } from '@/features/account/auth';
 import { isAccountConfigured } from '@/features/account/config';
+import { useSyncStore } from '@/features/sync/syncStore';
 import { AppleLogo, GoogleLogo } from '@/features/account/components/BrandLogos';
 
 type Busy = null | 'apple' | 'google' | 'email' | 'reset';
@@ -38,6 +39,12 @@ export function AccountPanel({ onSignedIn }: { onSignedIn?: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nativeApple, setNativeApple] = useState(false);
+  // Sync is opt-in, but offered checked: most people signing in want their data on the website.
+  const [syncChoice, setSyncChoice] = useState(true);
+  const signedIn = () => {
+    useSyncStore.getState().setEnabled(syncChoice);
+    onSignedIn?.();
+  };
 
   useEffect(() => {
     void isNativeAppleAvailable().then(setNativeApple);
@@ -68,7 +75,7 @@ export function AccountPanel({ onSignedIn }: { onSignedIn?: () => void }) {
   const social = (which: 'apple' | 'google') =>
     run(which, async () => {
       await (which === 'apple' ? signInWithApple() : signInWithGoogle());
-      onSignedIn?.();
+      signedIn();
     });
 
   const submitEmail = () => {
@@ -80,7 +87,7 @@ export function AccountPanel({ onSignedIn }: { onSignedIn?: () => void }) {
     return run('email', async () => {
       if (mode === 'signIn') {
         await signInWithEmail(email, password);
-        onSignedIn?.();
+        signedIn();
         return;
       }
       if (password.length < 8) throw new AccountError('weakPassword');
@@ -94,7 +101,7 @@ export function AccountPanel({ onSignedIn }: { onSignedIn?: () => void }) {
         setMode('signIn');
         setInfo(t('account.checkEmail', { email: email.trim() }));
       } else {
-        onSignedIn?.();
+        signedIn();
       }
     });
   };
@@ -116,6 +123,7 @@ export function AccountPanel({ onSignedIn }: { onSignedIn?: () => void }) {
 
   return (
     <View className="gap-3">
+      <SyncCheckbox checked={syncChoice} onChange={setSyncChoice} label={t('account.syncChoice')} />
       {nativeApple ? (
         <View pointerEvents={disabled ? 'none' : 'auto'} className={cn(disabled && 'opacity-60')}>
           <AppleAuthentication.AppleAuthenticationButton
@@ -250,6 +258,37 @@ export function AccountPanel({ onSignedIn }: { onSignedIn?: () => void }) {
         )}
       </Text>
     </View>
+  );
+}
+
+function SyncCheckbox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      accessibilityLabel={label}
+      hitSlop={6}
+      onPress={() => onChange(!checked)}
+      className="mb-1 flex-row items-center gap-2 self-start active:opacity-70"
+    >
+      <View
+        className={cn(
+          'h-[18px] w-[18px] items-center justify-center rounded-[5px] border',
+          checked ? 'border-primary bg-primary' : 'border-border-strong bg-surface',
+        )}
+      >
+        {checked && <Icon icon={Check} size={12} strokeWidth={3} />}
+      </View>
+      <Text className="text-sm text-muted">{label}</Text>
+    </Pressable>
   );
 }
 

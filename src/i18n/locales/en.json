@@ -161,7 +161,8 @@
     "exportDataHint": "Share everything SpotMe stores as JSON",
     "resetAllData": "Erase all data",
     "resetDataTitle": "Erase all data?",
-    "resetDataMessage": "This deletes your profile, logs and workouts from this device and restarts onboarding. It can't be undone."
+    "resetDataMessage": "This deletes your profile, logs and workouts from this device and restarts onboarding. It can't be undone.",
+    "resetDataMessageSync": "This deletes your profile, logs and workouts from this device and restarts onboarding. Sync is turned off first, so your SpotMe account keeps its copy."
   },
   "bodyWeight": {
     "title": "Body Weight",
@@ -382,9 +383,9 @@
   "account": {
     "section": "Account",
     "title": "Your SpotMe account",
-    "intro": "Optional. Use the same account on the SpotMe website, and soon to keep your logs in sync and share them with your trainer, nutritionist or doctor.",
+    "intro": "Optional. Sign in to keep your logs in sync with the SpotMe website and to use the same account there, where you can also share your progress with your trainer, nutritionist or doctor.",
     "onboardingTitle": "Create your account",
-    "onboardingIntro": "Optional. With an account you can use SpotMe on the website too, and soon keep your logs in sync across devices. Everything works offline without one.",
+    "onboardingIntro": "Optional. With an account, your logs sync with the SpotMe website and stay safe if you change phone. Everything works offline without one.",
     "skip": "Continue without an account",
     "continueWithApple": "Continue with Apple",
     "continueWithGoogle": "Continue with Google",
@@ -405,7 +406,6 @@
     "unavailable": "Accounts aren't available in this build yet. Everything keeps working on this device.",
     "signInRow": "Sign in or create an account",
     "signInRowHint": "Optional · use SpotMe on the website too",
-    "signedInRowHint": "Signed in",
     "unavailableRowHint": "Not set up in this build",
     "signedInWith": "Signed in with {{providers}}",
     "providers": {
@@ -413,11 +413,10 @@
       "apple": "Apple",
       "google": "Google"
     },
-    "syncNote": "Your logs stay on this phone for now. Syncing them with your account and the website is coming soon.",
     "manageOnWeb": "Manage account on the website",
     "signOut": "Sign out",
     "signOutConfirm": "Sign out?",
-    "signOutMessage": "Your logs stay on this phone.",
+    "signOutMessage": "Your logs stay on this phone. Syncing stops until you sign in again.",
     "deleteAccount": "Delete account",
     "deleteAccountHint": "Opens the website, where you can delete the account and everything stored in it.",
     "errors": {
@@ -430,6 +429,23 @@
       "network": "Can't reach the server. Check your connection and try again.",
       "failed": "Sign-in didn't work. Please try again.",
       "cancelled": "Sign-in was cancelled."
+    },
+    "syncChoice": "Sync my data with the SpotMe website",
+    "sync": {
+      "title": "Sync with the website",
+      "off": "Off · your logs stay on this phone",
+      "syncing": "Syncing…",
+      "lastSynced": "Last synced {{time}}",
+      "never": "Not synced yet",
+      "errorNetwork": "Couldn't sync: no connection. Trying again soon.",
+      "errorFailed": "Couldn't sync. Trying again soon.",
+      "syncNow": "Sync now",
+      "explainer": "Weight, body measurements, meals, workouts and your profile. Changes on the website come back here.",
+      "offConfirmTitle": "Stop syncing?",
+      "offConfirmMessage": "Your logs stay on this phone and in your account. New changes won't be shared until you turn sync back on.",
+      "offConfirm": "Stop syncing",
+      "rowOn": "Signed in · Sync on",
+      "rowOff": "Signed in · Sync off"
     }
   }
 }

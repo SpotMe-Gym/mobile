@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import '@/i18n';
 import { AccountPanel } from '@/features/account/components/AccountPanel';
 import { signInWithEmail, signUpWithEmail, AccountError } from '@/features/account/auth';
+import { useSyncStore } from '@/features/sync/syncStore';
 
 jest.mock('@/features/account/config', () => ({
   isAccountConfigured: true,
@@ -80,5 +81,25 @@ describe('AccountPanel', () => {
     expect(signUpWithEmail).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'new@example.com', password: 'longenough' }),
     );
+  });
+
+  it('offers sync with a small checkbox, on by default, and applies it on sign-in', async () => {
+    useSyncStore.getState().setEnabled(false);
+    render(<AccountPanel />);
+    const box = screen.getByRole('checkbox', { name: 'Sync my data with the SpotMe website' });
+    expect(box.props.accessibilityState.checked).toBe(true);
+    fill('giulia@example.com', 'secret123');
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+    await waitFor(() => expect(useSyncStore.getState().enabled).toBe(true));
+  });
+
+  it('unticked, signing in leaves sync off', async () => {
+    useSyncStore.getState().setEnabled(false);
+    render(<AccountPanel />);
+    fireEvent.press(screen.getByRole('checkbox', { name: 'Sync my data with the SpotMe website' }));
+    fill('giulia@example.com', 'secret123');
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+    await waitFor(() => expect(signInWithEmail).toHaveBeenCalled());
+    expect(useSyncStore.getState().enabled).toBe(false);
   });
 });
