@@ -1,7 +1,7 @@
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Hash, Languages, Ruler, Share2, Weight } from 'lucide-react-native';
+import { CircleUserRound, Hash, Languages, Ruler, Share2, Weight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '@/shared/components/ScreenHeader';
 import { Card } from '@/shared/ui/Card';
@@ -12,6 +12,7 @@ import { useUserStore } from '@/features/profile/userStore';
 import { useUnitConverter } from '@/features/profile/hooks/useUnitConverter';
 import { eraseAllData, shareExport } from '@/features/profile/userData';
 import { colors } from '@/theme/colors';
+import { useAccountStore } from '@/features/account/accountStore';
 import { formatNumber } from '@/shared/utils/number';
 
 export default function Profile() {
@@ -22,6 +23,8 @@ export default function Profile() {
   const age = useUserStore((s) => s.age);
   const targets = useUserStore((s) => s.targets);
   const { currentWeight, currentHeight } = useUnitConverter();
+  const accountStatus = useAccountStore((s) => s.status);
+  const accountEmail = useAccountStore((s) => s.user?.email);
   const f = (n: number) => formatNumber(n, i18n.language, 0);
 
   const confirmReset = () =>
@@ -55,6 +58,28 @@ export default function Profile() {
             </Text>
           </View>
         </View>
+
+        {accountStatus !== 'unavailable' && (
+          <>
+            <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
+              {t('account.section')}
+            </Text>
+            <ListGroup>
+              <ListRow
+                icon={CircleUserRound}
+                title={
+                  accountStatus === 'signedIn' ? (accountEmail ?? t('account.title')) : t('account.signInRow')
+                }
+                subtitle={
+                  accountStatus === 'signedIn' ? t('account.signedInRowHint') : t('account.signInRowHint')
+                }
+                chevron
+                onPress={() => router.push('/account')}
+                isLast
+              />
+            </ListGroup>
+          </>
+        )}
 
         <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
           {t('profile.statsTitle')}

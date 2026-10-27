@@ -17,6 +17,7 @@ import { useHasHydrated } from '@/shared/hooks/useHasHydrated';
 import { queryClient } from '@/shared/lib/queryClient';
 import { colors } from '@/theme/colors';
 import { ErrorFallback } from '@/shared/components/ErrorFallback';
+import { watchAccount } from '@/features/account/accountStore';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -50,6 +51,9 @@ export default function RootLayout() {
     if (ready) void SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
+  // Keep the account state in sync with the Supabase session (no-op when accounts aren't configured).
+  useEffect(() => watchAccount(), []);
+
   // Safety net: never keep the splash up forever if a storage read hangs or fails.
   useEffect(() => {
     const timer = setTimeout(() => void SplashScreen.hideAsync().catch(() => {}), 4000);
@@ -66,11 +70,14 @@ export default function RootLayout() {
               <Stack.Screen name="onboarding" />
             </Stack.Protected>
 
+            <Stack.Screen name="auth/callback" />
+
             <Stack.Protected guard={hasCompletedOnboarding}>
               <Stack.Screen name="index" />
               <Stack.Screen name="profile/index" />
               <Stack.Screen name="settings/units" />
               <Stack.Screen name="settings/language" />
+              <Stack.Screen name="account" options={{ presentation: 'modal' }} />
               <Stack.Screen name="workouts/index" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="workouts/create" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="nutrition/search" options={{ presentation: 'fullScreenModal' }} />

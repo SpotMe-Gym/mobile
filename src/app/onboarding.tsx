@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,14 +16,23 @@ import { useWeightStore } from '@/features/body-weight/weightStore';
 import { calculateTargets } from '@/features/nutrition/utils/nutrition';
 import { successFeedback } from '@/shared/lib/haptics';
 import { cn } from '@/shared/lib/cn';
+import { AccountPanel } from '@/features/account/components/AccountPanel';
+import { useAccountStore } from '@/features/account/accountStore';
+import { isAccountConfigured } from '@/features/account/config';
 
-type Step = 1 | 2 | 3;
+type Step = 0 | 1 | 2 | 3;
 
 export default function Onboarding() {
   const { t } = useTranslation();
   const completeOnboarding = useUserStore((s) => s.completeOnboarding);
   const addWeight = useWeightStore((s) => s.addEntry);
-  const [step, setStep] = useState<Step>(1);
+  // Step 0 (optional sign-in) only when accounts are configured and nobody is signed in yet.
+  const [offerAccount] = useState(
+    () => isAccountConfigured && useAccountStore.getState().status !== 'signedIn',
+  );
+  const [step, setStep] = useState<Step>(offerAccount ? 0 : 1);
+  const signedIn = useAccountStore((s) => s.status === 'signedIn');
+  const firstStep: Step = offerAccount && !signedIn ? 0 : 1;
 
   const { control, trigger, getValues, setValue, handleSubmit } = useForm<OnboardingValues>({
     resolver: zodResolver(onboardingSchema),
@@ -41,7 +50,16 @@ export default function Onboarding() {
     },
   });
 
+  const afterSignIn = () => {
+    const fullName = useAccountStore.getState().user?.user_metadata?.full_name;
+    if (typeof fullName === 'string' && fullName.trim() && !getValues('name').trim()) {
+      setValue('name', fullName.trim().split(/\s+/)[0] ?? '');
+    }
+    setStep(1);
+  };
+
   const next = async () => {
+    if (step === 0) return;
     if (!(await trigger(STEP_FIELDS[step]))) return;
     if (step === 2) {
       const v = getValues();
@@ -81,7 +99,7 @@ export default function Onboarding() {
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-6 pt-6">
         <View className="mb-8 flex-row items-center justify-between">
-          {step > 1 ? (
+          {step > firstStep ? (
             <IconButton
               icon={ChevronLeft}
               accessibilityLabel={t('common.back')}
@@ -91,7 +109,9 @@ export default function Onboarding() {
             <View className="w-11" />
           )}
           <View
-            className="flex-row gap-2"
+            className={cn('flex-row gap-2', step === 0 && 'opacity-0')}
+            accessibilityElementsHidden={step === 0}
+            importantForAccessibility={step === 0 ? 'no-hide-descendants' : 'auto'}
             accessible
             accessibilityRole="progressbar"
             accessibilityLabel={t('onboarding.stepOf', { step, total: 3 })}
@@ -106,24 +126,47 @@ export default function Onboarding() {
           <View className="w-11" />
         </View>
 
-        <ScrollView
-          className="flex-1"
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: 40 }}
-        >
-          {step === 1 && <Step1Bio control={control} />}
-          {step === 2 && <Step2Goals control={control} />}
-          {step === 3 && <Step3Nutrition control={control} />}
-        </ScrollView>
+        {step === 0 ? (
+          <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <ScrollView
+              className="flex-1"
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 24 }}
+            >
+              <Text className="mb-2 text-3xl font-bold text-foreground">{t('account.onboardingTitle')}</Text>
+              <Text className="mb-8 text-base leading-6 text-muted">{t('account.onboardingIntro')}</Text>
+              <AccountPanel onSignedIn={afterSignIn} />
+            </ScrollView>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setStep(1)}
+              className="items-center py-5 active:opacity-70"
+            >
+              <Text className="text-base font-semibold text-muted">{t('account.skip')}</Text>
+            </Pressable>
+          </KeyboardAvoidingView>
+        ) : (
+          <>
+            <ScrollView
+              className="flex-1"
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 40 }}
+            >
+              {step === 1 && <Step1Bio control={control} />}
+              {step === 2 && <Step2Goals control={control} />}
+              {step === 3 && <Step3Nutrition control={control} />}
+            </ScrollView>
 
-        <View className="py-4">
-          <Button
-            label={step === 3 ? t('onboarding.startJourney') : t('common.next')}
-            onPress={() => void (step === 3 ? finish() : next())}
-            variant="white"
-            className="h-14 w-full rounded-xl"
-          />
-        </View>
+            <View className="py-4">
+              <Button
+                label={step === 3 ? t('onboarding.startJourney') : t('common.next')}
+                onPress={() => void (step === 3 ? finish() : next())}
+                variant="white"
+                className="h-14 w-full rounded-xl"
+              />
+            </View>
+          </>
+        )}
       </View>
     </SafeAreaView>
   );

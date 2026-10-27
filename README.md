@@ -19,6 +19,25 @@ bun run android
 | `bun run i18n:check` | fails if `en.json` and `it.json` keys differ |
 | `bun run doctor` | expo-doctor |
 
+### Accounts (optional)
+
+People can sign in with Apple, Google or email and password, using the same Supabase project as the website. Signing in is optional: the app works offline without an account. The sign-in screen appears as the first onboarding step, which can be skipped, and under Profile → Account.
+
+1. Copy `.env.example` to `.env.local` and fill in the Supabase URL, the publishable key and the website URL. Without them, the account screens say sign-in isn't available in this build.
+2. Set up Apple and Google in Supabase, Apple Developer and Google Cloud. The steps are in the website README, under "Sign in with Apple and Google". On the app side:
+   - add `spotme://auth/callback` to Supabase's redirect URLs;
+   - put the bundle ID in the Apple provider's Client IDs;
+   - turn on the Sign In with Apple capability for the App ID.
+3. Rebuild the native app, because new native modules were added (`expo-apple-authentication`, `expo-web-browser`, `expo-crypto`): `bun run prebuild:clean && bun run ios`.
+
+| | iPhone | Android |
+|---|---|---|
+| Apple | native sheet (ID token + SHA-256 nonce) | Supabase OAuth in the browser sheet |
+| Google | Supabase OAuth in the browser sheet (PKCE) | same |
+| Email | email and password; confirmation and password-reset links open the website | same |
+
+The code is in `src/features/account/`. The session is stored in its own MMKV file, so "Erase all data" doesn't sign you out. Account deletion opens the website's settings page.
+
 Docs: [`docs/APP_GUIDE.md`](docs/APP_GUIDE.md) · [`docs/BODY_TRACKER.md`](docs/BODY_TRACKER.md) · [`docs/FOLDER_STRUCTURE.md`](docs/FOLDER_STRUCTURE.md) · [`docs/PROJECT_COMPREHENSION.md`](docs/PROJECT_COMPREHENSION.md) · [`docs/IMPROVEMENT_PLAN.md`](docs/IMPROVEMENT_PLAN.md). Coding rules: `.cursor/rules/` (+ `../.agent/rules/` for Antigravity).
 
 ## Roadmap & Todo
@@ -47,7 +66,7 @@ See [`docs/BODY_TRACKER.md`](docs/BODY_TRACKER.md).
 
 ### 5. Account & website sync — **needed**
 The website (`SpotMe-Gym/website`, Next.js + Supabase) already has accounts, a web version of the dashboard, and a portal where verified trainers, nutritionists and doctors follow the clients who invite them. The app is still local-only, so until this is built **nothing logged on the phone reaches the website or the professionals**.
-- [ ] Sign in / sign up in the app with the same Supabase project (`@supabase/supabase-js`, session in SecureStore). Keep using the app without an account.
+- [x] Sign in / sign up in the app with the same Supabase project: Apple, Google, email. Optional, the app works without an account (`src/features/account/`).
 - [ ] Sync the local stores two ways with the website tables: `profiles` (gender, birth year, height, goal, targets, units), `weight_entries`, `measurement_entries`, `bia_reports`, `food_entries`, `workouts`. Each table has a `client_id` column, unique per user, so the app can upsert its own local ids idempotently. Last-write-wins on `updated_at` is enough to start.
 - [ ] Map the existing MMKV data on first sign-in (one-off upload), then sync incrementally.
 - [ ] Care team in the app: enter an invite code (`accept_invite` RPC), see who has access and to what, pause/end sharing, accept or decline target suggestions (`decide_recommendation` RPC).

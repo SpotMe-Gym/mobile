@@ -378,5 +378,57 @@
       "ankleL": "Caviglia sinistra",
       "ankleR": "Caviglia destra"
     }
+  },
+  "account": {
+    "section": "Account",
+    "title": "Il tuo account SpotMe",
+    "intro": "Facoltativo. Usa lo stesso account sul sito di SpotMe e, a breve, per sincronizzare i tuoi dati e condividerli con il tuo trainer, nutrizionista o medico.",
+    "onboardingTitle": "Crea il tuo account",
+    "onboardingIntro": "Facoltativo. Con un account puoi usare SpotMe anche dal sito e, a breve, sincronizzare i tuoi dati tra dispositivi. Senza account funziona tutto offline.",
+    "skip": "Continua senza account",
+    "continueWithApple": "Continua con Apple",
+    "continueWithGoogle": "Continua con Google",
+    "orWithEmail": "oppure con l'email",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "Password (almeno 8 caratteri)",
+    "signIn": "Accedi",
+    "createAccount": "Crea account",
+    "switchToSignUp": "Sei nuovo? Crea un account",
+    "switchToSignIn": "Hai già un account? Accedi",
+    "forgotPassword": "Password dimenticata?",
+    "resetSent": "Se esiste un account per {{email}}, ti abbiamo inviato un link per impostare una nuova password.",
+    "checkEmail": "Controlla {{email}} e tocca il link per confermare l'indirizzo, poi accedi qui.",
+    "terms": "Continuando accetti i Termini e l'Informativa privacy, incluso il trattamento dei tuoi dati sulla salute per fornire il servizio.",
+    "termsLink": "Termini",
+    "privacyLink": "Privacy",
+    "unavailable": "Gli account non sono ancora disponibili in questa versione. Sul dispositivo continua a funzionare tutto.",
+    "signInRow": "Accedi o crea un account",
+    "signInRowHint": "Facoltativo · usa SpotMe anche dal sito",
+    "signedInRowHint": "Accesso effettuato",
+    "signedInWith": "Accesso con {{providers}}",
+    "providers": {
+      "email": "Email",
+      "apple": "Apple",
+      "google": "Google"
+    },
+    "syncNote": "Per ora i tuoi dati restano su questo telefono. La sincronizzazione con l'account e il sito arriverà presto.",
+    "manageOnWeb": "Gestisci l'account sul sito",
+    "signOut": "Esci",
+    "signOutConfirm": "Vuoi uscire?",
+    "signOutMessage": "I tuoi dati restano su questo telefono.",
+    "deleteAccount": "Elimina account",
+    "deleteAccountHint": "Apre il sito, dove puoi eliminare l'account e tutto ciò che contiene.",
+    "errors": {
+      "notConfigured": "Gli account non sono ancora disponibili in questa versione.",
+      "invalidEmail": "Inserisci un indirizzo email valido.",
+      "invalidCredentials": "Email o password errate.",
+      "emailNotConfirmed": "Conferma prima la tua email: ti abbiamo inviato un link.",
+      "emailTaken": "Esiste già un account con questa email. Accedi.",
+      "weakPassword": "Scegli una password più sicura: almeno 8 caratteri.",
+      "network": "Impossibile raggiungere il server. Controlla la connessione e riprova.",
+      "failed": "Accesso non riuscito. Riprova.",
+      "cancelled": "Accesso annullato."
+    }
   }
 }

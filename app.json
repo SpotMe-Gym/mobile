@@ -12,6 +12,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.damianoshushku.spotme",
       "appleTeamId": "VEK66395CZ",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Allow SpotMe to scan food barcodes."
       },
@@ -91,7 +92,9 @@
         }
       ],
       "expo-localization",
-      "expo-asset"
+      "expo-asset",
+      "expo-web-browser",
+      "expo-apple-authentication"
     ]
   }
 }

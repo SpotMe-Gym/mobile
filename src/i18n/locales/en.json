@@ -378,5 +378,57 @@
       "ankleL": "Left ankle",
       "ankleR": "Right ankle"
     }
+  },
+  "account": {
+    "section": "Account",
+    "title": "Your SpotMe account",
+    "intro": "Optional. Use the same account on the SpotMe website, and soon to keep your logs in sync and share them with your trainer, nutritionist or doctor.",
+    "onboardingTitle": "Create your account",
+    "onboardingIntro": "Optional. With an account you can use SpotMe on the website too, and soon keep your logs in sync across devices. Everything works offline without one.",
+    "skip": "Continue without an account",
+    "continueWithApple": "Continue with Apple",
+    "continueWithGoogle": "Continue with Google",
+    "orWithEmail": "or with email",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "Password (at least 8 characters)",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "switchToSignUp": "New here? Create an account",
+    "switchToSignIn": "Already have an account? Sign in",
+    "forgotPassword": "Forgot password?",
+    "resetSent": "If there's an account for {{email}}, we've sent a link to set a new password.",
+    "checkEmail": "Check {{email}} and tap the link to confirm your address, then sign in here.",
+    "terms": "By continuing you accept the Terms and the Privacy policy, including the processing of your health data to provide the service.",
+    "termsLink": "Terms",
+    "privacyLink": "Privacy",
+    "unavailable": "Accounts aren't available in this build yet. Everything keeps working on this device.",
+    "signInRow": "Sign in or create an account",
+    "signInRowHint": "Optional · use SpotMe on the website too",
+    "signedInRowHint": "Signed in",
+    "signedInWith": "Signed in with {{providers}}",
+    "providers": {
+      "email": "Email",
+      "apple": "Apple",
+      "google": "Google"
+    },
+    "syncNote": "Your logs stay on this phone for now. Syncing them with your account and the website is coming soon.",
+    "manageOnWeb": "Manage account on the website",
+    "signOut": "Sign out",
+    "signOutConfirm": "Sign out?",
+    "signOutMessage": "Your logs stay on this phone.",
+    "deleteAccount": "Delete account",
+    "deleteAccountHint": "Opens the website, where you can delete the account and everything stored in it.",
+    "errors": {
+      "notConfigured": "Accounts aren't available in this build yet.",
+      "invalidEmail": "Enter a valid email address.",
+      "invalidCredentials": "Wrong email or password.",
+      "emailNotConfirmed": "Confirm your email first: we sent you a link.",
+      "emailTaken": "There's already an account with this email. Sign in instead.",
+      "weakPassword": "Choose a stronger password: at least 8 characters.",
+      "network": "Can't reach the server. Check your connection and try again.",
+      "failed": "Sign-in didn't work. Please try again.",
+      "cancelled": "Sign-in was cancelled."
+    }
   }
 }
