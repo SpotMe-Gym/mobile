@@ -45,6 +45,17 @@ See [`docs/BODY_TRACKER.md`](docs/BODY_TRACKER.md).
 - [ ] Gradually introduce AI features throughout the app.
 - [ ] Start with simple recommendations and expand to full coaching.
 
-### 5. Future Enhancements
+### 5. Account & website sync — **needed**
+The website (`SpotMe-Gym/website`, Next.js + Supabase) already has accounts, a web version of the dashboard, and a portal where verified trainers, nutritionists and doctors follow the clients who invite them. The app is still local-only, so until this is built **nothing logged on the phone reaches the website or the professionals**.
+- [ ] Sign in / sign up in the app with the same Supabase project (`@supabase/supabase-js`, session in SecureStore). Keep using the app without an account.
+- [ ] Sync the local stores two ways with the website tables: `profiles` (gender, birth year, height, goal, targets, units), `weight_entries`, `measurement_entries`, `bia_reports`, `food_entries`, `workouts`. Each table has a `client_id` column, unique per user, so the app can upsert its own local ids idempotently. Last-write-wins on `updated_at` is enough to start.
+- [ ] Map the existing MMKV data on first sign-in (one-off upload), then sync incrementally.
+- [ ] Care team in the app: enter an invite code (`accept_invite` RPC), see who has access and to what, pause/end sharing, accept or decline target suggestions (`decide_recommendation` RPC).
+- [ ] Deep link `spotme://invite/<code>` / universal link from `https://<site>/invite/<code>`.
+- [ ] Remove the "app and website keep separate logs" notices on the website once this ships.
+
+See the website README for the schema (`supabase/migrations/`) and the access rules (`can_access`).
+
+### 6. Future Enhancements
 - [ ] Implement local search for exercises using **ExerciseDB API** (https://www.exercisedb.io/).
     - Allow users to search and add exercises from the database.
