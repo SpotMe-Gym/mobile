@@ -59,27 +59,27 @@ export default function Profile() {
           </View>
         </View>
 
-        {accountStatus !== 'unavailable' && (
-          <>
-            <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
-              {t('account.section')}
-            </Text>
-            <ListGroup>
-              <ListRow
-                icon={CircleUserRound}
-                title={
-                  accountStatus === 'signedIn' ? (accountEmail ?? t('account.title')) : t('account.signInRow')
-                }
-                subtitle={
-                  accountStatus === 'signedIn' ? t('account.signedInRowHint') : t('account.signInRowHint')
-                }
-                chevron
-                onPress={() => router.push('/account')}
-                isLast
-              />
-            </ListGroup>
-          </>
-        )}
+        <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
+          {t('account.section')}
+        </Text>
+        <ListGroup>
+          <ListRow
+            icon={CircleUserRound}
+            title={
+              accountStatus === 'signedIn' ? (accountEmail ?? t('account.title')) : t('account.signInRow')
+            }
+            subtitle={
+              accountStatus === 'signedIn'
+                ? t('account.signedInRowHint')
+                : accountStatus === 'unavailable'
+                  ? t('account.unavailableRowHint')
+                  : t('account.signInRowHint')
+            }
+            chevron
+            onPress={() => router.push('/account')}
+            isLast
+          />
+        </ListGroup>
 
         <Text accessibilityRole="header" className="mb-4 text-lg font-bold text-foreground">
           {t('profile.statsTitle')}

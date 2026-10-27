@@ -406,6 +406,7 @@
     "signInRow": "Sign in or create an account",
     "signInRowHint": "Optional · use SpotMe on the website too",
     "signedInRowHint": "Signed in",
+    "unavailableRowHint": "Not set up in this build",
     "signedInWith": "Signed in with {{providers}}",
     "providers": {
       "email": "Email",

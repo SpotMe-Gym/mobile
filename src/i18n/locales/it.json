@@ -406,6 +406,7 @@
     "signInRow": "Accedi o crea un account",
     "signInRowHint": "Facoltativo · usa SpotMe anche dal sito",
     "signedInRowHint": "Accesso effettuato",
+    "unavailableRowHint": "Non configurato in questa versione",
     "signedInWith": "Accesso con {{providers}}",
     "providers": {
       "email": "Email",
