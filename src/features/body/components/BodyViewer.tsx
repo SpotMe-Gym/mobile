@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber/native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as THREE from 'three';
 import { colors as theme } from '@/theme/colors';
-import { OrbitController } from '@/features/body/components/orbit';
+import { OrbitController, isSwipe } from '@/features/body/components/orbit';
 
 interface BodyViewerProps {
   /** Morphed positions (metres, Y up). Same length on every render. */
@@ -17,6 +17,13 @@ interface BodyViewerProps {
   heightM: number;
   style?: ViewStyle;
   accessibilityLabel?: string;
+  /**
+   * Inside a vertically scrolling screen: only sideways drags turn the body, so an up/down
+   * drag still scrolls the page.
+   */
+  scrollFriendly?: boolean;
+  /** A quick sideways swipe (rather than a drag) — e.g. to move to the next slide. */
+  onSwipe?: (direction: 'left' | 'right') => void;
 }
 
 function Body({ positions, colors, indices }: Pick<BodyViewerProps, 'positions' | 'colors' | 'indices'>) {
@@ -98,6 +105,8 @@ export function BodyViewer({
   heightM,
   style,
   accessibilityLabel,
+  scrollFriendly = false,
+  onSwipe,
 }: BodyViewerProps) {
   const [controller] = useState(() => new OrbitController(heightM));
   useEffect(() => controller.setHeight(heightM), [controller, heightM]);
@@ -107,13 +116,22 @@ export function BodyViewer({
     // pan/pinch, which made every drag wait for the tap to time out (~0.5 s) before the body
     // moved. Now a finger stops any coast the instant it lands (onBegin), a drag activates
     // after a couple of points, and the double tap fails as soon as the finger travels.
-    const pan = Gesture.Pan()
-      .runOnJS(true)
-      .maxPointers(1)
-      .minDistance(2)
-      .onBegin(() => controller.grab())
+    const base = Gesture.Pan().runOnJS(true).maxPointers(1);
+    const pan = (scrollFriendly ? base.activeOffsetX([-6, 6]).failOffsetY([-10, 10]) : base.minDistance(2))
+      .onBegin(() => {
+        controller.grab();
+        controller.markGrab();
+      })
       .onChange((e) => controller.rotate(e.changeX, e.changeY))
-      .onEnd((e) => controller.release(e.velocityX, e.velocityY));
+      .onEnd((e) => {
+        const swipe = onSwipe ? isSwipe(e.translationX, e.translationY, e.velocityX) : null;
+        if (swipe) {
+          controller.restoreGrab(); // a swipe moves the page, not the body
+          onSwipe?.(swipe);
+          return;
+        }
+        controller.release(e.velocityX, e.velocityY);
+      });
     const pinch = Gesture.Pinch()
       .runOnJS(true)
       .onBegin(() => controller.grab())
@@ -127,7 +145,7 @@ export function BodyViewer({
         if (success) controller.reset();
       });
     return Gesture.Simultaneous(pan, pinch, reset);
-  }, [controller]);
+  }, [controller, scrollFriendly, onSwipe]);
 
   // The Body screen is a native modal: on iOS it's presented in its own view controller,
   // outside the app root's GestureHandlerRootView, so gestures need a root of their own here.

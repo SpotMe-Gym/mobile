@@ -9,7 +9,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { useLocalSearchParams, usePreventRemove, useRouter } from 'expo-router';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -134,7 +135,7 @@ export default function CreateWorkout() {
   const handleRemove = useCallback((index: number) => remove(index), [remove]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
         <View className="flex-1 px-4">
           <ScreenHeader
@@ -280,6 +281,6 @@ export default function CreateWorkout() {
           />
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

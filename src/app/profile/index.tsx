@@ -1,5 +1,6 @@
 import { Alert, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { useRouter } from 'expo-router';
 import { CircleUserRound, Hash, Languages, Ruler, Share2, Weight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -44,7 +45,7 @@ export default function Profile() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']}>
       <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
         <ScreenHeader title={t('profile.title')} />
 
@@ -147,7 +148,7 @@ export default function Profile() {
 
         <Button variant="danger" label={t('profile.resetAllData')} onPress={confirmReset} className="mb-10" />
       </ScrollView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }
 

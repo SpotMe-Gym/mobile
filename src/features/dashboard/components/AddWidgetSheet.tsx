@@ -1,6 +1,7 @@
 import { Modal, View, Text, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTopInset } from '@/shared/components/SafeScreen';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react-native';
 import { cn } from '@/shared/lib/cn';
@@ -43,13 +44,14 @@ function buildRows(placedIds: WidgetId[]): CatalogRow[] {
 export function AddWidgetSheet({ visible, placedIds, onClose, onAdd }: AddWidgetSheetProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const topInset = useTopInset(true);
   const rows = buildRows(placedIds);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View
         className="flex-1 bg-surface-sunken"
-        style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+        style={{ paddingTop: topInset, paddingBottom: insets.bottom }}
       >
         <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
           <Text accessibilityRole="header" className="text-xl font-bold text-foreground">

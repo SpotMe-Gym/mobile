@@ -9,7 +9,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Armchair, Check, ChevronLeft, ChevronRight, Plus, Timer } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -164,7 +165,7 @@ export default function SessionScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']}>
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View className="flex-row items-center justify-between px-4 pb-2 pt-2">
           <View className="flex-1">
@@ -286,7 +287,7 @@ export default function SessionScreen() {
           )}
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }
 

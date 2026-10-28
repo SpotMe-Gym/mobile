@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { AlertCircle, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui/Button';
@@ -52,7 +53,7 @@ export default function ProductEntry() {
   const initialMeal: MealType = isMealType(params.meal) ? params.meal : mealForTime();
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']} sheet>
       <View className="flex-row items-center justify-between px-4 py-2">
         <Text accessibilityRole="header" className="text-lg font-bold text-foreground">
           {t('food.addFood')}
@@ -97,7 +98,7 @@ export default function ProductEntry() {
           }
         />
       )}
-    </SafeAreaView>
+    </SafeScreen>
   );
 }
 

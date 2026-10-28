@@ -423,7 +423,10 @@
     "weightLog": "Weight log",
     "measurementsLog": "Measurements log",
     "showAll": "Show all ({{count}})",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "change30": "30 days",
+    "entries": "Entries",
+    "lastWeighIn": "Last"
   },
   "account": {
     "section": "Account",

@@ -38,9 +38,7 @@ export function getWidgetDimensions(
   const unit = getColumnWidth(containerWidth);
   const fullWidth = getFullWidth(containerWidth);
   const dims: WidgetDimensions =
-    size === 'full'
-      ? { width: fullWidth, height: unit, span: 2 }
-      : { width: unit, height: unit, span: 1 };
+    size === 'full' ? { width: fullWidth, height: unit, span: 2 } : { width: unit, height: unit, span: 1 };
 
   if (kind === 'action') {
     return { ...dims, height: ACTION_HEIGHT };
@@ -49,7 +47,7 @@ export function getWidgetDimensions(
 }
 
 export function nextSize(current: WidgetSize, supported: WidgetSize[]): WidgetSize {
-  const cycle = SIZE_CYCLE.filter(s => supported.includes(s));
+  const cycle = SIZE_CYCLE.filter((s) => supported.includes(s));
   if (cycle.length === 0) return current;
   const i = cycle.indexOf(current);
   return cycle[(i + 1) % cycle.length] ?? current;

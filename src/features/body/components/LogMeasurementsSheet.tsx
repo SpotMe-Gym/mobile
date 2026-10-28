@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTopInset } from '@/shared/components/SafeScreen';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, X } from 'lucide-react-native';
 import { Button } from '@/shared/ui/Button';
@@ -26,6 +27,7 @@ type Draft = Partial<Record<MeasurementKey, number | null>>;
 export function LogMeasurementsSheet({ visible, previous, onClose, onSave }: LogMeasurementsSheetProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const topInset = useTopInset(true);
   const { unit, fromDisplay, format } = useLengthUnit();
   const [draft, setDraft] = useState<Draft>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -83,7 +85,11 @@ export function LogMeasurementsSheet({ visible, previous, onClose, onSave }: Log
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-surface-sunken">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        className="flex-1 bg-surface-sunken"
+        style={{ paddingTop: topInset }}
+      >
         <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
           <Text accessibilityRole="header" className="text-xl font-bold text-foreground">
             {t('body.logMeasurements')}
@@ -123,10 +129,14 @@ export function LogMeasurementsSheet({ visible, previous, onClose, onSave }: Log
               {t('body.nothingToSave')}
             </Text>
           )}
-          <Button label={t('body.save')} onPress={save} className="mt-2 w-full" disabled={submitted && hasErrors} />
+          <Button
+            label={t('body.save')}
+            onPress={save}
+            className="mt-2 w-full"
+            disabled={submitted && hasErrors}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
-

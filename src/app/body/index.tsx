@@ -140,7 +140,7 @@ function BodyDetailContent() {
   // The top slider, like Today's plan: one page per view, the logs below stay where they are.
   const pageWidth = windowWidth - 32;
   const gap = 12;
-  const sliderHeight = Math.round(windowHeight * 0.44);
+  const sliderHeight = Math.round(windowHeight * 0.62);
   const goTo = (i: number) => {
     pager.current?.scrollTo({ x: i * (pageWidth + gap), animated: true });
     setPage(i);
@@ -206,216 +206,136 @@ function BodyDetailContent() {
         <ScreenHeader title={t('body.title')} subtitle={t('body.subtitle')} onBack={handleClose} />
       </View>
 
-      {/* Top: swipe between the weight and the 3D body. Fixed above the logs, so a drag on
-          the body always rotates it and never scrolls the page. */}
-      <ScrollView
-        ref={pager}
-        horizontal
-        decelerationRate="fast"
-        snapToInterval={pageWidth + gap}
-        snapToAlignment="start"
-        disableIntervalMomentum
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onPageSettled}
-        contentContainerStyle={{ paddingHorizontal: 16, gap }}
-        style={{ flexGrow: 0 }}
-      >
-        <View
-          style={{ width: pageWidth, height: sliderHeight }}
-          className="overflow-hidden rounded-3xl border border-border bg-surface"
-          accessibilityLabel={pageLabel('weight')}
-        >
-          <WeightPage
-            height={sliderHeight}
-            heightLabel={t('body.heightLabel', { height: `${height.formatted} ${height.unit}` })}
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+        {/* Which slide: the clearest way to switch, whatever the finger is doing on the body. */}
+        <View className="px-4 pb-3">
+          <SegmentedControl
+            value={PAGES[page] ?? 'weight'}
+            onChange={(p) => goTo(PAGES.indexOf(p))}
+            segments={PAGES.map((p) => ({ value: p, label: pageLabel(p) }))}
           />
         </View>
-        <View
-          style={{ width: pageWidth, height: sliderHeight }}
-          className="overflow-hidden rounded-3xl border border-border bg-surface"
-        >
-          <View className="flex-row items-center justify-between px-5 pt-4">
-            <Text className="text-xs font-semibold uppercase tracking-wider text-primary-text">
-              {t('body.page3d')}
-            </Text>
-          </View>
-          <View className="flex-1 items-center justify-center">
-            {failed ? (
-              <Text className="text-subtle">{t('body.loadFailed')}</Text>
-            ) : isExpanded && model && positions && vertexColors && solution ? (
-              <BodyViewer
-                positions={positions}
-                colors={vertexColors}
-                indices={model.indices}
-                heightM={current.heightCm / 100}
-                accessibilityLabel={t('body.viewerA11y')}
-                style={{ width: '100%', height: '100%' }}
-              />
-            ) : (
-              <ActivityIndicator color={colors.muted} />
-            )}
-          </View>
-          {baseline ? (
-            <View className="pb-2">
-              <Legend mode={mode} />
-            </View>
-          ) : null}
-          <View className="flex-row gap-2 px-3 pb-3">
-            <SegmentedControl
-              size="sm"
-              className="flex-1"
-              value={mode}
-              onChange={setMode}
-              segments={[
-                {
-                  value: 'progress',
-                  label: t('body.modeProgress'),
-                  accessibilityLabel: `${t('body.colours')}: ${t('body.modeProgress')}`,
-                },
-                {
-                  value: 'change',
-                  label: t('body.modeChange'),
-                  accessibilityLabel: `${t('body.colours')}: ${t('body.modeChange')}`,
-                },
-              ]}
-            />
-            <SegmentedControl
-              size="sm"
-              className="flex-1"
-              value={compare}
-              onChange={setCompare}
-              segments={[
-                {
-                  value: 'previous',
-                  label: t('body.comparePrevious'),
-                  accessibilityLabel: `${t('body.compareWith')}: ${t('body.comparePrevious')}`,
-                },
-                {
-                  value: 'first',
-                  label: t('body.compareFirst'),
-                  accessibilityLabel: `${t('body.compareWith')}: ${t('body.compareFirst')}`,
-                },
-              ]}
-            />
-          </View>
-        </View>
-      </ScrollView>
 
-      {/* Page dots, tappable: the way back from the 3D page, where a drag rotates the body. */}
-      <View className="mt-3 flex-row items-center justify-center gap-2" accessibilityRole="tablist">
-        {PAGES.map((p, i) => (
-          <Pressable
-            key={p}
-            onPress={() => goTo(i)}
-            hitSlop={10}
-            accessibilityRole="tab"
-            accessibilityLabel={pageLabel(p)}
-            accessibilityState={{ selected: page === i }}
-            className="flex-row items-center gap-1.5"
+        {/* Swipe between the weight and the 3D body. On the body, a slow sideways drag turns
+          it, a quick swipe changes slide, and an up/down drag scrolls the page. */}
+        <ScrollView
+          ref={pager}
+          horizontal
+          decelerationRate="fast"
+          snapToInterval={pageWidth + gap}
+          snapToAlignment="start"
+          disableIntervalMomentum
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={onPageSettled}
+          contentContainerStyle={{ paddingHorizontal: 16, gap }}
+          style={{ flexGrow: 0 }}
+        >
+          <View
+            style={{ width: pageWidth, height: sliderHeight }}
+            className="overflow-hidden rounded-3xl border border-border bg-surface"
+            accessibilityLabel={pageLabel('weight')}
           >
-            <View className={`h-2 rounded-full ${page === i ? 'w-6 bg-primary' : 'w-2 bg-border-strong'}`} />
-            <Text className={`text-xs font-semibold ${page === i ? 'text-foreground' : 'text-subtle'}`}>
-              {pageLabel(p)}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 40 }}>
-        <SectionHeader
-          title={t('body.weightLog')}
-          action={t('bodyWeight.logWeight')}
-          onAction={() => setWeightSheet(true)}
-        />
-        {newestWeights.length === 0 ? (
-          <View className="rounded-2xl border border-border bg-surface p-4">
-            <Text className="text-sm text-muted">{t('bodyWeight.noHistoryYet')}</Text>
+            <WeightPage
+              height={sliderHeight}
+              heightLabel={t('body.heightLabel', { height: `${height.formatted} ${height.unit}` })}
+            />
           </View>
-        ) : (
-          <View className="overflow-hidden rounded-2xl border border-border bg-surface">
-            {shownWeights.map((entry, i) => {
-              const dw = convertWeight(entry.kg);
-              const date = formatDayKey(entry.day, i18n.language, {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-              });
-              return (
-                <View
-                  key={entry.id}
-                  className={`flex-row items-center justify-between py-1 pl-4 pr-1 ${i < shownWeights.length - 1 ? 'border-b border-border' : ''}`}
-                >
-                  <Text className="capitalize text-muted">{date}</Text>
-                  <View className="flex-row items-center gap-1">
-                    <Text className="text-base font-bold text-foreground">
-                      {dw.formatted} <Text className="text-xs font-normal text-subtle">{dw.unit}</Text>
-                    </Text>
-                    <IconButton
-                      icon={Trash2}
-                      variant="danger"
-                      iconSize={18}
-                      accessibilityLabel={t('bodyWeight.deleteEntryA11y', {
-                        value: dw.formatted,
-                        unit: dw.unit,
-                      })}
-                      onPress={() => confirmDeleteWeight(entry)}
-                    />
-                  </View>
-                </View>
-              );
-            })}
-            {newestWeights.length > WEIGHT_ROWS && (
-              <Pressable
-                onPress={() => setAllWeights((v) => !v)}
-                accessibilityRole="button"
-                className="h-11 items-center justify-center border-t border-border active:bg-surface-elevated"
-              >
-                <Text className="text-sm font-semibold text-primary-text">
-                  {allWeights ? t('body.showLess') : t('body.showAll', { count: newestWeights.length })}
-                </Text>
-              </Pressable>
-            )}
+          <View
+            style={{ width: pageWidth, height: sliderHeight }}
+            className="overflow-hidden rounded-3xl border border-border bg-surface"
+          >
+            <View className="flex-row items-center justify-between px-5 pt-4">
+              <Text className="text-xs font-semibold uppercase tracking-wider text-primary-text">
+                {t('body.page3d')}
+              </Text>
+            </View>
+            <View className="flex-1 items-center justify-center">
+              {failed ? (
+                <Text className="text-subtle">{t('body.loadFailed')}</Text>
+              ) : isExpanded && model && positions && vertexColors && solution ? (
+                <BodyViewer
+                  positions={positions}
+                  colors={vertexColors}
+                  indices={model.indices}
+                  heightM={current.heightCm / 100}
+                  accessibilityLabel={t('body.viewerA11y')}
+                  style={{ width: '100%', height: '100%' }}
+                  scrollFriendly
+                  onSwipe={(direction) => goTo(direction === 'right' ? 0 : 1)}
+                />
+              ) : (
+                <ActivityIndicator color={colors.muted} />
+              )}
+            </View>
+            {baseline ? (
+              <View className="pb-2">
+                <Legend mode={mode} />
+              </View>
+            ) : null}
+            <View className="flex-row gap-2 px-3 pb-3">
+              <SegmentedControl
+                size="sm"
+                className="flex-1"
+                value={mode}
+                onChange={setMode}
+                segments={[
+                  {
+                    value: 'progress',
+                    label: t('body.modeProgress'),
+                    accessibilityLabel: `${t('body.colours')}: ${t('body.modeProgress')}`,
+                  },
+                  {
+                    value: 'change',
+                    label: t('body.modeChange'),
+                    accessibilityLabel: `${t('body.colours')}: ${t('body.modeChange')}`,
+                  },
+                ]}
+              />
+              <SegmentedControl
+                size="sm"
+                className="flex-1"
+                value={compare}
+                onChange={setCompare}
+                segments={[
+                  {
+                    value: 'previous',
+                    label: t('body.comparePrevious'),
+                    accessibilityLabel: `${t('body.compareWith')}: ${t('body.comparePrevious')}`,
+                  },
+                  {
+                    value: 'first',
+                    label: t('body.compareFirst'),
+                    accessibilityLabel: `${t('body.compareWith')}: ${t('body.compareFirst')}`,
+                  },
+                ]}
+              />
+            </View>
           </View>
-        )}
+        </ScrollView>
 
-        <SectionHeader
-          title={t('body.measurementsLog')}
-          action={t('body.logMeasurements')}
-          onAction={() => setMeasureSheet(true)}
-        />
-        {since && (
-          <Text className="-mt-2 mb-2 ml-1 text-xs text-subtle">{t('body.since', { date: since })}</Text>
-        )}
-        {hydrated && entries.length === 0 && (
-          <View className="mb-3 rounded-2xl border border-border bg-surface p-4">
-            <Text className="font-semibold text-foreground">{t('body.noMeasurements')}</Text>
-            <Text className="mt-1 text-sm text-muted">{t('body.noMeasurementsHint')}</Text>
-          </View>
-        )}
-        {!baseline && entries.length > 0 && (
-          <Text className="mb-2 ml-1 text-xs text-subtle">{t('body.noBaseline')}</Text>
-        )}
-        {rows('primary')}
+        <View className="mt-3 flex-row justify-center gap-1.5" pointerEvents="none">
+          {PAGES.map((p, i) => (
+            <View
+              key={p}
+              className={`h-1.5 rounded-full ${page === i ? 'w-5 bg-primary' : 'w-1.5 bg-border-strong'}`}
+            />
+          ))}
+        </View>
 
-        <Pressable
-          onPress={() => setShowAdvanced((s) => !s)}
-          accessibilityRole="button"
-          accessibilityState={{ expanded: showAdvanced }}
-          accessibilityLabel={showAdvanced ? t('body.hideAdvanced') : t('body.showAdvanced')}
-          className="mt-3 h-12 flex-row items-center justify-between rounded-2xl border border-border bg-surface px-4"
-        >
-          <Text className="font-semibold text-foreground">{t('body.advanced')}</Text>
-          <Icon icon={showAdvanced ? ChevronUp : ChevronDown} size={20} color={colors.muted} />
-        </Pressable>
-        {showAdvanced && <View className="mt-3">{rows('advanced')}</View>}
-
-        {entries.length > 0 && (
-          <>
-            <Text accessibilityRole="header" className="mb-3 mt-6 text-base font-bold text-foreground">
-              {t('body.history')}
-            </Text>
+        <View className="px-4">
+          <SectionHeader
+            title={t('body.weightLog')}
+            action={t('bodyWeight.logWeight')}
+            onAction={() => setWeightSheet(true)}
+          />
+          {newestWeights.length === 0 ? (
+            <View className="rounded-2xl border border-border bg-surface p-4">
+              <Text className="text-sm text-muted">{t('bodyWeight.noHistoryYet')}</Text>
+            </View>
+          ) : (
             <View className="overflow-hidden rounded-2xl border border-border bg-surface">
-              {[...entries].reverse().map((entry, i, list) => {
+              {shownWeights.map((entry, i) => {
+                const dw = convertWeight(entry.kg);
                 const date = formatDayKey(entry.day, i18n.language, {
                   weekday: 'short',
                   day: 'numeric',
@@ -424,33 +344,115 @@ function BodyDetailContent() {
                 return (
                   <View
                     key={entry.id}
-                    className={`flex-row items-center justify-between py-1 pl-4 pr-1 ${i < list.length - 1 ? 'border-b border-border' : ''}`}
+                    className={`flex-row items-center justify-between py-1 pl-4 pr-1 ${i < shownWeights.length - 1 ? 'border-b border-border' : ''}`}
                   >
-                    <View>
-                      <Text className="capitalize text-foreground">{date}</Text>
-                      <Text className="text-xs text-subtle">
-                        {t('body.valuesCount', { count: Object.keys(entry.values).length })}
+                    <Text className="capitalize text-muted">{date}</Text>
+                    <View className="flex-row items-center gap-1">
+                      <Text className="text-base font-bold text-foreground">
+                        {dw.formatted} <Text className="text-xs font-normal text-subtle">{dw.unit}</Text>
                       </Text>
+                      <IconButton
+                        icon={Trash2}
+                        variant="danger"
+                        iconSize={18}
+                        accessibilityLabel={t('bodyWeight.deleteEntryA11y', {
+                          value: dw.formatted,
+                          unit: dw.unit,
+                        })}
+                        onPress={() => confirmDeleteWeight(entry)}
+                      />
                     </View>
-                    <IconButton
-                      icon={Trash2}
-                      variant="danger"
-                      iconSize={18}
-                      accessibilityLabel={t('body.deleteSessionA11y', { date })}
-                      onPress={() => confirmDeleteMeasurements(entry)}
-                    />
                   </View>
                 );
               })}
+              {newestWeights.length > WEIGHT_ROWS && (
+                <Pressable
+                  onPress={() => setAllWeights((v) => !v)}
+                  accessibilityRole="button"
+                  className="h-11 items-center justify-center border-t border-border active:bg-surface-elevated"
+                >
+                  <Text className="text-sm font-semibold text-primary-text">
+                    {allWeights ? t('body.showLess') : t('body.showAll', { count: newestWeights.length })}
+                  </Text>
+                </Pressable>
+              )}
             </View>
-          </>
-        )}
+          )}
 
-        <Text accessibilityRole="header" className="mb-3 mt-6 text-base font-bold text-foreground">
-          {t('body.composition')}
-        </Text>
-        <View className="rounded-2xl border border-border bg-surface p-4">
-          <Text className="text-sm text-muted">{t('body.compositionHint')}</Text>
+          <SectionHeader
+            title={t('body.measurementsLog')}
+            action={t('body.logMeasurements')}
+            onAction={() => setMeasureSheet(true)}
+          />
+          {since && (
+            <Text className="-mt-2 mb-2 ml-1 text-xs text-subtle">{t('body.since', { date: since })}</Text>
+          )}
+          {hydrated && entries.length === 0 && (
+            <View className="mb-3 rounded-2xl border border-border bg-surface p-4">
+              <Text className="font-semibold text-foreground">{t('body.noMeasurements')}</Text>
+              <Text className="mt-1 text-sm text-muted">{t('body.noMeasurementsHint')}</Text>
+            </View>
+          )}
+          {!baseline && entries.length > 0 && (
+            <Text className="mb-2 ml-1 text-xs text-subtle">{t('body.noBaseline')}</Text>
+          )}
+          {rows('primary')}
+
+          <Pressable
+            onPress={() => setShowAdvanced((s) => !s)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showAdvanced }}
+            accessibilityLabel={showAdvanced ? t('body.hideAdvanced') : t('body.showAdvanced')}
+            className="mt-3 h-12 flex-row items-center justify-between rounded-2xl border border-border bg-surface px-4"
+          >
+            <Text className="font-semibold text-foreground">{t('body.advanced')}</Text>
+            <Icon icon={showAdvanced ? ChevronUp : ChevronDown} size={20} color={colors.muted} />
+          </Pressable>
+          {showAdvanced && <View className="mt-3">{rows('advanced')}</View>}
+
+          {entries.length > 0 && (
+            <>
+              <Text accessibilityRole="header" className="mb-3 mt-6 text-base font-bold text-foreground">
+                {t('body.history')}
+              </Text>
+              <View className="overflow-hidden rounded-2xl border border-border bg-surface">
+                {[...entries].reverse().map((entry, i, list) => {
+                  const date = formatDayKey(entry.day, i18n.language, {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                  });
+                  return (
+                    <View
+                      key={entry.id}
+                      className={`flex-row items-center justify-between py-1 pl-4 pr-1 ${i < list.length - 1 ? 'border-b border-border' : ''}`}
+                    >
+                      <View>
+                        <Text className="capitalize text-foreground">{date}</Text>
+                        <Text className="text-xs text-subtle">
+                          {t('body.valuesCount', { count: Object.keys(entry.values).length })}
+                        </Text>
+                      </View>
+                      <IconButton
+                        icon={Trash2}
+                        variant="danger"
+                        iconSize={18}
+                        accessibilityLabel={t('body.deleteSessionA11y', { date })}
+                        onPress={() => confirmDeleteMeasurements(entry)}
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          )}
+
+          <Text accessibilityRole="header" className="mb-3 mt-6 text-base font-bold text-foreground">
+            {t('body.composition')}
+          </Text>
+          <View className="rounded-2xl border border-border bg-surface p-4">
+            <Text className="text-sm text-muted">{t('body.compositionHint')}</Text>
+          </View>
         </View>
       </ScrollView>
 

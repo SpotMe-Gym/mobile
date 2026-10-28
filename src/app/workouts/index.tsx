@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { ChevronRight, Dumbbell, Plus } from 'lucide-react-native';
@@ -90,7 +91,7 @@ export default function Workouts() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
         <ScreenHeader title={t('workouts.myWorkouts')} className="mt-4" rightAction={<AiButton />} />
         {isHydrated && (
@@ -128,6 +129,6 @@ export default function Workouts() {
           style={{ bottom: insets.bottom + 16 }}
         />
       </View>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

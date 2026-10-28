@@ -1,5 +1,6 @@
 import { ScrollView, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '@/shared/components/ScreenHeader';
 import { ListGroup, ListRow } from '@/shared/ui/ListRow';
@@ -23,7 +24,7 @@ export default function LanguageSettings() {
         : t('settings.italian');
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4">
         <ScreenHeader title={t('settings.language')} />
         <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
@@ -52,6 +53,6 @@ export default function LanguageSettings() {
           </ListGroup>
         </ScrollView>
       </View>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

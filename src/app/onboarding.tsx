@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ChevronLeft } from 'lucide-react-native';
@@ -96,7 +96,7 @@ export default function Onboarding() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top', 'bottom']}>
       <View className="flex-1 px-6 pt-6">
         <View className="mb-8 flex-row items-center justify-between">
           {step > firstStep ? (
@@ -168,6 +168,6 @@ export default function Onboarding() {
           </>
         )}
       </View>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

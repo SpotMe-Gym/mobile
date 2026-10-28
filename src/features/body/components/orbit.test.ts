@@ -1,4 +1,5 @@
 import {
+  isSwipe,
   clampOrbit,
   createOrbit,
   orbitToCamera,
@@ -79,5 +80,15 @@ describe('zoom toward the fingers', () => {
     expect(Math.abs(o.focus[0])).toBeLessThanOrEqual(1.75 * 0.22 + 1e-9);
     expect(Math.abs(o.focus[2])).toBeLessThanOrEqual(1.75 * 0.22 + 1e-9);
     expect(orbitToCamera(o).target[1]).toBeLessThanOrEqual(1.75 * 0.96 + 1e-9);
+  });
+});
+
+describe('swipe vs turn', () => {
+  it('a quick sideways flick is a swipe; a slow or vertical drag turns the body', () => {
+    expect(isSwipe(120, 10, 1500)).toBe('right');
+    expect(isSwipe(-90, 5, -1300)).toBe('left');
+    expect(isSwipe(120, 10, 300)).toBeNull(); // slow: a turn
+    expect(isSwipe(20, 0, 2000)).toBeNull(); // too short
+    expect(isSwipe(80, 90, 2000)).toBeNull(); // diagonal
   });
 });

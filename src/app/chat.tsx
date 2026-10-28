@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { Sparkles } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '@/shared/components/ScreenHeader';
@@ -9,7 +9,7 @@ import { colors } from '@/theme/colors';
 export default function Chat() {
   const { t } = useTranslation();
   return (
-    <SafeAreaView className="flex-1 bg-surface-sunken" edges={['top']}>
+    <SafeScreen className="flex-1 bg-surface-sunken" edges={['top']} sheet>
       <View className="px-4">
         <ScreenHeader title={t('chat.title')} />
       </View>
@@ -18,6 +18,6 @@ export default function Chat() {
         <Text className="mt-4 text-xl font-bold text-foreground">{t('chat.title')}</Text>
         <Text className="mt-2 text-center text-base text-subtle">{t('chat.comingSoon')}</Text>
       </View>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

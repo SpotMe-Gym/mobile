@@ -170,6 +170,20 @@ export class OrbitController {
     this.velocity = { az: 0, po: 0 };
   }
 
+  private grabbedAt: OrbitState | null = null;
+
+  /** Remembers the view when a finger lands, so a swipe can be undone (see restoreGrab). */
+  markGrab() {
+    this.grabbedAt = { ...this.state };
+  }
+
+  /** Puts the camera back where the finger landed: the drag was a swipe, not a rotation. */
+  restoreGrab() {
+    this.velocity = { az: 0, po: 0 };
+    if (this.grabbedAt) this.state = clampOrbit({ ...this.grabbedAt });
+    this.invalidate();
+  }
+
   rotate(dxPx: number, dyPx: number) {
     this.state = clampOrbit({
       ...this.state,
@@ -222,4 +236,13 @@ export class OrbitController {
     }
     return orbitToCamera(this.state);
   }
+}
+
+/** A release this fast and this far sideways is a swipe, not a turn of the body. */
+export const SWIPE_VELOCITY = 900;
+export const SWIPE_DISTANCE = 40;
+export function isSwipe(tx: number, ty: number, vx: number): 'left' | 'right' | null {
+  if (Math.abs(vx) < SWIPE_VELOCITY || Math.abs(tx) < SWIPE_DISTANCE) return null;
+  if (Math.abs(tx) < Math.abs(ty) * 1.5) return null;
+  return tx < 0 ? 'left' : 'right';
 }

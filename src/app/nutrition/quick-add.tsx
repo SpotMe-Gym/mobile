@@ -1,6 +1,7 @@
 import { KeyboardAvoidingView, Platform, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X } from 'lucide-react-native';
@@ -104,7 +105,7 @@ export default function QuickAdd() {
           : undefined;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']} sheet>
       <View className="flex-row items-center justify-between px-4 py-2">
         <Text accessibilityRole="header" className="text-lg font-bold text-foreground">
           {t('food.quickAdd')}
@@ -252,6 +253,6 @@ export default function QuickAdd() {
           />
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

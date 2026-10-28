@@ -1,5 +1,6 @@
 import { Alert, KeyboardAvoidingView, Linking, Platform, ScrollView, Switch, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { useRouter } from 'expo-router';
 import { Globe, LogOut, RefreshCw, Trash2, UserRound } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -21,7 +22,7 @@ export default function AccountScreen() {
   const user = useAccountStore((s) => s.user);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']} sheet>
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           className="flex-1 px-4"
@@ -44,7 +45,7 @@ export default function AccountScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeScreen>
   );
 }
 

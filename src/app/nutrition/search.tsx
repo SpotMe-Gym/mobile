@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen } from '@/shared/components/SafeScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, History, PenLine, ScanBarcode, Search, WifiOff } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
@@ -104,7 +105,7 @@ export default function NutritionSearch() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4 pt-2">
         <View className="mb-4 flex-row items-center">
           <IconButton
@@ -236,6 +237,6 @@ export default function NutritionSearch() {
       )}
 
       <BarcodeScanner visible={scanning} onClose={() => setScanning(false)} onScanned={handleScanned} />
-    </SafeAreaView>
+    </SafeScreen>
   );
 }

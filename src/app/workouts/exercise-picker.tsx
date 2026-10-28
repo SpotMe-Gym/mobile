@@ -9,7 +9,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeScreen, useTopInset } from '@/shared/components/SafeScreen';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Plus, Search, X } from 'lucide-react-native';
@@ -49,6 +50,7 @@ const EQUIPMENT = [
 export default function ExercisePicker() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const sheetTop = useTopInset(true);
   const { t } = useTranslation();
   const onPick = useExercisePicker((s) => s.onPick);
   const customs = useCustomExerciseStore((s) => s.exercises);
@@ -87,7 +89,7 @@ export default function ExercisePicker() {
       .join(', ');
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeScreen className="flex-1 bg-background" edges={['top']} sheet>
       <View className="flex-1 px-4">
         <ScreenHeader title={t('exercises.pick')} className="mt-4" />
         <View className="h-12 flex-row items-center rounded-2xl border border-border bg-surface px-3">
@@ -206,7 +208,7 @@ export default function ExercisePicker() {
         onRequestClose={() => setPreview(null)}
       >
         {preview && (
-          <View className="flex-1 bg-background">
+          <View className="flex-1 bg-background" style={{ paddingTop: sheetTop }}>
             <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 100 }}>
               <View className="mb-2 flex-row items-center justify-between">
                 <Text className="mr-3 flex-1 text-2xl font-bold text-foreground">{preview.name}</Text>
@@ -277,7 +279,7 @@ export default function ExercisePicker() {
           pick(created.id, created.name);
         }}
       />
-    </SafeAreaView>
+    </SafeScreen>
   );
 }
 
@@ -294,6 +296,7 @@ function CustomExerciseSheet({
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const sheetTop = useTopInset(true);
   const [name, setName] = useState(initialName);
   const [group, setGroup] = useState<MuscleGroup | null>(null);
   const [equipment, setEquipment] = useState<string | null>(null);
@@ -308,6 +311,7 @@ function CustomExerciseSheet({
       <KeyboardAvoidingView
         className="flex-1 bg-background"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ paddingTop: sheetTop }}
       >
         <ScrollView
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}

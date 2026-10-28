@@ -43,7 +43,10 @@ export function BodyCardContent({ size = 'half', style }: BodyCardContentProps) 
           <View className={compact ? 'flex-1 justify-center' : 'mt-1'}>
             {!compact && <Text className="text-sm text-muted">{t('body.cardWaist')}</Text>}
             <View className="flex-row items-baseline">
-              <Text className={cn('font-bold text-foreground', compact ? 'text-2xl' : 'text-4xl')} numberOfLines={1}>
+              <Text
+                className={cn('font-bold text-foreground', compact ? 'text-2xl' : 'text-4xl')}
+                numberOfLines={1}
+              >
                 {format(waist)}
               </Text>
               <Text className="ml-1 text-subtle">{unit}</Text>

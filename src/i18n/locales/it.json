@@ -423,7 +423,10 @@
     "weightLog": "Registro peso",
     "measurementsLog": "Registro misure",
     "showAll": "Mostra tutto ({{count}})",
-    "showLess": "Mostra meno"
+    "showLess": "Mostra meno",
+    "change30": "30 giorni",
+    "entries": "Pesate",
+    "lastWeighIn": "Ultima"
   },
   "account": {
     "section": "Account",

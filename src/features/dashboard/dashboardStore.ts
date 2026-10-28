@@ -34,6 +34,8 @@ interface DashboardState {
   removeWidget: (id: WidgetId) => void;
   addWidget: (id: WidgetId, size: WidgetSize) => void;
   reorderWidgets: (fromId: WidgetId, toId: WidgetId) => void;
+  /** Puts the cards in this order (ids not on the home are ignored, missing ones keep their place at the end). */
+  setOrder: (ids: WidgetId[]) => void;
 }
 
 function isWidgetSize(value: unknown): value is WidgetSize {
@@ -71,6 +73,14 @@ export const useDashboardStore = create<DashboardState>()(
           widgets: [...state.widgets, { id, size }],
         }));
       },
+
+      setOrder: (ids) =>
+        set(state => {
+          const byId = new Map(state.widgets.map(w => [w.id, w]));
+          const ordered = ids.map(id => byId.get(id)).filter((w): w is DashboardWidget => !!w);
+          const rest = state.widgets.filter(w => !ids.includes(w.id));
+          return { widgets: [...ordered, ...rest] };
+        }),
 
       reorderWidgets: (fromId, toId) => {
         if (fromId === toId) return;
