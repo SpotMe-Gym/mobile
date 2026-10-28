@@ -351,7 +351,6 @@
     "deleteSessionA11y": "Elimina le misure del {{date}}",
     "valuesCount_one": "{{count}} misura",
     "valuesCount_other": "{{count}} misure",
-    "heightWeight": "{{height}} · {{weight}}",
     "composition": "Composizione corporea",
     "compositionHint": "Importazione da bilancia smart (BIA) — in arrivo.",
     "cardEmpty": "Tocca per registrare le misure",
@@ -378,7 +377,8 @@
       "kneeR": "Ginocchio destro",
       "ankleL": "Caviglia sinistra",
       "ankleR": "Caviglia destra"
-    }
+    },
+    "heightLabel": "Altezza {{height}}"
   },
   "account": {
     "section": "Account",

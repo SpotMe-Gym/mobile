@@ -24,6 +24,7 @@ import { BodyCardContent } from '@/features/body/components/BodyCardContent';
 import { BodyViewer } from '@/features/body/components/BodyViewer';
 import { LogMeasurementsSheet } from '@/features/body/components/LogMeasurementsSheet';
 import { MeasurementRow } from '@/features/body/components/MeasurementRow';
+import { WeightPanel } from '@/features/body/components/WeightPanel';
 import { useBodyAvatar } from '@/features/body/hooks/useBodyAvatar';
 import { useLengthUnit } from '@/features/body/hooks/useLengthUnit';
 import { useBodyStore } from '@/features/body/bodyStore';
@@ -81,7 +82,7 @@ function BodyDetailContent() {
   const addMeasurements = useBodyStore((s) => s.addMeasurements);
   const removeMeasurements = useBodyStore((s) => s.removeMeasurements);
   const { unit, format } = useLengthUnit();
-  const { convertWeight, convertHeight } = useUnitConverter();
+  const { convertHeight } = useUnitConverter();
   const {
     model,
     failed,
@@ -97,7 +98,6 @@ function BodyDetailContent() {
   const since = baseline
     ? formatDayKey(baseline.day, i18n.language, { day: 'numeric', month: 'short' })
     : undefined;
-  const weight = convertWeight(current.weightKg);
   const height = convertHeight(current.heightCm);
 
   const confirmDelete = useCallback(
@@ -150,35 +150,34 @@ function BodyDetailContent() {
       </View>
 
       <View className="px-4">
+        {/* One card, two halves: the 3D body (drag to rotate) and the weight beside it. */}
         <View
-          className="items-center justify-center overflow-hidden rounded-3xl border border-border bg-surface"
+          className="flex-row overflow-hidden rounded-3xl border border-border bg-surface"
           style={{ height: viewerHeight }}
         >
-          {failed ? (
-            <Text className="text-subtle">{t('body.loadFailed')}</Text>
-          ) : isExpanded && model && positions && vertexColors && solution ? (
-            <BodyViewer
-              positions={positions}
-              colors={vertexColors}
-              indices={model.indices}
-              heightM={current.heightCm / 100}
-              accessibilityLabel={t('body.viewerA11y')}
-              style={{ width: '100%', height: '100%' }}
-            />
-          ) : (
-            <ActivityIndicator color={colors.muted} />
-          )}
+          <View className="flex-[1.35] items-center justify-center border-r border-border">
+            {failed ? (
+              <Text className="text-subtle">{t('body.loadFailed')}</Text>
+            ) : isExpanded && model && positions && vertexColors && solution ? (
+              <BodyViewer
+                positions={positions}
+                colors={vertexColors}
+                indices={model.indices}
+                heightM={current.heightCm / 100}
+                accessibilityLabel={t('body.viewerA11y')}
+                style={{ width: '100%', height: '100%' }}
+              />
+            ) : (
+              <ActivityIndicator color={colors.muted} />
+            )}
+          </View>
+          <WeightPanel
+            heightLabel={t('body.heightLabel', { height: `${height.formatted} ${height.unit}` })}
+          />
         </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 96 }}>
-        <Text className="mt-2 text-center text-sm text-muted">
-          {t('body.heightWeight', {
-            height: `${height.formatted} ${height.unit}`,
-            weight: `${weight.formatted} ${weight.unit}`,
-          })}
-        </Text>
-
         <View className="mt-4 flex-row gap-3">
           <View className="flex-1">
             <Text className="mb-1.5 ml-1 text-xs font-medium text-muted">{t('body.colours')}</Text>
