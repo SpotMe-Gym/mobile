@@ -27,3 +27,7 @@ jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'light' },
   NotificationFeedbackType: { Success: 'success' },
 }));
+
+// The exercise photo cross-fade runs on Reanimated, which has no native side under Jest.
+// Widgets and screens that show it import it indirectly (e.g. through the widget catalog).
+jest.mock('@/features/exercises/components/ExerciseAnimation', () => ({ ExerciseAnimation: () => null }));

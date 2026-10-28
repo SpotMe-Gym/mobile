@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -7,6 +7,9 @@ import {
   Text,
   View,
   useWindowDimensions,
+  type NativeScrollEvent,
+  type ScrollViewInstance,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -24,7 +27,9 @@ import { BodyCardContent } from '@/features/body/components/BodyCardContent';
 import { BodyViewer } from '@/features/body/components/BodyViewer';
 import { LogMeasurementsSheet } from '@/features/body/components/LogMeasurementsSheet';
 import { MeasurementRow } from '@/features/body/components/MeasurementRow';
-import { WeightPanel } from '@/features/body/components/WeightPanel';
+import { WeightPage } from '@/features/body/components/WeightPage';
+import { AddWeightModal } from '@/features/body-weight/components/AddWeightModal';
+import { useWeightStore, type WeightEntry } from '@/features/body-weight/weightStore';
 import { useBodyAvatar } from '@/features/body/hooks/useBodyAvatar';
 import { useLengthUnit } from '@/features/body/hooks/useLengthUnit';
 import { useBodyStore } from '@/features/body/bodyStore';
@@ -67,22 +72,52 @@ function Legend({ mode }: { mode: HighlightMode }) {
   );
 }
 
+type Page = 'weight' | 'body';
+const PAGES: Page[] = ['weight', 'body'];
+const WEIGHT_ROWS = 5;
+
+function SectionHeader({ title, action, onAction }: { title: string; action: string; onAction: () => void }) {
+  return (
+    <View className="mb-3 mt-6 flex-row items-center justify-between">
+      <Text accessibilityRole="header" className="text-lg font-bold text-foreground">
+        {title}
+      </Text>
+      <Pressable
+        onPress={onAction}
+        accessibilityRole="button"
+        accessibilityLabel={action}
+        className="h-9 flex-row items-center gap-1 rounded-full bg-primary/15 px-3 active:opacity-70"
+      >
+        <Icon icon={Plus} size={16} color={colors['primary-text']} />
+        <Text className="text-sm font-semibold text-primary-text">{action}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function BodyDetailContent() {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { handleClose, isExpanded } = useExpandableCardContext();
   const [mode, setMode] = useState<HighlightMode>('progress');
   const [compare, setCompare] = useState<CompareTo>('previous');
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [allWeights, setAllWeights] = useState(false);
+  const [measureSheet, setMeasureSheet] = useState(false);
+  const [weightSheet, setWeightSheet] = useState(false);
+  const [page, setPage] = useState(0);
+  const pager = useRef<ScrollViewInstance>(null);
 
   const hydrated = useHasHydrated(useBodyStore);
   const entries = useBodyStore((s) => s.measurements);
   const addMeasurements = useBodyStore((s) => s.addMeasurements);
   const removeMeasurements = useBodyStore((s) => s.removeMeasurements);
+  const weights = useWeightStore((s) => s.entries);
+  const addWeight = useWeightStore((s) => s.addEntry);
+  const removeWeight = useWeightStore((s) => s.removeEntry);
   const { unit, format } = useLengthUnit();
-  const { convertHeight } = useUnitConverter();
+  const { convertHeight, convertWeight, currentWeight, toKg, units } = useUnitConverter();
   const {
     model,
     failed,
@@ -99,8 +134,24 @@ function BodyDetailContent() {
     ? formatDayKey(baseline.day, i18n.language, { day: 'numeric', month: 'short' })
     : undefined;
   const height = convertHeight(current.heightCm);
+  const newestWeights = useMemo(() => [...weights].reverse(), [weights]);
+  const shownWeights = allWeights ? newestWeights : newestWeights.slice(0, WEIGHT_ROWS);
 
-  const confirmDelete = useCallback(
+  // The top slider, like Today's plan: one page per view, the logs below stay where they are.
+  const pageWidth = windowWidth - 32;
+  const gap = 12;
+  const sliderHeight = Math.round(windowHeight * 0.44);
+  const goTo = (i: number) => {
+    pager.current?.scrollTo({ x: i * (pageWidth + gap), animated: true });
+    setPage(i);
+  };
+  const onPageSettled = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) =>
+      setPage(Math.round(e.nativeEvent.contentOffset.x / (pageWidth + gap))),
+    [pageWidth],
+  );
+
+  const confirmDeleteMeasurements = useCallback(
     (entry: MeasurementEntry) => {
       Alert.alert(t('body.deleteSessionTitle'), t('body.deleteSessionMessage'), [
         { text: t('common.cancel'), style: 'cancel' },
@@ -108,6 +159,15 @@ function BodyDetailContent() {
       ]);
     },
     [removeMeasurements, t],
+  );
+  const confirmDeleteWeight = useCallback(
+    (entry: WeightEntry) => {
+      Alert.alert(t('bodyWeight.deleteEntryTitle'), t('bodyWeight.deleteEntryMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => removeWeight(entry.id) },
+      ]);
+    },
+    [removeWeight, t],
   );
 
   const rows = (group: MeasurementGroup) => {
@@ -135,10 +195,7 @@ function BodyDetailContent() {
     );
   };
 
-  // The 3D canvas mounts once the card has finished expanding: GL setup during the morph
-  // would cost frames, and the canvas can't be clipped by the growing card anyway.
-  // Fixed above the scrolling list: drags on the body always rotate it, never scroll the page.
-  const viewerHeight = Math.round(windowHeight * 0.42);
+  const pageLabel = (p: Page) => (p === 'weight' ? t('bodyWeight.weight') : t('body.page3d'));
 
   return (
     <View className="flex-1">
@@ -149,13 +206,40 @@ function BodyDetailContent() {
         <ScreenHeader title={t('body.title')} subtitle={t('body.subtitle')} onBack={handleClose} />
       </View>
 
-      <View className="px-4">
-        {/* One card, two halves: the 3D body (drag to rotate) and the weight beside it. */}
+      {/* Top: swipe between the weight and the 3D body. Fixed above the logs, so a drag on
+          the body always rotates it and never scrolls the page. */}
+      <ScrollView
+        ref={pager}
+        horizontal
+        decelerationRate="fast"
+        snapToInterval={pageWidth + gap}
+        snapToAlignment="start"
+        disableIntervalMomentum
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onPageSettled}
+        contentContainerStyle={{ paddingHorizontal: 16, gap }}
+        style={{ flexGrow: 0 }}
+      >
         <View
-          className="flex-row overflow-hidden rounded-3xl border border-border bg-surface"
-          style={{ height: viewerHeight }}
+          style={{ width: pageWidth, height: sliderHeight }}
+          className="overflow-hidden rounded-3xl border border-border bg-surface"
+          accessibilityLabel={pageLabel('weight')}
         >
-          <View className="flex-[1.35] items-center justify-center border-r border-border">
+          <WeightPage
+            height={sliderHeight}
+            heightLabel={t('body.heightLabel', { height: `${height.formatted} ${height.unit}` })}
+          />
+        </View>
+        <View
+          style={{ width: pageWidth, height: sliderHeight }}
+          className="overflow-hidden rounded-3xl border border-border bg-surface"
+        >
+          <View className="flex-row items-center justify-between px-5 pt-4">
+            <Text className="text-xs font-semibold uppercase tracking-wider text-primary-text">
+              {t('body.page3d')}
+            </Text>
+          </View>
+          <View className="flex-1 items-center justify-center">
             {failed ? (
               <Text className="text-subtle">{t('body.loadFailed')}</Text>
             ) : isExpanded && model && positions && vertexColors && solution ? (
@@ -171,58 +255,145 @@ function BodyDetailContent() {
               <ActivityIndicator color={colors.muted} />
             )}
           </View>
-          <WeightPanel
-            heightLabel={t('body.heightLabel', { height: `${height.formatted} ${height.unit}` })}
-          />
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 96 }}>
-        <View className="mt-4 flex-row gap-3">
-          <View className="flex-1">
-            <Text className="mb-1.5 ml-1 text-xs font-medium text-muted">{t('body.colours')}</Text>
+          {baseline ? (
+            <View className="pb-2">
+              <Legend mode={mode} />
+            </View>
+          ) : null}
+          <View className="flex-row gap-2 px-3 pb-3">
             <SegmentedControl
               size="sm"
+              className="flex-1"
               value={mode}
               onChange={setMode}
               segments={[
-                { value: 'progress', label: t('body.modeProgress') },
-                { value: 'change', label: t('body.modeChange') },
+                {
+                  value: 'progress',
+                  label: t('body.modeProgress'),
+                  accessibilityLabel: `${t('body.colours')}: ${t('body.modeProgress')}`,
+                },
+                {
+                  value: 'change',
+                  label: t('body.modeChange'),
+                  accessibilityLabel: `${t('body.colours')}: ${t('body.modeChange')}`,
+                },
               ]}
             />
-          </View>
-          <View className="flex-1">
-            <Text className="mb-1.5 ml-1 text-xs font-medium text-muted">{t('body.compareWith')}</Text>
             <SegmentedControl
               size="sm"
+              className="flex-1"
               value={compare}
               onChange={setCompare}
               segments={[
-                { value: 'previous', label: t('body.comparePrevious') },
-                { value: 'first', label: t('body.compareFirst') },
+                {
+                  value: 'previous',
+                  label: t('body.comparePrevious'),
+                  accessibilityLabel: `${t('body.compareWith')}: ${t('body.comparePrevious')}`,
+                },
+                {
+                  value: 'first',
+                  label: t('body.compareFirst'),
+                  accessibilityLabel: `${t('body.compareWith')}: ${t('body.compareFirst')}`,
+                },
               ]}
             />
           </View>
         </View>
-        <View className="mt-3">
-          {baseline ? (
-            <Legend mode={mode} />
-          ) : (
-            <Text className="text-center text-xs text-subtle">{t('body.noBaseline')}</Text>
-          )}
-        </View>
+      </ScrollView>
 
-        <View className="mb-3 mt-6 flex-row items-baseline justify-between">
-          <Text accessibilityRole="header" className="text-lg font-bold text-foreground">
-            {t('body.measurements')}
-          </Text>
-          {since && <Text className="text-xs text-subtle">{t('body.since', { date: since })}</Text>}
-        </View>
+      {/* Page dots, tappable: the way back from the 3D page, where a drag rotates the body. */}
+      <View className="mt-3 flex-row items-center justify-center gap-2" accessibilityRole="tablist">
+        {PAGES.map((p, i) => (
+          <Pressable
+            key={p}
+            onPress={() => goTo(i)}
+            hitSlop={10}
+            accessibilityRole="tab"
+            accessibilityLabel={pageLabel(p)}
+            accessibilityState={{ selected: page === i }}
+            className="flex-row items-center gap-1.5"
+          >
+            <View className={`h-2 rounded-full ${page === i ? 'w-6 bg-primary' : 'w-2 bg-border-strong'}`} />
+            <Text className={`text-xs font-semibold ${page === i ? 'text-foreground' : 'text-subtle'}`}>
+              {pageLabel(p)}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 40 }}>
+        <SectionHeader
+          title={t('body.weightLog')}
+          action={t('bodyWeight.logWeight')}
+          onAction={() => setWeightSheet(true)}
+        />
+        {newestWeights.length === 0 ? (
+          <View className="rounded-2xl border border-border bg-surface p-4">
+            <Text className="text-sm text-muted">{t('bodyWeight.noHistoryYet')}</Text>
+          </View>
+        ) : (
+          <View className="overflow-hidden rounded-2xl border border-border bg-surface">
+            {shownWeights.map((entry, i) => {
+              const dw = convertWeight(entry.kg);
+              const date = formatDayKey(entry.day, i18n.language, {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+              });
+              return (
+                <View
+                  key={entry.id}
+                  className={`flex-row items-center justify-between py-1 pl-4 pr-1 ${i < shownWeights.length - 1 ? 'border-b border-border' : ''}`}
+                >
+                  <Text className="capitalize text-muted">{date}</Text>
+                  <View className="flex-row items-center gap-1">
+                    <Text className="text-base font-bold text-foreground">
+                      {dw.formatted} <Text className="text-xs font-normal text-subtle">{dw.unit}</Text>
+                    </Text>
+                    <IconButton
+                      icon={Trash2}
+                      variant="danger"
+                      iconSize={18}
+                      accessibilityLabel={t('bodyWeight.deleteEntryA11y', {
+                        value: dw.formatted,
+                        unit: dw.unit,
+                      })}
+                      onPress={() => confirmDeleteWeight(entry)}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+            {newestWeights.length > WEIGHT_ROWS && (
+              <Pressable
+                onPress={() => setAllWeights((v) => !v)}
+                accessibilityRole="button"
+                className="h-11 items-center justify-center border-t border-border active:bg-surface-elevated"
+              >
+                <Text className="text-sm font-semibold text-primary-text">
+                  {allWeights ? t('body.showLess') : t('body.showAll', { count: newestWeights.length })}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        <SectionHeader
+          title={t('body.measurementsLog')}
+          action={t('body.logMeasurements')}
+          onAction={() => setMeasureSheet(true)}
+        />
+        {since && (
+          <Text className="-mt-2 mb-2 ml-1 text-xs text-subtle">{t('body.since', { date: since })}</Text>
+        )}
         {hydrated && entries.length === 0 && (
           <View className="mb-3 rounded-2xl border border-border bg-surface p-4">
             <Text className="font-semibold text-foreground">{t('body.noMeasurements')}</Text>
             <Text className="mt-1 text-sm text-muted">{t('body.noMeasurementsHint')}</Text>
           </View>
+        )}
+        {!baseline && entries.length > 0 && (
+          <Text className="mb-2 ml-1 text-xs text-subtle">{t('body.noBaseline')}</Text>
         )}
         {rows('primary')}
 
@@ -238,16 +409,9 @@ function BodyDetailContent() {
         </Pressable>
         {showAdvanced && <View className="mt-3">{rows('advanced')}</View>}
 
-        <Text accessibilityRole="header" className="mb-3 mt-6 text-lg font-bold text-foreground">
-          {t('body.composition')}
-        </Text>
-        <View className="rounded-2xl border border-border bg-surface p-4">
-          <Text className="text-sm text-muted">{t('body.compositionHint')}</Text>
-        </View>
-
         {entries.length > 0 && (
           <>
-            <Text accessibilityRole="header" className="mb-3 mt-6 text-lg font-bold text-foreground">
+            <Text accessibilityRole="header" className="mb-3 mt-6 text-base font-bold text-foreground">
               {t('body.history')}
             </Text>
             <View className="overflow-hidden rounded-2xl border border-border bg-surface">
@@ -273,7 +437,7 @@ function BodyDetailContent() {
                       variant="danger"
                       iconSize={18}
                       accessibilityLabel={t('body.deleteSessionA11y', { date })}
-                      onPress={() => confirmDelete(entry)}
+                      onPress={() => confirmDeleteMeasurements(entry)}
                     />
                   </View>
                 );
@@ -281,26 +445,33 @@ function BodyDetailContent() {
             </View>
           </>
         )}
+
+        <Text accessibilityRole="header" className="mb-3 mt-6 text-base font-bold text-foreground">
+          {t('body.composition')}
+        </Text>
+        <View className="rounded-2xl border border-border bg-surface p-4">
+          <Text className="text-sm text-muted">{t('body.compositionHint')}</Text>
+        </View>
       </ScrollView>
 
       <LogMeasurementsSheet
-        visible={sheetOpen}
+        visible={measureSheet}
         previous={current.measurements}
-        onClose={() => setSheetOpen(false)}
+        onClose={() => setMeasureSheet(false)}
         onSave={(values) => {
           addMeasurements(values);
           successFeedback();
         }}
       />
-
-      <IconButton
-        icon={Plus}
-        variant="primary"
-        iconSize={28}
-        accessibilityLabel={t('body.logMeasurements')}
-        onPress={() => setSheetOpen(true)}
-        className="absolute right-6 h-14 w-14 shadow-lg"
-        style={{ bottom: insets.bottom + 24 }}
+      <AddWeightModal
+        visible={weightSheet}
+        onClose={() => setWeightSheet(false)}
+        unit={units.weight}
+        initialWeight={currentWeight.formatted === '--' ? null : Number(currentWeight.formatted)}
+        onSave={(w, day) => {
+          addWeight(toKg(w), day);
+          successFeedback();
+        }}
       />
     </View>
   );

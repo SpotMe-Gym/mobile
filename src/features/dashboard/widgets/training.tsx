@@ -26,8 +26,8 @@ function TrainingWeekRender({ size }: WidgetRenderProps) {
   const planned = days.reduce((n, d) => n + d.planned, 0);
   const done = days.reduce((n, d) => n + Math.min(d.done, Math.max(d.planned, d.done)), 0);
   return (
-    <View className="flex-1 overflow-hidden rounded-2xl">
-      <Card className="h-full w-full flex-1" title={t('dashboard.trainingWeek')}>
+    <View className="flex-1 overflow-hidden rounded-2xl border border-border bg-surface">
+      <Card className="h-full w-full flex-1 bg-transparent" title={t('dashboard.trainingWeek')}>
         <Text className="text-3xl font-bold tracking-tight text-foreground">
           {done}
           <Text className="text-base font-normal text-subtle"> / {planned}</Text>
@@ -76,8 +76,8 @@ function PersonalRecordsRender({ size }: WidgetRenderProps) {
   const { convertWeight, units } = useUnitConverter();
   const records = useMemo(() => personalRecords(sessions, size === 'full' ? 3 : 2), [sessions, size]);
   return (
-    <View className="flex-1 overflow-hidden rounded-2xl">
-      <Card className="h-full w-full flex-1" title={t('dashboard.personalRecords')}>
+    <View className="flex-1 overflow-hidden rounded-2xl border border-border bg-surface">
+      <Card className="h-full w-full flex-1 bg-transparent" title={t('dashboard.personalRecords')}>
         {records.length === 0 ? (
           <View className="flex-1 items-center justify-center">
             <Icon icon={Trophy} size={22} color={colors.subtle} />

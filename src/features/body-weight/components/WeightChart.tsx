@@ -16,10 +16,12 @@ interface WeightChartProps {
   data: WeightPoint[];
   unit: string;
   height?: number;
+  /** No card frame of its own (when it sits inside another card). */
+  bare?: boolean;
 }
 
 /** Last 7 entries as bars, scaled to their own range so small changes stay visible. */
-export function WeightChart({ data, unit, height = 200 }: WeightChartProps) {
+export function WeightChart({ data, unit, height = 200, bare = false }: WeightChartProps) {
   const { t, i18n } = useTranslation();
 
   const points = useMemo(() => {
@@ -41,7 +43,11 @@ export function WeightChart({ data, unit, height = 200 }: WeightChartProps) {
     return (
       <View
         style={{ height }}
-        className="items-center justify-center rounded-3xl border border-border bg-surface px-6"
+        className={
+          bare
+            ? 'items-center justify-center px-6'
+            : 'items-center justify-center rounded-3xl border border-border bg-surface px-6'
+        }
       >
         <Text className="text-center text-subtle">{t('bodyWeight.addMoreEntries')}</Text>
       </View>
@@ -60,7 +66,11 @@ export function WeightChart({ data, unit, height = 200 }: WeightChartProps) {
         unit,
       })}
       style={{ height }}
-      className="flex-row items-end justify-between rounded-3xl border border-border bg-surface p-4 pt-8"
+      className={
+        bare
+          ? 'flex-row items-end justify-between px-1 pt-6'
+          : 'flex-row items-end justify-between rounded-3xl border border-border bg-surface p-4 pt-8'
+      }
     >
       {points.map((d, i) => (
         <View key={d.id} className="items-center" style={{ width: `${100 / points.length}%` }}>

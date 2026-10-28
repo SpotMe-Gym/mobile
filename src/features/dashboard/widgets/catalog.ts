@@ -10,11 +10,33 @@ import {
   recentActivityWidget,
 } from '@/features/dashboard/widgets';
 import { logMealAction, addWeightAction } from '@/features/dashboard/widgets/quickActions';
-import { personalRecordsWidget, startWorkoutAction, trainingWeekWidget } from '@/features/dashboard/widgets/training';
+import {
+  personalRecordsWidget,
+  startWorkoutAction,
+  trainingWeekWidget,
+} from '@/features/dashboard/widgets/training';
+import {
+  bodyAndWeightWidget,
+  caloriesWeekWidget,
+  consistencyWidget,
+  frequentFoodsWidget,
+  logAnythingAction,
+  measurementsWidget,
+  nextWorkoutWidget,
+  proteinTodayWidget,
+  weeklyVolumeWidget,
+  weightTrendWidget,
+} from '@/features/dashboard/widgets/sections';
 import type { WidgetDefinition, WidgetCategory } from '@/features/dashboard/widgets/types';
 import type { TranslationKey } from '@/i18n/keys';
 
-export type { WidgetDefinition, WidgetRenderProps, WidgetCategory, WidgetGestureMode, WidgetKind } from '@/features/dashboard/widgets/types';
+export type {
+  WidgetDefinition,
+  WidgetRenderProps,
+  WidgetCategory,
+  WidgetGestureMode,
+  WidgetKind,
+} from '@/features/dashboard/widgets/types';
 
 export const WIDGETS: WidgetDefinition[] = [
   bodyWeightWidget,
@@ -24,13 +46,24 @@ export const WIDGETS: WidgetDefinition[] = [
   addWeightAction,
   bodyWidget,
   recentActivityWidget,
+  // Section widgets: in the "Add card" sheet, not on the home until the user adds them.
+  bodyAndWeightWidget,
+  weightTrendWidget,
+  measurementsWidget,
+  caloriesWeekWidget,
+  proteinTodayWidget,
+  frequentFoodsWidget,
+  nextWorkoutWidget,
   trainingWeekWidget,
+  weeklyVolumeWidget,
+  consistencyWidget,
   personalRecordsWidget,
   startWorkoutAction,
+  logAnythingAction,
 ];
 
 export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = Object.fromEntries(
-  WIDGETS.map(widget => [widget.id, widget]),
+  WIDGETS.map((widget) => [widget.id, widget]),
 );
 
 export function isRegisteredWidgetId(id: string): boolean {
@@ -48,6 +81,7 @@ export const CATEGORY_TITLE_KEYS: Record<WidgetCategory, TranslationKey> = {
   general: 'dashboard.editCategoryGeneral',
 };
 
-export const DEFAULT_HOME_WIDGETS = WIDGETS
-  .filter(w => w.defaultOnHome)
-  .map(w => ({ id: w.id, size: w.defaultSize }));
+export const DEFAULT_HOME_WIDGETS = WIDGETS.filter((w) => w.defaultOnHome).map((w) => ({
+  id: w.id,
+  size: w.defaultSize,
+}));
