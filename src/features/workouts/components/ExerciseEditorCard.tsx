@@ -8,6 +8,11 @@ import { cn } from '@/shared/lib/cn';
 import { IconButton } from '@/shared/ui/IconButton';
 import { Icon } from '@/shared/ui/Icon';
 import { DurationField } from '@/features/workouts/components/DurationField';
+import { ExerciseAnimation } from '@/features/exercises/components/ExerciseAnimation';
+import { resolveExercise } from '@/features/exercises/resolve';
+import { requestExercise, type PickedExercise } from '@/features/exercises/pickerStore';
+import { useUnitConverter } from '@/features/profile/hooks/useUnitConverter';
+import { useRouter } from 'expo-router';
 import type { WorkoutFormValues } from '@/features/workouts/workoutSchema';
 
 interface ExerciseEditorCardProps {
@@ -130,20 +135,13 @@ export const ExerciseEditorCard = memo(function ExerciseEditorCard({
       {reorder}
       <View className="flex-1 gap-4">
         <View className="flex-row items-center gap-3">
-          <Controller
-            control={control}
-            name={`exercises.${index}.name`}
-            render={({ field }) => (
-              <TextInput
-                className="flex-1 text-lg font-bold text-foreground"
-                placeholder={t('workouts.exerciseName')}
-                placeholderTextColor={colors.placeholder}
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                accessibilityLabel={t('workouts.exerciseName')}
-              />
-            )}
+          <ExerciseField
+            exerciseId={ex.exerciseId}
+            name={ex.name}
+            onPicked={(picked) => {
+              setValue(`exercises.${index}.exerciseId`, picked.exerciseId, opts);
+              setValue(`exercises.${index}.name`, picked.name, opts);
+            }}
           />
           <IconButton
             icon={Trash2}
@@ -199,6 +197,12 @@ export const ExerciseEditorCard = memo(function ExerciseEditorCard({
             )}
           />
         </View>
+
+        <Controller
+          control={control}
+          name={`exercises.${index}.weight`}
+          render={({ field }) => <WeightField kg={field.value} onChange={field.onChange} />}
+        />
 
         <View className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface-sunken p-4">
           <Icon icon={Clock} size={16} color={colors.subtle} />
@@ -309,6 +313,77 @@ function Phase({
         accessibilityLabel={t('workouts.removePhase', { name: name || placeholder })}
         onPress={onRemove}
       />
+    </View>
+  );
+}
+
+/** The exercise this card is about: photos + name, tap to choose it from the library. */
+function ExerciseField({
+  exerciseId,
+  name,
+  onPicked,
+}: {
+  exerciseId?: string;
+  name: string;
+  onPicked: (picked: PickedExercise) => void;
+}) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const resolved = resolveExercise(exerciseId, name);
+  const choose = () => {
+    requestExercise(onPicked);
+    router.push('/workouts/exercise-picker');
+  };
+  return (
+    <Pressable
+      onPress={choose}
+      accessibilityRole="button"
+      accessibilityLabel={name ? t('exercises.change') : t('exercises.pick')}
+      accessibilityHint={name || undefined}
+      className="flex-1 flex-row items-center gap-3 active:opacity-70"
+    >
+      <ExerciseAnimation frames={resolved.frames} still style={{ width: 48, height: 48, borderRadius: 12 }} />
+      <View className="flex-1">
+        <Text
+          className={cn('text-base font-bold', name ? 'text-foreground' : 'text-primary-text')}
+          numberOfLines={2}
+        >
+          {name || t('exercises.pick')}
+        </Text>
+        <Text className="text-xs text-subtle" numberOfLines={1}>
+          {resolved.source === 'free-text' && name ? t('exercises.linkToLibrary') : t('exercises.change')}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+/** Target weight, shown in the person's unit and stored in kg. Empty = bodyweight / not set. */
+function WeightField({ kg, onChange }: { kg?: number; onChange: (kg: number | undefined) => void }) {
+  const { t } = useTranslation();
+  const { convertWeight, toKg, units } = useUnitConverter();
+  const [text, setText] = useState(() => (kg ? convertWeight(kg).formatted : ''));
+  return (
+    <View className="flex-row items-center justify-between rounded-2xl border border-border bg-surface-sunken p-4">
+      <Text className="text-xs font-bold uppercase tracking-widest text-subtle">{t('workouts.weight')}</Text>
+      <View className="flex-row items-baseline gap-1">
+        <TextInput
+          className="min-w-14 px-2 text-right text-lg font-bold text-foreground"
+          value={text}
+          onChangeText={(v) => {
+            const clean = v.replace(',', '.').replace(/[^0-9.]/g, '');
+            setText(clean);
+            const n = parseFloat(clean);
+            onChange(Number.isFinite(n) && n > 0 ? Math.round(toKg(n) * 100) / 100 : undefined);
+          }}
+          keyboardType="decimal-pad"
+          placeholder="—"
+          placeholderTextColor={colors.placeholder}
+          selectTextOnFocus
+          accessibilityLabel={t('workouts.weight')}
+        />
+        <Text className="text-sm text-subtle">{units.weight}</Text>
+      </View>
     </View>
   );
 }

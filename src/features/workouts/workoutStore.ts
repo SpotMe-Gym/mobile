@@ -6,6 +6,8 @@ import { ISO_WEEKDAYS, type IsoWeekday } from '@/shared/utils/date';
 
 export interface Exercise {
   id: string;
+  /** Library id ("Barbell_Squat") or "custom:<uuid>"; absent for older free-text exercises. */
+  exerciseId?: string;
   name: string;
   sets: number;
   reps: string; // free text: "8-12", "AMRAP"
@@ -174,6 +176,7 @@ export function normaliseExercise(raw: unknown): Exercise | null {
   const s = (v: unknown) => (typeof v === 'string' && v.length > 0 ? v : undefined);
   return {
     id: s(raw.id) ?? newId(),
+    exerciseId: s(raw.exerciseId),
     name: typeof raw.name === 'string' ? raw.name : '',
     sets: n(raw.sets, 3),
     reps: typeof raw.reps === 'string' ? raw.reps : String(raw.reps ?? ''),

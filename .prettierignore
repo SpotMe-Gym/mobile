@@ -4,3 +4,4 @@ android
 node_modules
 bun.lock
 *.md
+src/features/exercises/exercise-library.json

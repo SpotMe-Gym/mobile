@@ -16,14 +16,17 @@ import { AiButton } from '@/shared/components/AiButton';
 import { Button } from '@/shared/ui/Button';
 import { IconButton } from '@/shared/ui/IconButton';
 import { Icon } from '@/shared/ui/Icon';
-import { Badge } from '@/shared/ui/Badge';
 import { EmptyState } from '@/shared/ui/EmptyState';
-import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '@/shared/expandable-card/ExpandableCardLayout';
+import {
+  ExpandableCardLayoutWithContext,
+  useExpandableCardContext,
+} from '@/shared/expandable-card/ExpandableCardLayout';
 import { TodaysPlanCardContent } from '@/features/workouts/components/TodaysPlanCardContent';
 import { useTodaysWorkouts } from '@/features/workouts/hooks/useTodaysWorkouts';
 import { weekdayLabel } from '@/shared/utils/date';
 import { colors } from '@/theme/colors';
 import type { Exercise } from '@/features/workouts/workoutStore';
+import { selectActiveSession, useSessionStore } from '@/features/sessions/sessionStore';
 
 // Preview renders the same component as the home grid card so the two can never drift. Page
 // width comes from the known card size — a measure-then-setState pass would re-render mid-animation.
@@ -93,6 +96,7 @@ function WorkoutDetailContent() {
   const { width: windowWidth } = useWindowDimensions();
   const { handleClose } = useExpandableCardContext();
   const { workouts, weekday, isHydrated } = useTodaysWorkouts();
+  const activeSession = useSessionStore(selectActiveSession);
   const [activeIndex, setActiveIndex] = useState(0);
   const pageWidth = windowWidth - 32;
   const dayName = weekdayLabel(weekday, i18n.language, 'long');
@@ -162,9 +166,14 @@ function WorkoutDetailContent() {
                       </View>
                     </View>
                     <View className="flex-row items-center gap-3">
-                      {/* Live tracking isn't built yet: the control is shown, but honestly disabled. */}
-                      <Button label={t('workouts.startWorkout')} disabled className="flex-1" />
-                      <Badge label={t('common.comingSoon')} />
+                      <Button
+                        label={activeSession ? t('session.resume') : t('session.start')}
+                        icon={<Icon icon={Play} size={16} color={colors['primary-foreground']} />}
+                        onPress={() =>
+                          router.push({ pathname: '/workouts/session', params: { workoutId: workout.id } })
+                        }
+                        className="flex-1"
+                      />
                     </View>
                   </View>
                 </View>

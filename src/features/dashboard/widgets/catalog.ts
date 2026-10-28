@@ -10,6 +10,7 @@ import {
   recentActivityWidget,
 } from '@/features/dashboard/widgets';
 import { logMealAction, addWeightAction } from '@/features/dashboard/widgets/quickActions';
+import { personalRecordsWidget, startWorkoutAction, trainingWeekWidget } from '@/features/dashboard/widgets/training';
 import type { WidgetDefinition, WidgetCategory } from '@/features/dashboard/widgets/types';
 import type { TranslationKey } from '@/i18n/keys';
 
@@ -23,6 +24,9 @@ export const WIDGETS: WidgetDefinition[] = [
   addWeightAction,
   bodyWidget,
   recentActivityWidget,
+  trainingWeekWidget,
+  personalRecordsWidget,
+  startWorkoutAction,
 ];
 
 export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = Object.fromEntries(

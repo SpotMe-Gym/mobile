@@ -8,9 +8,15 @@ import type { BiaReport, MeasurementEntry } from '@/features/body/types';
 import { useNutritionStore, type LogEntry } from '@/features/nutrition/nutritionStore';
 import { scheduledDays, useWorkoutStore, withDays } from '@/features/workouts/workoutStore';
 import { useUserStore } from '@/features/profile/userStore';
+import { useCustomExerciseStore, type CustomExercise } from '@/features/exercises/customExerciseStore';
+import { useSessionStore, type WorkoutSession } from '@/features/sessions/sessionStore';
 import {
   biaFromRow,
   biaToWire,
+  customExerciseFromRow,
+  customExerciseToWire,
+  sessionFromRow,
+  sessionToWire,
   foodFromRow,
   foodToWire,
   measurementFromRow,
@@ -45,6 +51,8 @@ export function readLocal(): LocalWires {
     weight_entries: byId(entries.map(weightToWire)),
     measurement_entries: byId(measurements.map(measurementToWire)),
     bia_reports: byId(biaReports.map(biaToWire)),
+    custom_exercises: byId(useCustomExerciseStore.getState().exercises.map(customExerciseToWire)),
+    workout_sessions: byId(useSessionStore.getState().sessions.map(sessionToWire)),
     food_entries: byId(Object.entries(days).flatMap(([day, list]) => list.map((e) => foodToWire(e, day)))),
     workouts: byId(workouts.map((w) => workoutToWire(w, scheduledDays(schedule, w.id)))),
   };
@@ -138,6 +146,22 @@ export function applyRemote(changes: RemoteChanges, profile?: LocalProfile): voi
           schedule,
         };
       });
+    }
+
+    const cx = changes.custom_exercises;
+    if (cx && (cx.upserts.length || cx.deletes.length)) {
+      useCustomExerciseStore.setState((st) => ({
+        exercises: merge<CustomExercise>(st.exercises, cx.upserts.map(customExerciseFromRow), cx.deletes),
+      }));
+    }
+
+    const ss = changes.workout_sessions;
+    if (ss && (ss.upserts.length || ss.deletes.length)) {
+      useSessionStore.setState((st) => ({
+        sessions: merge<WorkoutSession>(st.sessions, ss.upserts.map(sessionFromRow), ss.deletes).sort(
+          (a, z) => a.startedAt.localeCompare(z.startedAt),
+        ),
+      }));
     }
 
     if (profile) {

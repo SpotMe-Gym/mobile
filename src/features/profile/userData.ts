@@ -8,6 +8,8 @@ import { useBodyStore } from '@/features/body/bodyStore';
 import { useDashboardStore, DEFAULT_WIDGETS } from '@/features/dashboard/dashboardStore';
 import { reportError } from '@/shared/lib/reporting';
 import { turnSyncOff } from '@/features/sync/syncStore';
+import { useSessionStore } from '@/features/sessions/sessionStore';
+import { useCustomExerciseStore } from '@/features/exercises/customExerciseStore';
 
 /** Everything the app stores about the user, as one portable JSON document. */
 export function buildExport() {
@@ -21,6 +23,8 @@ export function buildExport() {
     weight: pick(useWeightStore.getState()),
     nutrition: pick(useNutritionStore.getState()),
     workouts: pick(useWorkoutStore.getState()),
+    sessions: pick(useSessionStore.getState()),
+    customExercises: pick(useCustomExerciseStore.getState()),
     body: pick(useBodyStore.getState()),
     dashboard: pick(useDashboardStore.getState()),
   };
@@ -46,6 +50,8 @@ export function eraseAllData(): void {
   useWeightStore.getState().reset();
   useWorkoutStore.getState().reset();
   useBodyStore.getState().reset();
+  useSessionStore.getState().reset();
+  useCustomExerciseStore.getState().reset();
   useDashboardStore.setState({ widgets: DEFAULT_WIDGETS });
   useUserStore.getState().resetUser(); // last: flips the onboarding guard
 }

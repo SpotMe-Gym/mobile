@@ -24,7 +24,13 @@ import {
   type ExerciseFormValues,
   type WorkoutFormValues,
 } from '@/features/workouts/workoutSchema';
-import { calculateDuration, scheduledDays, useWorkoutStore, type Exercise } from '@/features/workouts/workoutStore';
+import { requestExercise } from '@/features/exercises/pickerStore';
+import {
+  calculateDuration,
+  scheduledDays,
+  useWorkoutStore,
+  type Exercise,
+} from '@/features/workouts/workoutStore';
 import { ISO_WEEKDAYS, weekdayLabel, type IsoWeekday } from '@/shared/utils/date';
 import { newId } from '@/shared/lib/ids';
 import { successFeedback } from '@/shared/lib/haptics';
@@ -233,7 +239,12 @@ export default function CreateWorkout() {
                 variant="secondary"
                 icon={<Icon icon={Plus} size={18} color={colors.muted} />}
                 label={t('workouts.addExercise')}
-                onPress={() => append(newExercise())}
+                onPress={() => {
+                  requestExercise((picked) =>
+                    append({ ...newExercise(), exerciseId: picked.exerciseId, name: picked.name }),
+                  );
+                  router.push('/workouts/exercise-picker');
+                }}
                 className="flex-1 rounded-2xl py-4"
               />
               <Button
@@ -261,7 +272,12 @@ export default function CreateWorkout() {
           className="border-t border-border bg-background px-4 pt-3"
           style={{ paddingBottom: Math.max(insets.bottom, 12) }}
         >
-          <Button label={t('workouts.saveWorkout')} size="lg" className="w-full rounded-2xl" onPress={() => void save()} />
+          <Button
+            label={t('workouts.saveWorkout')}
+            size="lg"
+            className="w-full rounded-2xl"
+            onPress={() => void save()}
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

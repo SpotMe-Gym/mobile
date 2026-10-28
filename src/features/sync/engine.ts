@@ -13,6 +13,12 @@ import {
   biaFromRow,
   biaToWire,
   biaValid,
+  customExerciseFromRow,
+  customExerciseToWire,
+  customExerciseValid,
+  sessionFromRow,
+  sessionToWire,
+  sessionValid,
   foodFromRow,
   foodToWire,
   foodValid,
@@ -46,6 +52,8 @@ const COLUMNS: Record<SyncTable, string> = {
   bia_reports: 'client_id, day, device, data, created_at, updated_at',
   food_entries: 'client_id, day, meal, name, grams, kcal, protein, carbs, fat, extra, created_at, updated_at',
   workouts: 'client_id, name, data, weekdays, updated_at',
+  custom_exercises: 'client_id, name, muscles, equipment, created_at, updated_at',
+  workout_sessions: 'client_id, workout_client_id, name, started_at, ended_at, data, updated_at',
 };
 
 /** Row as the server sends it → the same normalised wire the phone produces. */
@@ -61,6 +69,8 @@ const NORMALISE: Record<SyncTable, (r: Row) => Wire> = {
     const { workout, weekdays } = workoutFromRow(r);
     return workoutToWire(workout, weekdays) as unknown as Wire;
   },
+  custom_exercises: (r) => customExerciseToWire(customExerciseFromRow(r)) as unknown as Wire,
+  workout_sessions: (r) => sessionToWire(sessionFromRow(r)) as unknown as Wire,
 };
 
 const VALID: Record<SyncTable, (w: Wire) => boolean> = {
@@ -69,6 +79,8 @@ const VALID: Record<SyncTable, (w: Wire) => boolean> = {
   bia_reports: (w) => biaValid(w as never),
   food_entries: (w) => foodValid(w as never),
   workouts: (w) => workoutValid(w as never),
+  custom_exercises: (w) => customExerciseValid(w as never),
+  workout_sessions: (w) => sessionValid(w as never),
 };
 
 const later = (a: string | null, b: unknown): string | null => {

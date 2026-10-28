@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const exerciseSchema = z.object({
   id: z.string(),
+  exerciseId: z.string().optional(),
   type: z.enum(['exercise', 'rest']),
   name: z.string().trim().max(60),
   sets: z.number().int().min(0).max(30),

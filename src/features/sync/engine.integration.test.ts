@@ -15,6 +15,8 @@ import { useBodyStore } from '@/features/body/bodyStore';
 import { useNutritionStore } from '@/features/nutrition/nutritionStore';
 import { emptySchedule, useWorkoutStore } from '@/features/workouts/workoutStore';
 import { useUserStore, DEFAULT_TARGETS } from '@/features/profile/userStore';
+import { useCustomExerciseStore } from '@/features/exercises/customExerciseStore';
+import { useSessionStore } from '@/features/sessions/sessionStore';
 
 jest.mock('@/features/account/supabase', () => ({ supabase: null }));
 
@@ -63,6 +65,8 @@ function freshPhone() {
   useBodyStore.setState({ measurements: [], biaReports: [] });
   useNutritionStore.setState({ days: {}, foods: {} });
   useWorkoutStore.setState({ workouts: [], schedule: emptySchedule() });
+  useCustomExerciseStore.setState({ exercises: [] });
+  useSessionStore.setState({ sessions: [] });
   useUserStore.setState({
     name: '',
     gender: null,
@@ -96,7 +100,15 @@ suite('sync against a real backend', () => {
   beforeAll(async () => {
     sb = client();
     web = client();
-    for (const t of ['weight_entries', 'measurement_entries', 'bia_reports', 'food_entries', 'workouts']) {
+    for (const t of [
+      'weight_entries',
+      'measurement_entries',
+      'bia_reports',
+      'food_entries',
+      'workouts',
+      'custom_exercises',
+      'workout_sessions',
+    ]) {
       await web.from(t).delete().eq('user_id', USER);
     }
     freshPhone();
@@ -213,5 +225,40 @@ suite('sync against a real backend', () => {
     expect(useUserStore.getState()).toMatchObject({ gender: 'female', heightCm: 168, age: 30 });
     expect((await rows(web, 'weight_entries')).length).toBe(1);
     expect((await rows(web, 'workouts')).length).toBe(1);
+  });
+
+  it('5. training: custom exercises and logged sessions sync both ways', async () => {
+    const custom = useCustomExerciseStore.getState().add({ name: 'Sled push', muscles: ['quadriceps'] });
+    const session = useSessionStore
+      .getState()
+      .start({ id: 'wk-push', name: 'Push A', exercises: useWorkoutStore.getState().workouts[0]!.exercises });
+    useSessionStore.getState().logSet(session.id, {
+      blockId: 'e1',
+      exerciseId: custom.id,
+      exerciseName: 'Sled push',
+      setIndex: 0,
+      reps: 10,
+      weightKg: 40,
+    });
+    useSessionStore.getState().finish(session.id);
+
+    await syncOnce(sb, USER);
+
+    expect(await rows(web, 'custom_exercises', 'client_id, name, muscles')).toEqual([
+      { client_id: custom.id, name: 'Sled push', muscles: ['quadriceps'] },
+    ]);
+    const [remote] = await rows(
+      web,
+      'workout_sessions',
+      'client_id, name, workout_client_id, ended_at, data',
+    );
+    expect(remote).toMatchObject({ client_id: session.id, name: 'Push A', workout_client_id: 'wk-push' });
+    expect((remote!.data as { sets: unknown[] }).sets).toHaveLength(1);
+
+    // Deleted on the website → gone from the phone.
+    await web.from('workout_sessions').delete().eq('user_id', USER).eq('client_id', session.id);
+    await syncOnce(sb, USER);
+    expect(useSessionStore.getState().sessions).toEqual([]);
+    expect(useCustomExerciseStore.getState().exercises.map((e) => e.name)).toEqual(['Sled push']);
   });
 });

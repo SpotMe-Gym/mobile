@@ -6,6 +6,8 @@ import { useBodyStore } from '@/features/body/bodyStore';
 import { useNutritionStore } from '@/features/nutrition/nutritionStore';
 import { useWorkoutStore } from '@/features/workouts/workoutStore';
 import { useUserStore } from '@/features/profile/userStore';
+import { useCustomExerciseStore } from '@/features/exercises/customExerciseStore';
+import { useSessionStore } from '@/features/sessions/sessionStore';
 import { reportError } from '@/shared/lib/reporting';
 import { syncOnce } from '@/features/sync/engine';
 import { isApplyingRemote } from '@/features/sync/local';
@@ -19,7 +21,14 @@ let running = false;
 let again = false;
 let timer: ReturnType<typeof setTimeout> | null = null;
 
-const persisted = [useWeightStore, useBodyStore, useNutritionStore, useWorkoutStore];
+const persisted = [
+  useWeightStore,
+  useBodyStore,
+  useNutritionStore,
+  useWorkoutStore,
+  useCustomExerciseStore,
+  useSessionStore,
+];
 
 function hydrated(): Promise<void> {
   return Promise.all(

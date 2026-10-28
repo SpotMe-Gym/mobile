@@ -14,6 +14,8 @@ import {
   type Exercise,
   type Workout,
 } from '@/features/workouts/workoutStore';
+import type { CustomExercise } from '@/features/exercises/customExerciseStore';
+import type { LoggedSet, WorkoutSession } from '@/features/sessions/sessionStore';
 import type {
   ActivityLevel,
   Gender,
@@ -24,13 +26,21 @@ import type {
 } from '@/features/profile/userStore';
 
 export type SyncTable =
-  'weight_entries' | 'measurement_entries' | 'bia_reports' | 'food_entries' | 'workouts';
+  | 'weight_entries'
+  | 'measurement_entries'
+  | 'bia_reports'
+  | 'food_entries'
+  | 'workouts'
+  | 'custom_exercises'
+  | 'workout_sessions';
 export const SYNC_TABLES: readonly SyncTable[] = [
   'weight_entries',
   'measurement_entries',
   'bia_reports',
   'food_entries',
   'workouts',
+  'custom_exercises',
+  'workout_sessions',
 ];
 
 type Row = Record<string, unknown>;
@@ -249,6 +259,88 @@ export const workoutFromRow = (r: Row): { workout: Workout; weekdays: IsoWeekday
   };
 };
 export const workoutValid = (w: WorkoutWire) => w.name.length > 0;
+
+// ---------------------------------------------------------------------------
+// Custom exercises
+// ---------------------------------------------------------------------------
+
+export interface CustomExerciseWire {
+  client_id: string;
+  name: string;
+  muscles: string[];
+  equipment: string | null;
+}
+export const customExerciseToWire = (c: CustomExercise): CustomExerciseWire => ({
+  client_id: c.id,
+  name: (c.name.trim() || 'Exercise').slice(0, 80),
+  muscles: [...new Set(c.muscles.filter((m) => typeof m === 'string' && m))].sort(),
+  equipment: c.equipment ? c.equipment.slice(0, 40) : null,
+});
+export const customExerciseFromRow = (r: Row): CustomExercise => ({
+  id: String(r.client_id),
+  name: typeof r.name === 'string' && r.name ? r.name : 'Exercise',
+  muscles: Array.isArray(r.muscles) ? r.muscles.filter((m): m is string => typeof m === 'string') : [],
+  equipment: str(r.equipment),
+  createdAt: iso(r.created_at),
+});
+export const customExerciseValid = (c: CustomExerciseWire) => c.name.length > 0;
+
+// ---------------------------------------------------------------------------
+// Workout sessions (what was actually done)
+// ---------------------------------------------------------------------------
+
+export interface SessionWire {
+  client_id: string;
+  workout_client_id: string | null;
+  name: string;
+  started_at: string;
+  ended_at: string | null;
+  data: { plan: Exercise[]; sets: LoggedSet[]; notes?: string };
+}
+const nullableNum = (v: unknown, digits = 2): number | null => {
+  const n = num(v);
+  return n === null ? null : round(n, digits);
+};
+const cleanSets = (raw: unknown): LoggedSet[] =>
+  (Array.isArray(raw) ? raw : [])
+    .filter(isRecord)
+    .map((s, i) => ({
+      id: str(s.id) ?? `set-${i}`,
+      blockId: str(s.blockId) ?? '',
+      exerciseId: str(s.exerciseId),
+      exerciseName: typeof s.exerciseName === 'string' ? s.exerciseName : '',
+      setIndex: Math.max(0, Math.round(num(s.setIndex) ?? i)),
+      reps: nullableNum(s.reps, 0),
+      weightKg: nullableNum(s.weightKg ?? s.weight_kg),
+      durationSec: s.durationSec === undefined ? undefined : nullableNum(s.durationSec, 0),
+      rpe: s.rpe === undefined ? undefined : nullableNum(s.rpe, 1),
+      completedAt: iso(s.completedAt),
+    }))
+    .map((s) => JSON.parse(JSON.stringify(s)) as LoggedSet);
+
+export const sessionToWire = (s: WorkoutSession): SessionWire => ({
+  client_id: s.id,
+  workout_client_id: s.workoutId ?? null,
+  name: (s.name.trim() || 'Workout').slice(0, 120),
+  started_at: iso(s.startedAt),
+  ended_at: s.endedAt ? iso(s.endedAt) : null,
+  data: { plan: cleanExercises(s.plan), sets: cleanSets(s.sets), notes: s.notes || undefined },
+});
+export const sessionFromRow = (r: Row): WorkoutSession => {
+  const data = isRecord(r.data) ? r.data : {};
+  return {
+    id: String(r.client_id),
+    workoutId: str(r.workout_client_id) ?? null,
+    name: typeof r.name === 'string' && r.name ? r.name : 'Workout',
+    startedAt: iso(r.started_at),
+    endedAt: typeof r.ended_at === 'string' ? iso(r.ended_at) : null,
+    plan: cleanExercises(data.plan),
+    sets: cleanSets(data.sets),
+    notes: str(data.notes),
+  };
+};
+export const sessionValid = (s: SessionWire) =>
+  s.name.length > 0 && (s.ended_at === null || Date.parse(s.ended_at) >= Date.parse(s.started_at));
 
 // ---------------------------------------------------------------------------
 // Profile (one row per account)

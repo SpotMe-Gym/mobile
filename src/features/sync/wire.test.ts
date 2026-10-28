@@ -14,6 +14,10 @@ import {
   weightToWire,
   workoutFromRow,
   workoutToWire,
+  customExerciseFromRow,
+  customExerciseToWire,
+  sessionFromRow,
+  sessionToWire,
   type LocalProfile,
 } from '@/features/sync/wire';
 import type { LogEntry } from '@/features/nutrition/nutritionStore';
@@ -133,6 +137,100 @@ describe('round trips keep the same fingerprint', () => {
     expect(w.data.estimatedMinutes).toBe(42);
     const back = workoutFromRow(viaServer(w));
     expect(fingerprint(workoutToWire(back.workout, back.weekdays))).toBe(fingerprint(w));
+  });
+});
+
+describe('training data', () => {
+  it('workouts keep their library exercise ids', () => {
+    const w = workoutToWire(
+      {
+        id: 'wk2',
+        name: 'Legs',
+        duration: 50,
+        exercises: [
+          {
+            id: 'b1',
+            exerciseId: 'Barbell_Squat',
+            name: 'Barbell Squat',
+            sets: 4,
+            reps: '6',
+            weight: 80,
+            restTime: 150,
+            executionTime: 0,
+            type: 'exercise',
+          },
+        ],
+      },
+      [2],
+    );
+    expect(w.data.exercises[0]).toMatchObject({ exerciseId: 'Barbell_Squat', weight: 80 });
+    const back = workoutFromRow(viaServer(w));
+    expect(fingerprint(workoutToWire(back.workout, back.weekdays))).toBe(fingerprint(w));
+  });
+
+  it('custom exercises', () => {
+    const c = customExerciseToWire({
+      id: 'custom:1',
+      name: ' Sled push ',
+      muscles: ['quadriceps', 'glutes'],
+      createdAt: '2026-10-28T08:00:00.000Z',
+    });
+    expect(c).toEqual({
+      client_id: 'custom:1',
+      name: 'Sled push',
+      muscles: ['glutes', 'quadriceps'],
+      equipment: null,
+    });
+    expect(fingerprint(customExerciseToWire(customExerciseFromRow(viaServer(c))))).toBe(fingerprint(c));
+  });
+
+  it('sessions, with their plan and every set', () => {
+    const s = sessionToWire({
+      id: 's1',
+      workoutId: 'wk2',
+      name: 'Legs',
+      startedAt: '2026-10-28T17:00:00.000Z',
+      endedAt: '2026-10-28T18:02:00.000Z',
+      plan: [
+        {
+          id: 'b1',
+          exerciseId: 'Barbell_Squat',
+          name: 'Barbell Squat',
+          sets: 4,
+          reps: '6',
+          restTime: 150,
+          executionTime: 0,
+          type: 'exercise',
+        },
+      ],
+      sets: [
+        {
+          id: 'x1',
+          blockId: 'b1',
+          exerciseId: 'Barbell_Squat',
+          exerciseName: 'Barbell Squat',
+          setIndex: 0,
+          reps: 6,
+          weightKg: 80,
+          completedAt: '2026-10-28T17:05:00.000Z',
+        },
+        {
+          id: 'x2',
+          blockId: 'b1',
+          exerciseId: 'Barbell_Squat',
+          exerciseName: 'Barbell Squat',
+          setIndex: 1,
+          reps: 6,
+          weightKg: 82.5,
+          rpe: 8,
+          completedAt: '2026-10-28T17:09:00.000Z',
+        },
+      ],
+    });
+    expect(s.data.sets).toHaveLength(2);
+    const back = sessionFromRow(viaServer(s));
+    expect(back.sets[1]).toMatchObject({ weightKg: 82.5, rpe: 8 });
+    expect(fingerprint(sessionToWire(back))).toBe(fingerprint(s));
   });
 });
 

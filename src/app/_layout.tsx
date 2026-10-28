@@ -83,6 +83,11 @@ export default function RootLayout() {
               <Stack.Screen name="account" options={{ presentation: 'modal' }} />
               <Stack.Screen name="workouts/index" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="workouts/create" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="workouts/exercise-picker" options={{ presentation: 'modal' }} />
+              <Stack.Screen
+                name="workouts/session"
+                options={{ presentation: 'fullScreenModal', gestureEnabled: false }}
+              />
               <Stack.Screen name="nutrition/search" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="nutrition/product/[code]" options={{ presentation: 'modal' }} />
               <Stack.Screen name="nutrition/quick-add" options={{ presentation: 'modal' }} />
