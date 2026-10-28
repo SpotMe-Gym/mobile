@@ -11,6 +11,8 @@ export interface OrbitState {
   polar: number;
   radius: number;
   heightM: number;
+  /** Where the camera looks, as an offset from the middle of the body (pinch-to-point zoom). */
+  focus: [number, number, number];
 }
 
 export const POLAR_MIN = 0.35; // ≈ 20° from straight above
@@ -22,14 +24,27 @@ export function radiusLimits(heightM: number) {
 }
 
 export function createOrbit(heightM: number): OrbitState {
-  return { azimuth: 0, polar: 1.42, radius: heightM * 2.3, heightM };
+  return { azimuth: 0, polar: 1.42, radius: defaultRadius(heightM), heightM, focus: [0, 0, 0] };
 }
 
-/** Look-at height: hips when far, rising toward the chest when zoomed in. */
-function targetY(o: Pick<OrbitState, 'radius' | 'heightM'>) {
-  const { min, max } = radiusLimits(o.heightM);
-  const zoom = 1 - (o.radius - min) / (max - min); // 0 far … 1 near
-  return o.heightM * (0.52 + 0.14 * Math.min(1, Math.max(0, zoom)));
+const defaultRadius = (heightM: number) => heightM * 2.3;
+/** The middle of the body: where the camera looks before any zoom. */
+const baseY = (heightM: number) => heightM * 0.53;
+
+/** The aim stays on the body: inside its silhouette's box, above the feet, below the head top. */
+function clampFocus(focus: readonly number[], heightM: number): [number, number, number] {
+  const side = heightM * 0.22;
+  const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+  return [
+    clamp(focus[0] ?? 0, -side, side),
+    clamp(focus[1] ?? 0, heightM * 0.06 - baseY(heightM), heightM * 0.96 - baseY(heightM)),
+    clamp(focus[2] ?? 0, -side, side),
+  ];
+}
+
+/** Look-at point. */
+function targetOf(o: Pick<OrbitState, 'focus' | 'heightM'>): [number, number, number] {
+  return [o.focus[0], baseY(o.heightM) + o.focus[1], o.focus[2]];
 }
 
 /** Keeps the camera this far above the floor plane. */
@@ -38,24 +53,78 @@ const FLOOR_CLEARANCE = 0.05;
 export function clampOrbit(o: OrbitState): OrbitState {
   const { min, max } = radiusLimits(o.heightM);
   const radius = Math.min(max, Math.max(min, o.radius));
-  // Never below the floor: camera y = targetY + r·cos(polar) ≥ clearance.
-  const floorCos = -(targetY({ radius, heightM: o.heightM }) - FLOOR_CLEARANCE) / radius;
+  const focus = clampFocus(o.focus ?? [0, 0, 0], o.heightM);
+  // Never below the floor: camera y = target y + r·cos(polar) ≥ clearance.
+  const floorCos = -(targetOf({ focus, heightM: o.heightM })[1] - FLOOR_CLEARANCE) / radius;
   const floorPolar = floorCos <= -1 ? Math.PI : Math.acos(floorCos);
   const polarMax = Math.min(POLAR_MAX, floorPolar);
-  return { ...o, radius, polar: Math.min(polarMax, Math.max(POLAR_MIN, o.polar)) };
+  return { ...o, radius, focus, polar: Math.min(polarMax, Math.max(POLAR_MIN, o.polar)) };
+}
+
+export interface Viewport {
+  width: number;
+  height: number;
+  /** Vertical field of view, degrees. */
+  fov: number;
+}
+
+/**
+ * Zoom to `radius` keeping the point under (x, y) — view pixels — where it is on screen:
+ * the aim slides toward that point by the same fraction the distance shrinks. Zooming out
+ * slides the aim back to the middle of the body, reached at the default distance.
+ */
+export function zoomAt(o: OrbitState, radius: number, x: number, y: number, view: Viewport): OrbitState {
+  const next = clampOrbit({ ...o, radius });
+  const oldR = o.radius;
+  const newR = next.radius;
+  if (Math.abs(newR - oldR) < 1e-9 || view.width <= 0 || view.height <= 0) return next;
+
+  if (newR > oldR) {
+    const home = defaultRadius(o.heightM);
+    const t = oldR >= home ? 1 : Math.min(1, (newR - oldR) / (home - oldR));
+    const keep = 1 - t;
+    const focus: [number, number, number] =
+      keep <= 0 ? [0, 0, 0] : [o.focus[0] * keep, o.focus[1] * keep, o.focus[2] * keep];
+    return clampOrbit({ ...next, focus });
+  }
+
+  // Point under the fingers, on the plane through the aim facing the camera.
+  const ndcX = (x / view.width) * 2 - 1;
+  const ndcY = 1 - (y / view.height) * 2;
+  const halfH = oldR * Math.tan(((view.fov / 2) * Math.PI) / 180);
+  const halfW = halfH * (view.width / view.height);
+  const sinP = Math.sin(o.polar);
+  // Camera → aim direction, and the screen's right / up vectors.
+  const fwd = [-sinP * Math.sin(o.azimuth), -Math.cos(o.polar), -sinP * Math.cos(o.azimuth)] as const;
+  const rLen = Math.hypot(fwd[2], fwd[0]) || 1;
+  const right = [-fwd[2] / rLen, 0, fwd[0] / rLen] as const; // fwd × worldUp
+  const up = [
+    right[1] * fwd[2] - right[2] * fwd[1],
+    right[2] * fwd[0] - right[0] * fwd[2],
+    right[0] * fwd[1] - right[1] * fwd[0],
+  ] as const; // right × fwd
+  const k = 1 - newR / oldR;
+  const shift = (i: 0 | 1 | 2) => (right[i] * ndcX * halfW + up[i] * ndcY * halfH) * k;
+  return clampOrbit({
+    ...next,
+    focus: [o.focus[0] + shift(0), o.focus[1] + shift(1), o.focus[2] + shift(2)],
+  });
 }
 
 /** Camera position + look-at target. */
-export function orbitToCamera(o: OrbitState): { position: [number, number, number]; target: [number, number, number] } {
-  const ty = targetY(o);
+export function orbitToCamera(o: OrbitState): {
+  position: [number, number, number];
+  target: [number, number, number];
+} {
+  const t = targetOf(o);
   const sinP = Math.sin(o.polar);
   return {
     position: [
-      o.radius * sinP * Math.sin(o.azimuth),
-      ty + o.radius * Math.cos(o.polar),
-      o.radius * sinP * Math.cos(o.azimuth),
+      t[0] + o.radius * sinP * Math.sin(o.azimuth),
+      t[1] + o.radius * Math.cos(o.polar),
+      t[2] + o.radius * sinP * Math.cos(o.azimuth),
     ],
-    target: [0, ty, 0],
+    target: t,
   };
 }
 
@@ -67,6 +136,7 @@ export class OrbitController {
   private state: OrbitState;
   private velocity = { az: 0, po: 0 };
   private pinchStartRadius = 0;
+  private viewport: Viewport = { width: 0, height: 0, fov: 35 };
   private invalidate: () => void = () => {};
 
   static readonly ROTATE_PER_PX = 0.008;
@@ -80,6 +150,10 @@ export class OrbitController {
 
   attach(invalidate: () => void) {
     this.invalidate = invalidate;
+  }
+
+  setViewport(viewport: Viewport) {
+    this.viewport = viewport;
   }
 
   setHeight(heightM: number) {
@@ -118,8 +192,13 @@ export class OrbitController {
     this.pinchStartRadius = this.state.radius;
   }
 
-  pinch(scale: number) {
-    this.state = clampOrbit({ ...this.state, radius: this.pinchStartRadius / Math.max(scale, 0.01) });
+  /** `focalX/Y`: midpoint between the fingers, in view pixels. */
+  pinch(scale: number, focalX?: number, focalY?: number) {
+    const radius = this.pinchStartRadius / Math.max(scale, 0.01);
+    this.state =
+      focalX === undefined || focalY === undefined
+        ? clampOrbit({ ...this.state, radius })
+        : zoomAt(this.state, radius, focalX, focalY, this.viewport);
     this.invalidate();
   }
 
@@ -133,7 +212,11 @@ export class OrbitController {
   step() {
     const v = this.velocity;
     if (Math.abs(v.az) > OrbitController.STOP_BELOW || Math.abs(v.po) > OrbitController.STOP_BELOW) {
-      this.state = clampOrbit({ ...this.state, azimuth: this.state.azimuth + v.az, polar: this.state.polar + v.po });
+      this.state = clampOrbit({
+        ...this.state,
+        azimuth: this.state.azimuth + v.az,
+        polar: this.state.polar + v.po,
+      });
       this.velocity = { az: v.az * OrbitController.DAMPING, po: v.po * OrbitController.DAMPING };
       this.invalidate();
     }

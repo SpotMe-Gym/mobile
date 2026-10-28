@@ -66,10 +66,17 @@ function Body({ positions, colors, indices }: Pick<BodyViewerProps, 'positions' 
   );
 }
 
+const FOV = 35;
+
 function OrbitRig({ controller }: { controller: OrbitController }) {
   const camera = useThree((s) => s.camera);
   const invalidate = useThree((s) => s.invalidate);
+  const size = useThree((s) => s.size);
   useEffect(() => controller.attach(invalidate), [controller, invalidate]);
+  useEffect(
+    () => controller.setViewport({ width: size.width, height: size.height, fov: FOV }),
+    [controller, size.width, size.height],
+  );
   useFrame(() => {
     const { position, target } = controller.step();
     camera.position.set(position[0], position[1], position[2]);
@@ -79,7 +86,8 @@ function OrbitRig({ controller }: { controller: OrbitController }) {
 }
 
 /**
- * Interactive 3D body: one-finger drag orbits 360°, pinch zooms, double tap resets.
+ * Interactive 3D body: one-finger drag orbits 360°, pinch zooms toward the fingers (and back
+ * to the middle when zooming out), double tap resets.
  * Zoom and tilt are clamped (see orbit.ts) so the camera can't enter the mesh or lose it.
  * Renders on demand — nothing is drawn while the body and camera are still.
  */
@@ -110,7 +118,7 @@ export function BodyViewer({
       .runOnJS(true)
       .onBegin(() => controller.grab())
       .onStart(() => controller.pinchStart())
-      .onUpdate((e) => controller.pinch(e.scale));
+      .onUpdate((e) => controller.pinch(e.scale, e.focalX, e.focalY));
     const reset = Gesture.Tap()
       .runOnJS(true)
       .numberOfTaps(2)
@@ -134,7 +142,7 @@ export function BodyViewer({
         >
           <Canvas
             frameloop="demand"
-            camera={{ fov: 35, near: 0.05, far: 50 }}
+            camera={{ fov: FOV, near: 0.05, far: 50 }}
             onCreated={(state) => state.gl.setClearColor(theme.surface)}
           >
             <ambientLight intensity={0.55} />
