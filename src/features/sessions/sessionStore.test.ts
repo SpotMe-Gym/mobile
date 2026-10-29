@@ -4,6 +4,7 @@ import {
   selectActiveSession,
   summarizeSession,
   useSessionStore,
+  addHeartRateSample,
 } from '@/features/sessions/sessionStore';
 
 const workout = {
@@ -90,5 +91,20 @@ describe('workout sessions', () => {
     expect(summary.records).toEqual([{ name: 'Bench', oneRepMaxKg: 82.3 }]);
     // The first time an exercise is done isn't a "record".
     expect(summarizeSession(all[0]!, all.slice(0, 1)).records).toEqual([]);
+  });
+});
+
+describe('heart rate log', () => {
+  it('keeps one sample every 5 s with running avg / min / max', () => {
+    let log = addHeartRateSample(undefined, 0, 90);
+    log = addHeartRateSample(log, 2, 150); // too soon: ignored
+    log = addHeartRateSample(log, 5, 130);
+    log = addHeartRateSample(log, 10.4, 110);
+    expect(log.samples).toEqual([
+      [0, 90],
+      [5, 130],
+      [10, 110],
+    ]);
+    expect(log).toMatchObject({ avg: 110, max: 130, min: 90 });
   });
 });

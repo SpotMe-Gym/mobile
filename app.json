@@ -14,7 +14,8 @@
       "appleTeamId": "VEK66395CZ",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow SpotMe to scan food barcodes."
+        "NSCameraUsageDescription": "Allow SpotMe to scan food barcodes.",
+        "NSAppleMusicUsageDescription": "SpotMe shows the song playing in Apple Music during your workout and lets you skip it."
       },
       "privacyManifests": {
         "NSPrivacyTracking": false,
@@ -94,7 +95,28 @@
       "expo-localization",
       "expo-asset",
       "expo-web-browser",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#3B82F6"
+        }
+      ],
+      [
+        "react-native-ble-manager",
+        {
+          "neverForLocation": true,
+          "bluetoothAlwaysPermission": "Allow SpotMe to connect to your heart rate monitor."
+        }
+      ]
     ]
   }
 }

@@ -23,6 +23,8 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
 }));
 jest.mock('expo-image', () => ({ Image: () => null }));
+// The music bar polls music sources: tested on its own.
+jest.mock('@/features/music/components/MusicBar', () => ({ MusicBar: () => null }));
 jest.mock('@/features/exercises/components/ExerciseAnimation', () => ({ ExerciseAnimation: () => null }));
 jest.mock('@shopify/flash-list', () => {
   const { FlatList } = jest.requireActual('react-native');
@@ -74,18 +76,33 @@ describe('workout session', () => {
     mockParams = { workoutId: 'w1' };
   });
 
-  it('starts from the workout, logs a set with its defaults and starts the rest timer', () => {
+  it('plays the workout: set with its targets, Done logs it, then the rest timer and what comes next', () => {
     render(<SessionScreen />);
     expect(screen.getByText('Legs')).toBeTruthy();
     expect(screen.getByText('Barbell Squat')).toBeTruthy();
-    expect(screen.getByText(/First time/)).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'Mark set 1 done' }));
+    expect(screen.getByText(/Set 1 of 2/)).toBeTruthy();
+    // Up next while on set 1: the rest, then set 2
+    expect(screen.getByText('Then rest 2:00')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Set done' }));
     const session = useSessionStore.getState().sessions[0]!;
     expect(session.sets).toEqual([
       expect.objectContaining({ reps: 5, weightKg: 80, exerciseId: 'Barbell_Squat', setIndex: 0 }),
     ]);
-    expect(screen.getByText(/Rest 2:00|Rest 1:59/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Undo set 1' })).toBeTruthy();
+    // Now resting, the next set is shown
+    expect(screen.getByRole('button', { name: 'Skip rest' })).toBeTruthy();
+    expect(screen.getAllByText(/Set 2 of 2/).length).toBeGreaterThan(0);
+    fireEvent.press(screen.getByRole('button', { name: 'Skip rest' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Set done' }));
+    expect(useSessionStore.getState().sessions[0]!.sets).toHaveLength(2);
+    expect(screen.getByText('Workout complete')).toBeTruthy();
+  });
+
+  it('pauses and resumes', () => {
+    render(<SessionScreen />);
+    fireEvent.press(screen.getByRole('button', { name: 'Pause' }));
+    expect(useSessionStore.getState().sessions[0]!.player?.pausedAt).not.toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Resume' }));
+    expect(useSessionStore.getState().sessions[0]!.player?.pausedAt).toBeNull();
   });
 
   it('resumes the session in progress instead of starting another', () => {

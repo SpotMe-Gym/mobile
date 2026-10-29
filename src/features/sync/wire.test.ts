@@ -226,7 +226,29 @@ describe('training data', () => {
           completedAt: '2026-10-28T17:09:00.000Z',
         },
       ],
+      heartRate: {
+        samples: [
+          [0, 92],
+          [5, 131],
+          [10, 300],
+        ],
+        avg: 0,
+        max: 0,
+        min: 0,
+      },
+      player: { step: 3, startedAt: 1, pausedAt: null, pausedMs: 0, extraMs: 0 },
     });
+    // Heart rate goes up (bad readings dropped, stats recomputed); the player stays on the phone.
+    expect(s.data.heartRate).toEqual({
+      samples: [
+        [0, 92],
+        [5, 131],
+      ],
+      avg: 111.5,
+      max: 131,
+      min: 92,
+    });
+    expect(JSON.stringify(s)).not.toContain('pausedMs');
     expect(s.data.sets).toHaveLength(2);
     const back = sessionFromRow(viaServer(s));
     expect(back.sets[1]).toMatchObject({ weightKg: 82.5, rpe: 8 });

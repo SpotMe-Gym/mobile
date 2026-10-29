@@ -158,9 +158,16 @@ export function applyRemote(changes: RemoteChanges, profile?: LocalProfile): voi
     const ss = changes.workout_sessions;
     if (ss && (ss.upserts.length || ss.deletes.length)) {
       useSessionStore.setState((st) => ({
-        sessions: merge<WorkoutSession>(st.sessions, ss.upserts.map(sessionFromRow), ss.deletes).sort(
-          (a, z) => a.startedAt.localeCompare(z.startedAt),
-        ),
+        // The player position is local: keep it when the same session comes back from the server.
+        sessions: merge<WorkoutSession>(
+          st.sessions,
+          ss.upserts.map((row) => {
+            const incoming = sessionFromRow(row);
+            const mine = st.sessions.find((x) => x.id === incoming.id);
+            return mine?.player && !incoming.endedAt ? { ...incoming, player: mine.player } : incoming;
+          }),
+          ss.deletes,
+        ).sort((a, z) => a.startedAt.localeCompare(z.startedAt)),
       }));
     }
 

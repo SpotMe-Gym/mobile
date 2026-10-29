@@ -15,7 +15,7 @@ import {
   type Workout,
 } from '@/features/workouts/workoutStore';
 import type { CustomExercise } from '@/features/exercises/customExerciseStore';
-import type { LoggedSet, WorkoutSession } from '@/features/sessions/sessionStore';
+import type { HeartRateLog, LoggedSet, WorkoutSession } from '@/features/sessions/sessionStore';
 import type {
   ActivityLevel,
   Gender,
@@ -295,8 +295,24 @@ export interface SessionWire {
   name: string;
   started_at: string;
   ended_at: string | null;
-  data: { plan: Exercise[]; sets: LoggedSet[]; notes?: string };
+  data: { plan: Exercise[]; sets: LoggedSet[]; notes?: string; heartRate?: HeartRateLog };
 }
+const cleanHeartRate = (raw: unknown): HeartRateLog | undefined => {
+  if (!isRecord(raw) || !Array.isArray(raw.samples)) return undefined;
+  const samples = raw.samples
+    .filter((p): p is [number, number] => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1]))
+    .map(([t, b]) => [Math.max(0, Math.round(t)), Math.round(b)] as [number, number])
+    .filter(([, b]) => b >= 25 && b <= 250)
+    .slice(0, 5000);
+  if (samples.length === 0) return undefined;
+  const bpm = samples.map(([, b]) => b);
+  return {
+    samples,
+    avg: Math.round((bpm.reduce((a, b) => a + b, 0) / bpm.length) * 10) / 10,
+    max: Math.max(...bpm),
+    min: Math.min(...bpm),
+  };
+};
 const nullableNum = (v: unknown, digits = 2): number | null => {
   const n = num(v);
   return n === null ? null : round(n, digits);
@@ -324,7 +340,12 @@ export const sessionToWire = (s: WorkoutSession): SessionWire => ({
   name: (s.name.trim() || 'Workout').slice(0, 120),
   started_at: iso(s.startedAt),
   ended_at: s.endedAt ? iso(s.endedAt) : null,
-  data: { plan: cleanExercises(s.plan), sets: cleanSets(s.sets), notes: s.notes || undefined },
+  data: {
+    plan: cleanExercises(s.plan),
+    sets: cleanSets(s.sets),
+    notes: s.notes || undefined,
+    heartRate: cleanHeartRate(s.heartRate),
+  },
 });
 export const sessionFromRow = (r: Row): WorkoutSession => {
   const data = isRecord(r.data) ? r.data : {};
@@ -337,6 +358,7 @@ export const sessionFromRow = (r: Row): WorkoutSession => {
     plan: cleanExercises(data.plan),
     sets: cleanSets(data.sets),
     notes: str(data.notes),
+    heartRate: cleanHeartRate(data.heartRate),
   };
 };
 export const sessionValid = (s: SessionWire) =>

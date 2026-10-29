@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { newId } from '@/shared/lib/ids';
 import type { Exercise, Workout } from '@/features/workouts/workoutStore';
 import { exerciseKey } from '@/features/exercises/resolve';
+import type { PlayerState } from '@/features/sessions/player';
 
 /** One set actually done. Weight is always kg. */
 export interface LoggedSet {
@@ -21,6 +22,33 @@ export interface LoggedSet {
   completedAt: string;
 }
 
+/** Heart rate during a session, from a Bluetooth monitor. Samples are [seconds since start, bpm]. */
+export interface HeartRateLog {
+  samples: [number, number][];
+  avg: number;
+  max: number;
+  min: number;
+}
+
+/** Keep one sample every this many seconds (about 720 for an hour). */
+export const HR_SAMPLE_EVERY_SEC = 5;
+
+/** Adds a reading to the log (at most one sample per HR_SAMPLE_EVERY_SEC). */
+export function addHeartRateSample(log: HeartRateLog | undefined, atSec: number, bpm: number): HeartRateLog {
+  const t = Math.max(0, Math.round(atSec));
+  const b = Math.round(bpm);
+  if (!log || log.samples.length === 0) return { samples: [[t, b]], avg: b, max: b, min: b };
+  const last = log.samples[log.samples.length - 1]!;
+  if (t - last[0] < HR_SAMPLE_EVERY_SEC) return log;
+  const n = log.samples.length;
+  return {
+    samples: [...log.samples, [t, b]],
+    avg: Math.round(((log.avg * n + b) / (n + 1)) * 10) / 10,
+    max: Math.max(log.max, b),
+    min: Math.min(log.min, b),
+  };
+}
+
 /** A workout as it was done. `plan` is a copy, so later edits to the workout don't rewrite history. */
 export interface WorkoutSession {
   id: string;
@@ -31,6 +59,9 @@ export interface WorkoutSession {
   plan: Exercise[];
   sets: LoggedSet[];
   notes?: string;
+  heartRate?: HeartRateLog;
+  /** Where the workout player is (this device only, not synced). */
+  player?: PlayerState;
 }
 
 interface SessionState {
@@ -45,6 +76,8 @@ interface SessionState {
   removeSet: (sessionId: string, setId: string) => void;
   /** Adds an exercise to the session's plan (quick start, or one more exercise on the day). */
   addBlock: (sessionId: string, block: Exercise) => void;
+  setPlayer: (sessionId: string, player: PlayerState) => void;
+  addHeartRate: (sessionId: string, bpm: number, at?: number) => void;
   finish: (sessionId: string) => void;
   discard: (sessionId: string) => void;
   reset: () => void;
@@ -95,9 +128,19 @@ export const useSessionStore = create<SessionState>()(
         set((s) => ({
           sessions: mapSession(s.sessions, sessionId, (x) => ({ ...x, plan: [...x.plan, block] })),
         })),
+      setPlayer: (sessionId, player) =>
+        set((s) => ({ sessions: mapSession(s.sessions, sessionId, (x) => ({ ...x, player })) })),
+      addHeartRate: (sessionId, bpm, at = Date.now()) => {
+        if (!Number.isFinite(bpm) || bpm < 25 || bpm > 250) return;
+        const session = get().sessions.find((x) => x.id === sessionId);
+        if (!session || session.endedAt) return;
+        const next = addHeartRateSample(session.heartRate, (at - Date.parse(session.startedAt)) / 1000, bpm);
+        if (next === session.heartRate) return;
+        set((s) => ({ sessions: mapSession(s.sessions, sessionId, (x) => ({ ...x, heartRate: next })) }));
+      },
       finish: (sessionId) =>
         set((s) => ({
-          sessions: mapSession(s.sessions, sessionId, (x) => ({
+          sessions: mapSession(s.sessions, sessionId, ({ player: _player, ...x }) => ({
             ...x,
             endedAt: x.endedAt ?? new Date().toISOString(),
           })),

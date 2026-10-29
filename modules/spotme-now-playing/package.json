@@ -1,0 +1,10 @@
+{
+  "name": "spotme-now-playing",
+  "version": "1.0.0",
+  "description": "What's playing on the phone, with play / pause / skip: Apple Music on iOS, any media player on Android.",
+  "main": "index.ts",
+  "license": "UNLICENSED",
+  "private": true,
+  "author": "Damiano",
+  "homepage": "https://github.com/"
+}
