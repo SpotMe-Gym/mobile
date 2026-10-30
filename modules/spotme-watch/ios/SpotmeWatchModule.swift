@@ -11,9 +11,14 @@ import WatchConnectivity
 /// from the phone.
 public final class SpotmeWatchModule: Module {
   private let store = HKHealthStore()
-  private var mirrored: HKWorkoutSession?
-  private lazy var sessionDelegate = MirroredSessionDelegate(module: self)
+  // HKWorkoutSession exists on iPhone only from iOS 17, and the app still supports 16.4: the
+  // session and its delegate are kept untyped here and used behind #available checks.
+  private var mirroredSession: AnyObject?
+  private var sessionDelegate: AnyObject?
   private lazy var connectivity = Connectivity()
+
+  @available(iOS 17.0, *)
+  private var mirrored: HKWorkoutSession? { mirroredSession as? HKWorkoutSession }
 
   public func definition() -> ModuleDefinition {
     Name("SpotmeWatch")
@@ -37,7 +42,7 @@ public final class SpotmeWatchModule: Module {
         "healthAvailable": HKHealthStore.isHealthDataAvailable(),
         "isPaired": wc.isPaired,
         "isWatchAppInstalled": wc.isWatchAppInstalled,
-        "connected": self.mirrored != nil,
+        "connected": self.mirroredSession != nil,
       ]
     }.runOnQueue(.main)
 
@@ -81,14 +86,18 @@ public final class SpotmeWatchModule: Module {
     }.runOnQueue(.main)
   }
 
+  @available(iOS 17.0, *)
   private func attach(_ session: HKWorkoutSession) {
-    mirrored = session
-    session.delegate = sessionDelegate
+    let delegate = MirroredSessionDelegate(module: self)
+    sessionDelegate = delegate
+    mirroredSession = session
+    session.delegate = delegate
     sendEvent("onWatchState", ["connected": true])
   }
 
   fileprivate func detach() {
-    mirrored = nil
+    mirroredSession = nil
+    sessionDelegate = nil
     sendEvent("onWatchState", ["connected": false])
   }
 
@@ -114,6 +123,7 @@ public final class SpotmeWatchModule: Module {
 }
 
 /// HKWorkoutSessionDelegate needs an NSObject; it forwards to the module.
+@available(iOS 17.0, *)
 private final class MirroredSessionDelegate: NSObject, HKWorkoutSessionDelegate {
   private weak var module: SpotmeWatchModule?
 
