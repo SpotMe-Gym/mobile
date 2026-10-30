@@ -28,6 +28,10 @@ interface HeartRateState {
   /** When the last reading arrived (ms). */
   at: number | null;
   contact: boolean | null;
+  /** What the latest reading came from. */
+  source: 'ble' | 'watch' | null;
+  /** The SpotMe Apple Watch app is running a workout mirrored to this phone. */
+  watchConnected: boolean;
   set: (patch: Partial<Omit<HeartRateState, 'set' | 'forget'>>) => void;
   forget: () => void;
 }
@@ -41,6 +45,8 @@ export const useHeartRateStore = create<HeartRateState>()(
       bpm: null,
       at: null,
       contact: null,
+      source: null,
+      watchConnected: false,
       set: (patch) => set(patch),
       forget: () => set({ saved: null, bpm: null, at: null, status: 'idle' }),
     }),

@@ -2,19 +2,19 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import BleManager, { BleState } from 'react-native-ble-manager';
 import { HR_MEASUREMENT, HR_SERVICE, isUuid, parseHeartRate } from '@/features/heartRate/heartRate';
 import { useHeartRateStore, type HeartRateDevice } from '@/features/heartRate/heartRateStore';
+import { publishHeartRate } from '@/features/heartRate/heartRateBus';
+
+export { onHeartRate } from '@/features/heartRate/heartRateBus';
 
 /**
  * Connection to a Bluetooth heart rate monitor. One at a time; readings go to the heart rate
  * store, and from there to the session in progress. If the strap drops out (out of range,
  * battery), it reconnects by itself while `keepConnected` is on.
  */
-type Listener = (bpm: number, at: number) => void;
-
 let started = false;
 let connectedId: string | null = null;
 let keepConnected = false;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-const listeners = new Set<Listener>();
 
 const store = () => useHeartRateStore.getState();
 
@@ -45,8 +45,8 @@ async function ensureStarted(): Promise<boolean> {
       const reading = parseHeartRate(e.value);
       if (!reading || reading.bpm <= 0) return;
       const at = Date.now();
-      store().set({ bpm: reading.bpm, at, contact: reading.contact, status: 'connected' });
-      for (const l of listeners) l(reading.bpm, at);
+      store().set({ status: 'connected' });
+      publishHeartRate(reading.bpm, at, 'ble', reading.contact);
     });
     BleManager.onDisconnectPeripheral((e) => {
       if (e.peripheral !== connectedId) return;
@@ -173,10 +173,4 @@ export async function disconnectMonitor() {
 export function forgetMonitor() {
   void disconnectMonitor();
   store().forget();
-}
-
-/** Every reading while connected (returns an unsubscribe). */
-export function onHeartRate(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
 }

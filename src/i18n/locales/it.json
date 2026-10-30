@@ -634,7 +634,7 @@
   "heartRate": {
     "title": "Fascia cardio",
     "intro": "Collega una fascia cardio Bluetooth per vedere battito e zona durante l'allenamento. Viene salvato con ogni sessione.",
-    "compat": "Funziona con fasce toraciche e da braccio (Polar, Garmin, Wahoo, Coros…) e con gli orologi che trasmettono il battito via Bluetooth. Apple Watch non condivide il battito in questo modo.",
+    "compat": "Funziona con fasce toraciche e da braccio (Polar, Garmin, Wahoo, Coros…) e con gli orologi che trasmettono il battito via Bluetooth. Apple Watch funziona con l'app SpotMe per orologio qui sopra.",
     "search": "Cerca dispositivi",
     "searching": "Ricerca…",
     "connect": "Collega",
@@ -656,6 +656,16 @@
       "unauthorized": "SpotMe non può usare il Bluetooth: consentilo in Impostazioni",
       "unsupported": "Questo dispositivo non ha Bluetooth LE",
       "error": "Collegamento non riuscito. Riprova."
+    },
+    "watch": {
+      "connected": "Collegato: il battito arriva dall'orologio",
+      "checking": "Verifica…",
+      "notPaired": "Nessun Apple Watch abbinato a questo iPhone",
+      "notInstalled": "Installa SpotMe sull'orologio dall'app Watch dell'iPhone (Il mio orologio → App disponibili)",
+      "ready": "Pronto: SpotMe si apre sull'orologio quando inizia un allenamento",
+      "useA11y": "Usa Apple Watch durante gli allenamenti",
+      "how": "Avviare un allenamento apre SpotMe sull'orologio: battito in tempo reale qui, esercizio, timer e Serie fatta al polso, e l'allenamento salvato in Salute e negli anelli Attività.",
+      "allowHealth": "Consenti accesso a Salute"
     }
   },
   "music": {

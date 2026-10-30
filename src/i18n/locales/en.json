@@ -634,7 +634,7 @@
   "heartRate": {
     "title": "Heart rate monitor",
     "intro": "Connect a Bluetooth heart rate monitor to see your heart rate and zone during workouts. It's saved with each session.",
-    "compat": "Works with chest straps and armbands (Polar, Garmin, Wahoo, Coros…) and with watches that can broadcast heart rate over Bluetooth. Apple Watch doesn't share heart rate this way.",
+    "compat": "Works with chest straps and armbands (Polar, Garmin, Wahoo, Coros…) and watches that broadcast heart rate over Bluetooth. Apple Watch works through the SpotMe watch app above.",
     "search": "Search for monitors",
     "searching": "Searching…",
     "connect": "Connect",
@@ -656,6 +656,16 @@
       "unauthorized": "SpotMe isn't allowed to use Bluetooth: allow it in Settings",
       "unsupported": "This device has no Bluetooth LE",
       "error": "Couldn't connect. Try again."
+    },
+    "watch": {
+      "connected": "Connected: heart rate comes from your watch",
+      "checking": "Checking…",
+      "notPaired": "No Apple Watch paired with this iPhone",
+      "notInstalled": "Install SpotMe on your watch from the Watch app on iPhone (My Watch → Available apps)",
+      "ready": "Ready: SpotMe opens on your watch when a workout starts",
+      "useA11y": "Use Apple Watch during workouts",
+      "how": "Starting a workout opens SpotMe on your watch: live heart rate here, the exercise, timer and Set done on your wrist, and the workout saved to Apple Health and your Activity rings.",
+      "allowHealth": "Allow Apple Health access"
     }
   },
   "music": {

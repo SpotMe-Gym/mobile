@@ -1,0 +1,10 @@
+{
+  "name": "spotme-watch",
+  "version": "1.0.0",
+  "description": "Bridge to the SpotMe Apple Watch app: starts it, receives the mirrored workout (live heart rate, commands), sends the player state.",
+  "main": "index.ts",
+  "license": "UNLICENSED",
+  "private": true,
+  "author": "Damiano",
+  "homepage": "https://github.com/"
+}

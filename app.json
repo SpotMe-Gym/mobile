@@ -15,7 +15,12 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Allow SpotMe to scan food barcodes.",
-        "NSAppleMusicUsageDescription": "SpotMe shows the song playing in Apple Music during your workout and lets you skip it."
+        "NSAppleMusicUsageDescription": "SpotMe shows the song playing in Apple Music during your workout and lets you skip it.",
+        "NSHealthShareUsageDescription": "SpotMe reads your heart rate from Apple Watch during workouts and saves it with each session.",
+        "NSHealthUpdateUsageDescription": "SpotMe saves your strength workouts to Apple Health.",
+        "UIBackgroundModes": [
+          "workout-processing"
+        ]
       },
       "privacyManifests": {
         "NSPrivacyTracking": false,
@@ -49,6 +54,10 @@
             ]
           }
         ]
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.access": []
       }
     },
     "android": {
@@ -117,7 +126,8 @@
           "neverForLocation": true,
           "bluetoothAlwaysPermission": "Allow SpotMe to connect to your heart rate monitor."
         }
-      ]
+      ],
+      "@bacons/apple-targets"
     ]
   }
 }

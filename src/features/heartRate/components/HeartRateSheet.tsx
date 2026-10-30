@@ -15,6 +15,7 @@ import {
   scanForMonitors,
 } from '@/features/heartRate/bleHeartRate';
 import type { TranslationKey } from '@/i18n/keys';
+import { WatchSection } from '@/features/watch/WatchSection';
 
 const STATUS_KEY: Record<HeartRateStatus, TranslationKey> = {
   idle: 'heartRate.status.idle',
@@ -48,6 +49,8 @@ export function HeartRateSheet({ visible, onClose }: { visible: boolean; onClose
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}>
           <Text className="text-sm text-muted">{t('heartRate.intro')}</Text>
+
+          <WatchSection visible={visible} />
 
           <View className="mt-4 flex-row items-center gap-2" accessibilityLiveRegion="polite">
             {busy ? (

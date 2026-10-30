@@ -46,6 +46,8 @@ import { HeartRateChip } from '@/features/heartRate/components/HeartRateChip';
 import { HeartRateSheet } from '@/features/heartRate/components/HeartRateSheet';
 import { connectSavedMonitor, disconnectMonitor, onHeartRate } from '@/features/heartRate/bleHeartRate';
 import { MusicBar } from '@/features/music/components/MusicBar';
+import { useWatchSync } from '@/features/watch/useWatchSync';
+import { endWatchWorkout } from '@/features/watch/watch';
 
 const clock = (seconds: number) => {
   const s = Math.max(0, Math.ceil(seconds - 0.05));
@@ -84,12 +86,16 @@ export default function SessionScreen() {
     return off;
   }, [sessionId]);
 
+  // The SpotMe watch app, if there is one: opened at the start, kept in step with the player.
+  useWatchSync(p.session, p, (s) => phaseName(t, s));
+
   const session = p.session;
   if (!session) return null;
 
   const finish = () =>
     finishSession(session, t, i18n.language, () => {
       void disconnectMonitor();
+      endWatchWorkout();
       router.back();
     });
 
