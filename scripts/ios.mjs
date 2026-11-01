@@ -396,7 +396,7 @@ async function main() {
       'For the simulator: bun run ios:sim',
     ]);
   }
-  if (phone.devMode && phone.devMode !== 'enabled') {
+  if (/disabled/i.test(phone.devMode ?? '')) {
     fail(`Developer Mode is off on ${phone.name}.`, [
       'On the iPhone: Settings › Privacy & Security › Developer Mode › On, restart, and confirm.',
     ]);
@@ -409,7 +409,7 @@ async function main() {
       'No Apple Watch found: building the iPhone app only. (Pair the watch with this iPhone, and keep it unlocked near it.)',
     );
   }
-  if (watch && watch.devMode && watch.devMode !== 'enabled') {
+  if (watch && /disabled/i.test(watch.devMode ?? '')) {
     warn(
       `Developer Mode is off on ${watch.name}: on the watch, Settings › Privacy & Security › Developer Mode › On, restart. Skipping the watch for now.`,
     );
