@@ -253,7 +253,7 @@ Dark, high-contrast, iOS-flavoured: zinc greys (`#0A0A0A` background, `#18181b` 
 cd mobile
 direnv allow          # or: nix develop   (Bun, Node 20, JDK 17, Android SDK 36, NDK 27)
 bun install
-bun run ios           # expo run:ios   (dev build — native modules like MMKV need it; Expo Go won't work)
+bun run ios           # scripts/ios.mjs: build + install on iPhone and Apple Watch, start Metro (ios:sim for the simulator)
 bun run android       # expo run:android
 bun run prebuild:clean  # regenerate ios/ and android/ from app.json
 ```

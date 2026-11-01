@@ -24,8 +24,5 @@ watchman watch-del-all >/dev/null 2>&1 || true
 step "bun install"
 bun install || { echo "FAILED: bun install"; exit 1; }
 
-step "expo prebuild (iOS) — regenerates ios/ and runs pod install"
-CI=1 npx expo prebuild --clean --platform ios || { echo "FAILED: prebuild"; exit 1; }
-
-step "expo run:ios (build, install, launch, Metro)"
-npx expo run:ios --no-build-cache
+step "Build + install on iPhone and Apple Watch (scripts/ios.mjs --clean)"
+node scripts/ios.mjs --clean "$@"

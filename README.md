@@ -7,9 +7,34 @@ Offline-first gym & nutrition tracker — Expo SDK 58, React Native 0.88 (New Ar
 ```bash
 direnv allow        # or: nix develop
 bun install
-bun run ios         # dev build (MMKV & co. need a native build; Expo Go won't work)
+bun run ios         # build + install on your iPhone and Apple Watch, then start Metro
 bun run android
 ```
+
+### iPhone and Apple Watch
+
+`bun run ios` does the whole native build, with nothing to set up by hand in Xcode:
+
+1. finds your iPhone and its paired Apple Watch (`xcrun devicectl`);
+2. runs `bun install`, and `expo prebuild --clean` only when the native config changed (app.json, app.config.ts, packages, `modules/`, `targets/`, `EXPO_PUBLIC_NATIVE_APPLE_SIGN_IN`);
+3. adds the `SpotMeWatch` scheme that prebuild doesn't create (`scripts/watch-scheme.mjs`);
+4. signs with the team in `app.json` (`ios.appleTeamId`) and registers the iPhone and the watch with it. The first time it builds the watch app for the watch once, which is what fixes *"This app cannot be installed because its integrity could not be verified"* on the watch;
+5. builds, installs SpotMe on the iPhone and the watch app on the watch, starts Metro and opens the app.
+
+| Script | |
+|---|---|
+| `bun run ios` | Debug: live reload from this Mac (the iPhone has to be on the same Wi-Fi) |
+| `bun run ios:release` | Release: the JavaScript is bundled in, so it works at the gym without the Mac |
+| `bun run ios:clean` | regenerates `ios/` first |
+| `bun run ios -- --no-watch` | iPhone only |
+| `bun run ios -- --device "Name" --watch "Name"` | pick the devices when there are several |
+| `bun run ios:sim` | the simulator (`expo run:ios`) |
+
+The full xcodebuild output goes to `logs/ios-build.log`; on failure the script prints the errors with what to do about them.
+
+Once per device: connect the iPhone by cable and tap Trust; turn on Developer Mode on the iPhone and on the watch (Settings › Privacy & Security › Developer Mode); sign in to Xcode › Settings › Accounts with your Apple ID; after the first install, trust the certificate on the iPhone (Settings › General › VPN & Device Management). With a free Apple ID: put `EXPO_PUBLIC_NATIVE_APPLE_SIGN_IN=false` in `.env.local`, and expect the app to stop opening after 7 days, until you run `bun run ios` again.
+
+To work in Xcode instead, open `ios/SpotMe.xcworkspace` and pick the **SpotMe** scheme for the iPhone or **SpotMeWatch** for the watch.
 
 | Script | What it does |
 |---|---|
@@ -29,7 +54,7 @@ People can sign in with Apple, Google or email and password, using the same Supa
    - put the bundle ID in the Apple provider's Client IDs;
    - turn on the Sign In with Apple capability for the App ID.
    On a free Apple **Personal Team**, Xcode stops with *"Missing Sign In with Apple"*: free teams can't have that capability. Add `EXPO_PUBLIC_NATIVE_APPLE_SIGN_IN=false` to `.env.local` and rebuild. The build then leaves the capability out, and "Continue with Apple" opens the browser sheet instead of the native one. On a paid account, enable Sign In with Apple on the App ID and remove the line.
-3. Rebuild the native app, because new native modules were added (`expo-apple-authentication`, `expo-web-browser`, `expo-crypto`): `bun run prebuild:clean && bun run ios`.
+3. Rebuild the native app, because new native modules were added (`expo-apple-authentication`, `expo-web-browser`, `expo-crypto`): `bun run ios:clean`.
 
 | | iPhone | Android |
 |---|---|---|
