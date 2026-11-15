@@ -1,0 +1,10 @@
+{
+  "name": "spotme-motion",
+  "version": "1.0.0",
+  "description": "Follows marked points and the body's joints through a video (Apple Vision), for Motion Lab.",
+  "main": "index.ts",
+  "license": "UNLICENSED",
+  "private": true,
+  "author": "Damiano",
+  "homepage": "https://github.com/"
+}

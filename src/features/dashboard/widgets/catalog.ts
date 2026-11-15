@@ -27,6 +27,7 @@ import {
   weeklyVolumeWidget,
   weightTrendWidget,
 } from '@/features/dashboard/widgets/sections';
+import { motionLabAction } from '@/features/dashboard/widgets/motion';
 import type { WidgetDefinition, WidgetCategory } from '@/features/dashboard/widgets/types';
 import type { TranslationKey } from '@/i18n/keys';
 
@@ -44,6 +45,7 @@ export const WIDGETS: WidgetDefinition[] = [
   nutritionWidget,
   logMealAction,
   addWeightAction,
+  motionLabAction,
   bodyWidget,
   recentActivityWidget,
   // Section widgets: in the "Add card" sheet, not on the home until the user adds them.

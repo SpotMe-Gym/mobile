@@ -99,7 +99,7 @@ export const useDashboardStore = create<DashboardState>()(
     {
       name: 'dashboard-storage',
       storage: createJSONStorage(() => mmkvStorage),
-      version: 4,
+      version: 5,
       migrate: (persistedState: unknown, version: number) => {
         const state = (persistedState ?? {}) as { widgets?: unknown };
         let raw: unknown[] = Array.isArray(state.widgets) ? state.widgets : [];
@@ -135,6 +135,13 @@ export const useDashboardStore = create<DashboardState>()(
           const at = widgets.findIndex(w => w.id === 'recentActivity');
           const body: DashboardWidget = { id: 'body', size: 'half' };
           widgets = at < 0 ? [...widgets, body] : [...widgets.slice(0, at), body, ...widgets.slice(at)];
+        }
+
+        // v5: Motion Lab (film your execution, analyse a machine) joins existing layouts once.
+        if (version < 5 && !widgets.some(w => w.id === 'motionLab')) {
+          const at = widgets.findIndex(w => w.id === 'body' || w.id === 'recentActivity');
+          const lab: DashboardWidget = { id: 'motionLab', size: 'full' };
+          widgets = at < 0 ? [...widgets, lab] : [...widgets.slice(0, at), lab, ...widgets.slice(at)];
         }
 
         return { widgets };

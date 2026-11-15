@@ -14,13 +14,14 @@
       "appleTeamId": "VEK66395CZ",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow SpotMe to scan food barcodes.",
+        "NSCameraUsageDescription": "Allow SpotMe to scan food barcodes and to film your exercises.",
         "NSAppleMusicUsageDescription": "SpotMe shows the song playing in Apple Music during your workout and lets you skip it.",
         "NSHealthShareUsageDescription": "SpotMe reads your heart rate from Apple Watch during workouts and saves it with each session.",
         "NSHealthUpdateUsageDescription": "SpotMe saves your strength workouts to Apple Health.",
         "UIBackgroundModes": [
           "workout-processing"
-        ]
+        ],
+        "NSPhotoLibraryUsageDescription": "Allow SpotMe to open a video of your exercise that you choose."
       },
       "privacyManifests": {
         "NSPrivacyTracking": false,
@@ -96,9 +97,17 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow SpotMe to scan food barcodes.",
+          "cameraPermission": "Allow SpotMe to scan food barcodes and to film your exercises.",
           "microphonePermission": false,
           "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow SpotMe to open a video of your exercise that you choose.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       "expo-localization",

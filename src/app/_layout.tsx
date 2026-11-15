@@ -95,6 +95,9 @@ export default function RootLayout() {
               <Stack.Screen name="body-weight/index" options={EXPANDABLE} />
               <Stack.Screen name="body/index" options={EXPANDABLE} />
               <Stack.Screen name="workouts/today" options={EXPANDABLE} />
+              <Stack.Screen name="motion/index" />
+              <Stack.Screen name="motion/new" options={{ presentation: 'fullScreenModal' }} />
+              <Stack.Screen name="motion/[id]" />
               <Stack.Screen
                 name="chat"
                 options={{

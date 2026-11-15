@@ -15,6 +15,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react-native';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { SafeScreen } from '@/shared/components/SafeScreen';
 import { Button } from '@/shared/ui/Button';
@@ -181,7 +182,7 @@ export default function SessionScreen() {
 
 function finishSession(
   session: WorkoutSession,
-  t: ReturnType<typeof useTranslation>['t'],
+  t: TFunction,
   lang: string,
   done: () => void,
 ) {
@@ -284,7 +285,7 @@ function BlockProgress({
   );
 }
 
-const phaseName = (t: ReturnType<typeof useTranslation>['t'], s: Step) =>
+const phaseName = (t: TFunction, s: Step) =>
   s.kind === 'rest'
     ? t('player.rest')
     : s.label ||

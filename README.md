@@ -44,6 +44,15 @@ To work in Xcode instead, open `ios/SpotMe.xcworkspace` and pick the **SpotMe** 
 | `bun run i18n:check` | fails if `en.json` and `it.json` keys differ |
 | `bun run doctor` | expo-doctor |
 
+### Motion Lab
+
+A section of its own (the Motion Lab card on the home, `/motion`) with two options. Both work from a side-on video, analysed on the phone with Apple Vision (`modules/spotme-motion`, iPhone only for now); the video isn't stored, only the numbers and one still frame.
+
+- **Record my execution**: tap the handle or bar on the first frame. The app follows it and your joints, finds the reps, and reports range, tempo (out / hold / back), speed lost across the set, how far each rep drifts from the target path, and the working joint's angles.
+- **Analyse a machine**: tap the handle and the load (top plate of the stack, or the plates), optionally the pivot. The resistance profile is the load's rise per unit of handle travel at each point of the lift (the machine's leverage: cams, lever arms and pulleys are all inside that ratio), normalised to its own peak. No force is measured. The profile is then compared with the textbook strength curve of the movement it's for (`analysis/movements.ts`).
+
+The maths is in `src/features/motion/analysis/` and is tested with simulated machines (`analysis.test.ts`). `motionForAi()` in `motionStore.ts` gives the results as compact data for the AI coach.
+
 ### Accounts (optional)
 
 People can sign in with Apple, Google or email and password, using the same Supabase project as the website. Signing in is optional: the app works offline without an account. The sign-in screen appears as the first onboarding step, which can be skipped, and under Profile → Account.

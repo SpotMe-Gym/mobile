@@ -10,6 +10,8 @@ import { reportError } from '@/shared/lib/reporting';
 import { turnSyncOff } from '@/features/sync/syncStore';
 import { useSessionStore } from '@/features/sessions/sessionStore';
 import { useCustomExerciseStore } from '@/features/exercises/customExerciseStore';
+import { useMotionStore } from '@/features/motion/motionStore';
+import { discardFrame } from '@/features/motion/runAnalysis';
 
 /** Everything the app stores about the user, as one portable JSON document. */
 export function buildExport() {
@@ -26,6 +28,7 @@ export function buildExport() {
     sessions: pick(useSessionStore.getState()),
     customExercises: pick(useCustomExerciseStore.getState()),
     body: pick(useBodyStore.getState()),
+    motion: pick(useMotionStore.getState()),
     dashboard: pick(useDashboardStore.getState()),
   };
 }
@@ -52,6 +55,8 @@ export function eraseAllData(): void {
   useBodyStore.getState().reset();
   useSessionStore.getState().reset();
   useCustomExerciseStore.getState().reset();
+  for (const r of useMotionStore.getState().records) discardFrame(r.image);
+  useMotionStore.getState().reset();
   useDashboardStore.setState({ widgets: DEFAULT_WIDGETS });
   useUserStore.getState().resetUser(); // last: flips the onboarding guard
 }
