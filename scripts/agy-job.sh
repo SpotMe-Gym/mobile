@@ -31,6 +31,8 @@ case "$EFFORT" in
 esac
 MODEL="$(meta model)"; MODEL="${MODEL:-$DEFAULT_MODEL}"
 TIMEOUT="$(meta timeout)"; TIMEOUT="${TIMEOUT:-15m}"
+# `timeout: none` waits until the job finishes, however long it takes.
+[ "$TIMEOUT" = "none" ] && TIMEOUT=0
 
 # Models get renamed: check before starting rather than after a failed run.
 MODELS="$(agy models 2>/dev/null | cut -f2)"
@@ -59,7 +61,7 @@ else
 $PROMPT"
 fi
 
-echo "› $NAME ($MODE, effort $EFFORT: $MODEL, up to $TIMEOUT)"
+echo "› $NAME ($MODE, effort $EFFORT: $MODEL, $([ "$TIMEOUT" = 0 ] && echo "no time limit" || echo "up to $TIMEOUT"))"
 echo "  folder: $WORK"
 echo "  log:    $LOG  (stays empty until the job ends)"
 # What was already uncommitted, so the read-only check only reports what the job changed.

@@ -2,7 +2,7 @@
 name: NNN-short-name
 mode: write            # write | read-only
 effort: medium         # low | medium | high | max: picks the model (docs/AGENT_WORKFLOW.md); model: overrides
-timeout: 15m
+timeout: 15m           # or none: wait until the job finishes
 ---
 
 # Title: what will exist when this is done

@@ -50,7 +50,7 @@ What the Antigravity Pro plan offers (`agy models`, `agy -p "/usage"`):
 - **Gemini 4 Hydrogen** (Low/Medium/High/XHigh): the newest and strongest; the only one with XHigh.
 - **Claude Opus 5.5, Claude Sonnet 5.5** (Low/Medium/High), **GPT-OSS 120B** (Medium): a separate quota pool. Not used for reviews, which should come from a different model than the one that wrote the code (Claude). Sonnet is the fallback for write jobs when the Gemini limit runs out.
 
-Argon (High) is slow: it didn't finish review 001 (two Swift modules plus the watch target) in 30 minutes, where Flash (High) took 14. Give `high` jobs `timeout: 45m` or more, or split them.
+Argon (High) is slow and expensive: review 001 (two Swift modules plus the watch target) took 71 minutes and 22% of Argon's weekly limit, where Flash (High) took 14 minutes. It found more real bugs, including ones that span Swift and TypeScript. Give `high` jobs `timeout: none` and keep them to a few a week.
 
 Quotas: Gemini models share a 5-hour and a weekly limit; Claude and GPT share another. A 14-minute Flash (High) review used about 3% of the Gemini 5-hour limit and 1% of the weekly one. Check with `agy -p "/usage"` before a batch of jobs.
 
@@ -65,3 +65,4 @@ Quotas: Gemini models share a 5-hour and a weekly limit; Claude and GPT share an
 |---|---|---|---|---|---|
 | 2026-11-16 | 001-review-native-trackers | read-only, Flash (High) | 14 min | 6 findings: 1 valid (watch workout aborts if mirroring fails), 1 plausible (Vision tracker not re-seeded after a lost frame), 4 wrong or cosmetic. Nothing at launch. | First run failed: model renamed to Gemini 3.8 Flash. It suggested removing iOS `workout-processing`, which mirroring needs (iOS 17+) |
 | 2026-11-16 | 001-review-native-trackers | read-only, Argon (High) | 15 min, then 30 min | No report either time: it hit the time limit while still reviewing. Used about 21% of the Gemini 5-hour limit and 3% of Argon's weekly limit. | Not usable at `effort: high` for a review this size. The script now reports a timed-out run as failed (agy exits 0 with an empty answer) |
+| 2026-11-17 | 001-review-native-trackers | read-only, Argon (High), no time limit | 71 min | 10 findings: 4 valid but minor (duplicate watch session if the start arrives twice; wrist cues skipped after +15s; `frame` duration can be NaN; pose follows a lost tracker), 2 plausible (WCSession read before activation; seed frame when frame 0 fails), 4 wrong. Found cross-file bugs Flash missed. Used 22% of Argon's weekly limit and 6% of the Gemini weekly limit | Called `HKHealthStore()` a launch blocker (it isn't); suggested batching trackers against an intentional comment; also suggested removing iOS `workout-processing`, like Flash |
