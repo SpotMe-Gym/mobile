@@ -127,3 +127,7 @@ See [`docs/BODY_TRACKER.md`](docs/BODY_TRACKER.md).
 ### 6. Future Enhancements
 - [ ] Implement local search for exercises using **ExerciseDB API** (https://www.exercisedb.io/).
     - Allow users to search and add exercises from the database.
+
+## Audit and roadmap
+
+`docs/AUDIT_AND_ROADMAP.md` is the current list of what's left before a full release: verification, security, privacy and store rules, performance, operations, Android, product gaps and the AI plan, each item with an ID, priority and size.
