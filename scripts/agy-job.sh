@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Runs one Antigravity (agy) sub-agent job from a spec file. See docs/AGENT_WORKFLOW.md.
+#
+#   scripts/agy-job.sh docs/specs/001-name.md
+#
+# The spec's front matter decides how it runs:
+#   mode: read-only  → in this folder, sandboxed, nothing is changed
+#   mode: write      → in its own git worktree (../.agy-worktrees/<name>) on branch agy/<name>,
+#                      so the job can't collide with work in this folder
+# Output goes to logs/agy/<name>.log (empty until the job ends: agy prints at the end).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+ROOT="$(pwd)"
+
+SPEC="${1:-}"
+[ -f "$SPEC" ] || { echo "Usage: scripts/agy-job.sh docs/specs/NNN-name.md"; exit 2; }
+command -v agy >/dev/null || { echo "agy not found. Install the Antigravity CLI and run 'agy' once to sign in."; exit 1; }
+
+# Front matter value: `key: value` between the first two --- lines.
+meta() { awk -v k="$1" 'NR==1&&$0!="---"{exit} NR>1&&$0=="---"{exit} index($0,k":")==1{sub("^"k":[ \t]*","");sub("[ \t]+#.*$","");print;exit}' "$SPEC"; }
+NAME="$(meta name)"; NAME="${NAME:-$(basename "$SPEC" .md)}"
+MODE="$(meta mode)"; MODE="${MODE:-read-only}"
+MODEL="$(meta model)"; MODEL="${MODEL:-Gemini 3.5 Flash (Medium)}"
+TIMEOUT="$(meta timeout)"; TIMEOUT="${TIMEOUT:-15m}"
+
+mkdir -p logs/agy
+LOG="$ROOT/logs/agy/$NAME.log"
+# The spec without its front matter is the whole briefing.
+PROMPT="$(awk 'NR==1&&$0=="---"{f=1;next} f&&$0=="---"{f=0;next} !f' "$SPEC")"
+
+if [ "$MODE" = "write" ]; then
+  WORK="$(dirname "$ROOT")/.agy-worktrees/$NAME"
+  if [ ! -d "$WORK" ]; then
+    git worktree add -b "agy/$NAME" "$WORK" HEAD
+    # Same dependencies as the main folder, so typecheck and tests run there.
+    [ -d node_modules ] && ln -s "$ROOT/node_modules" "$WORK/node_modules"
+  fi
+  FLAGS=(--dangerously-skip-permissions)
+else
+  WORK="$ROOT"
+  FLAGS=(--dangerously-skip-permissions --sandbox)
+  PROMPT="Read-only job: do not create, modify or delete any file.
+
+$PROMPT"
+fi
+
+echo "› $NAME ($MODE, $MODEL, up to $TIMEOUT)"
+echo "  folder: $WORK"
+echo "  log:    $LOG  (stays empty until the job ends)"
+START=$(date +%s)
+set +e
+# stdin must be closed or agy waits forever.
+( cd "$WORK" && agy -p "$PROMPT" --model "$MODEL" --print-timeout "$TIMEOUT" "${FLAGS[@]}" </dev/null >"$LOG" 2>&1 )
+CODE=$?
+set -e
+echo "  finished in $(( ($(date +%s) - START) / 60 )) min, exit $CODE"
+
+if [ "$MODE" = "write" ]; then
+  echo; echo "Changes on agy/$NAME (uncommitted, for review):"
+  git -C "$WORK" status --short | head -40
+else
+  CHANGED="$(git status --porcelain | grep -v '^?? logs/' || true)"
+  [ -z "$CHANGED" ] || { echo "! A read-only job changed files:"; echo "$CHANGED"; }
+fi
+exit $CODE

@@ -18,8 +18,8 @@ The new layout is **feature-first**:
 mobile/
 ├── src/                  ← all application source (the `@/` alias points here)
 ├── assets/               ← icons, splash, images referenced by app.json; avatar/*.glb = 3D bodies
-├── docs/                 ← project docs (this file, comprehension, improvement plan)
-├── scripts/              ← dev scripts (i18n parity check, clean iOS rebuild)
+├── docs/                 ← project docs (this file, comprehension, improvement plan, AGENT_WORKFLOW.md); specs/ = briefs for delegated jobs
+├── scripts/              ← dev scripts (i18n parity check, iOS build, agy-job.sh for sub-agent jobs)
 ├── tools/avatar/         ← MPFB2 pipeline that builds assets/avatar (Python, not shipped) + optional service
 ├── jest/                 ← Jest helpers (CSS stub)
 ├── .cursor/rules/        ← agent coding rules (Antigravity rules live in ../.agent/rules)
