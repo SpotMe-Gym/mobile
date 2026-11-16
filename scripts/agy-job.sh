@@ -20,7 +20,7 @@ command -v agy >/dev/null || { echo "agy not found. Install the Antigravity CLI 
 meta() { awk -v k="$1" 'NR==1&&$0!="---"{exit} NR>1&&$0=="---"{exit} index($0,k":")==1{sub("^"k":[ \t]*","");sub("[ \t]+#.*$","");print;exit}' "$SPEC"; }
 NAME="$(meta name)"; NAME="${NAME:-$(basename "$SPEC" .md)}"
 MODE="$(meta mode)"; MODE="${MODE:-read-only}"
-MODEL="$(meta model)"; MODEL="${MODEL:-Gemini 3.5 Flash (Medium)}"
+MODEL="$(meta model)"; MODEL="${MODEL:-Gemini 3.8 Flash (Medium)}"
 TIMEOUT="$(meta timeout)"; TIMEOUT="${TIMEOUT:-15m}"
 
 mkdir -p logs/agy
@@ -47,6 +47,8 @@ fi
 echo "› $NAME ($MODE, $MODEL, up to $TIMEOUT)"
 echo "  folder: $WORK"
 echo "  log:    $LOG  (stays empty until the job ends)"
+# What was already uncommitted, so the read-only check only reports what the job changed.
+BEFORE="$(git status --porcelain)"
 START=$(date +%s)
 set +e
 # stdin must be closed or agy waits forever.
@@ -59,7 +61,7 @@ if [ "$MODE" = "write" ]; then
   echo; echo "Changes on agy/$NAME (uncommitted, for review):"
   git -C "$WORK" status --short | head -40
 else
-  CHANGED="$(git status --porcelain | grep -v '^?? logs/' || true)"
+  CHANGED="$(comm -13 <(echo "$BEFORE" | sort) <(git status --porcelain | sort) | grep -v '^?? logs/' || true)"
   [ -z "$CHANGED" ] || { echo "! A read-only job changed files:"; echo "$CHANGED"; }
 fi
 exit $CODE

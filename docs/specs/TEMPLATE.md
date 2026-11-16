@@ -1,7 +1,7 @@
 ---
 name: NNN-short-name
 mode: write            # write | read-only
-model: Gemini 3.5 Flash (Medium)
+model: Gemini 3.8 Flash (Medium)
 timeout: 15m
 ---
 

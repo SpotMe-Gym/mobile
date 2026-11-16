@@ -34,7 +34,7 @@ The rule of thumb for delegating: **delegate when the spec is shorter than the c
 
 ## Costs
 
-- Default model: `Gemini 3.5 Flash (Medium)`; `Flash (High)` for reviews. Change per spec with `model:`.
+- Default model: `Gemini 3.8 Flash (Medium)`; `Flash (High)` for reviews. Change per spec with `model:`.
 - Split a big job into 2–4 narrow ones rather than one long one: they finish sooner and a bad one costs less to redo.
 - Don't run a write job to save ten minutes of typing.
 
@@ -42,4 +42,4 @@ The rule of thumb for delegating: **delegate when the spec is shorter than the c
 
 | Date | Spec | Mode | Run time | Outcome | Corrections needed |
 |---|---|---|---|---|---|
-| | | | | | |
+| 2026-11-16 | 001-review-native-trackers | read-only | 14 min | 6 findings: 1 valid (watch workout aborts if mirroring fails), 1 plausible (Vision tracker not re-seeded after a lost frame), 4 wrong or cosmetic. Nothing at launch. | First run failed: model renamed to Gemini 3.8 Flash. It suggested removing iOS `workout-processing`, which mirroring needs (iOS 17+) |

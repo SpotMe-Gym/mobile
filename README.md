@@ -32,6 +32,8 @@ bun run android
 
 The full xcodebuild output goes to `logs/ios-build.log`; on failure the script prints the errors with what to do about them.
 
+If the app closes about 10 seconds after opening, it's a Debug build that can't reach Metro: it waits for this Mac on the main thread and iOS kills it (crash log: `0x8BADF00D`, `scene-create watchdog`, `RCTBundleURLProvider isPackagerRunning`). Start Metro on the same Wi-Fi, or install `bun run ios:release` to use it away from the Mac.
+
 Once per device: connect the iPhone by cable and tap Trust; turn on Developer Mode on the iPhone and on the watch (Settings › Privacy & Security › Developer Mode); sign in to Xcode › Settings › Accounts with your Apple ID; after the first install, trust the certificate on the iPhone (Settings › General › VPN & Device Management). With a free Apple ID: put `EXPO_PUBLIC_NATIVE_APPLE_SIGN_IN=false` in `.env.local`, and expect the app to stop opening after 7 days, until you run `bun run ios` again.
 
 To work in Xcode instead, open `ios/SpotMe.xcworkspace` and pick the **SpotMe** scheme for the iPhone or **SpotMeWatch** for the watch.
