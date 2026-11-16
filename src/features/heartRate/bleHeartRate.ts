@@ -15,6 +15,30 @@ let started = false;
 let connectedId: string | null = null;
 let keepConnected = false;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+/** A connection attempt in progress (attempts don't overlap). */
+let attempt: Promise<boolean> | null = null;
+
+/** iOS never gives up on a connection by itself: a strap that's asleep would hang it forever. */
+const CONNECT_TIMEOUT_MS = 10_000;
+const STEADY: readonly string[] = [BleState.On, BleState.Off, BleState.Unauthorized, BleState.Unsupported];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e: unknown) => {
+        clearTimeout(timer);
+        reject(e instanceof Error ? e : new Error(String(e)));
+      },
+    );
+  });
+}
 
 const store = () => useHeartRateStore.getState();
 
@@ -74,7 +98,13 @@ async function ensureStarted(): Promise<boolean> {
       if (store().status === 'scanning') store().set({ status: 'idle' });
     });
   }
-  const state = await BleManager.checkState();
+  // Right after start (and after the app comes back) Bluetooth reports "unknown" for a moment:
+  // connecting then fails silently, which used to leave the strap unconnected until toggled.
+  let state = await BleManager.checkState();
+  for (let i = 0; i < 12 && !STEADY.includes(state); i++) {
+    await sleep(250);
+    state = await BleManager.checkState();
+  }
   if (state === BleState.Off) {
     store().set({ status: 'bluetoothOff' });
     return false;
@@ -110,28 +140,66 @@ export async function stopScan() {
 }
 
 /** Connects, subscribes to heart rate and remembers the monitor for next time. */
-export async function connectMonitor(device: HeartRateDevice): Promise<boolean> {
+export function connectMonitor(device: HeartRateDevice): Promise<boolean> {
+  if (attempt) return attempt;
+  attempt = connectOnce(device).finally(() => {
+    attempt = null;
+  });
+  return attempt;
+}
+
+async function connectOnce(device: HeartRateDevice): Promise<boolean> {
   try {
     if (!(await ensureStarted())) return false;
     await stopScan();
     keepConnected = true;
     store().set({ status: 'connecting', saved: device });
-    await BleManager.connect(device.id);
-    await BleManager.retrieveServices(device.id, [HR_SERVICE]);
-    await BleManager.startNotification(device.id, HR_SERVICE, HR_MEASUREMENT);
+    await withTimeout(BleManager.connect(device.id), CONNECT_TIMEOUT_MS);
+    await withTimeout(BleManager.retrieveServices(device.id, [HR_SERVICE]), CONNECT_TIMEOUT_MS);
+    await withTimeout(
+      BleManager.startNotification(device.id, HR_SERVICE, HR_MEASUREMENT),
+      CONNECT_TIMEOUT_MS,
+    );
     connectedId = device.id;
     store().set({ status: 'connected' });
     return true;
   } catch {
     connectedId = null;
+    // Cancel whatever is half done, so the next attempt starts clean.
+    void BleManager.disconnect(device.id).catch(() => undefined);
     if (keepConnected) {
       store().set({ status: 'reconnecting' });
-      scheduleReconnect();
+      scheduleReconnect(2000);
     } else {
       store().set({ status: 'error' });
     }
     return false;
   }
+}
+
+/**
+ * Drops the connection and makes it again: what turning the monitor off and on in the sheet
+ * does. For a link that says "connected" but has stopped sending readings.
+ */
+export async function refreshMonitor(): Promise<boolean> {
+  const saved = store().saved;
+  if (!saved) return false;
+  if (attempt) return attempt;
+  const id = connectedId;
+  connectedId = null;
+  if (id) {
+    try {
+      await BleManager.stopNotification(id, HR_SERVICE, HR_MEASUREMENT);
+    } catch {
+      // already gone
+    }
+    try {
+      await BleManager.disconnect(id);
+    } catch {
+      // already gone
+    }
+  }
+  return connectMonitor(saved);
 }
 
 function scheduleReconnect(delay = 4000) {

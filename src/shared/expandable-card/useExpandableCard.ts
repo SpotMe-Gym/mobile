@@ -98,13 +98,11 @@ export function useExpandableCard(config: ExpandableCardConfig = {}): Expandable
       progress.set(1);
       return;
     }
-    progress.set(withTiming(
-      1,
-      { duration: openDuration, easing: Easing.out(Easing.cubic) },
-      (finished) => {
+    progress.set(
+      withTiming(1, { duration: openDuration, easing: Easing.out(Easing.cubic) }, (finished) => {
         if (finished) scheduleOnRN(setIsExpanded, true);
-      },
-    ));
+      }),
+    );
     // Runs once on mount: the open animation must not restart on re-render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -118,13 +116,11 @@ export function useExpandableCard(config: ExpandableCardConfig = {}): Expandable
       navigateBack();
       return;
     }
-    progress.set(withTiming(
-      0,
-      { duration: closeDuration, easing: Easing.inOut(Easing.cubic) },
-      (finished) => {
+    progress.set(
+      withTiming(0, { duration: closeDuration, easing: Easing.inOut(Easing.cubic) }, (finished) => {
         if (finished) scheduleOnRN(navigateBack);
-      },
-    ));
+      }),
+    );
   }, [isClosing, closeDuration, shouldReduceMotion, navigateBack, progress]);
 
   // Android hardware back: animate the card closed instead of popping the route abruptly.

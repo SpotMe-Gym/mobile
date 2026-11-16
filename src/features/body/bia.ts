@@ -31,7 +31,8 @@ export const BIA_IMPORTERS: BiaImporter[] = [];
 const inRange = (v: unknown, min: number, max: number): v is number =>
   typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 
-const pickRange = (v: unknown, min: number, max: number): number | undefined => (inRange(v, min, max) ? v : undefined);
+const pickRange = (v: unknown, min: number, max: number): number | undefined =>
+  inRange(v, min, max) ? v : undefined;
 
 function cleanSegment(s: SegmentComposition | undefined): SegmentComposition | undefined {
   if (!s) return undefined;

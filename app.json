@@ -21,7 +21,8 @@
         "UIBackgroundModes": [
           "workout-processing"
         ],
-        "NSPhotoLibraryUsageDescription": "Allow SpotMe to open a video of your exercise that you choose."
+        "NSPhotoLibraryUsageDescription": "Allow SpotMe to open a video of your exercise that you choose.",
+        "NSSupportsLiveActivities": true
       },
       "privacyManifests": {
         "NSPrivacyTracking": false,

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +25,10 @@ import {
 } from '@/shared/expandable-card/ExpandableCardLayout';
 import { BodyCardContent } from '@/features/body/components/BodyCardContent';
 import { BodyViewer } from '@/features/body/components/BodyViewer';
+import { FatigueList, LEVEL_COLOR } from '@/features/body/components/FatigueList';
+import { buildFatigueColors } from '@/features/body/avatar/fatigueColors';
+import { muscleFatigue, muscleVolume } from '@/features/sessions/fatigue';
+import { useSessionStore } from '@/features/sessions/sessionStore';
 import { LogMeasurementsSheet } from '@/features/body/components/LogMeasurementsSheet';
 import { MeasurementRow } from '@/features/body/components/MeasurementRow';
 import { WeightPage } from '@/features/body/components/WeightPage';
@@ -53,13 +57,22 @@ function BodyCardPreview() {
   );
 }
 
-function Legend({ mode }: { mode: HighlightMode }) {
+/** What the body's colours show: change in size (two ways of reading it), or training fatigue. */
+type BodyView = HighlightMode | 'fatigue';
+
+function Legend({ mode }: { mode: BodyView }) {
   const { t } = useTranslation();
-  const items = [
-    { color: colors.success, label: mode === 'progress' ? t('body.legendGood') : t('body.legendGrew') },
-    { color: colors.danger, label: mode === 'progress' ? t('body.legendBad') : t('body.legendShrank') },
-    { color: '#b07a5e', label: t('body.legendSame') },
-  ];
+  const items =
+    mode === 'fatigue'
+      ? (['light', 'moderate', 'high'] as const).map((l) => ({
+          color: LEVEL_COLOR[l],
+          label: t(`fatigue.level.${l}`),
+        }))
+      : [
+          { color: colors.success, label: mode === 'progress' ? t('body.legendGood') : t('body.legendGrew') },
+          { color: colors.danger, label: mode === 'progress' ? t('body.legendBad') : t('body.legendShrank') },
+          { color: '#b07a5e', label: t('body.legendSame') },
+        ];
   return (
     <View className="flex-row flex-wrap justify-center gap-x-4 gap-y-1" accessible accessibilityRole="text">
       {items.map((i) => (
@@ -100,7 +113,8 @@ function BodyDetailContent() {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { handleClose, isExpanded } = useExpandableCardContext();
-  const [mode, setMode] = useState<HighlightMode>('progress');
+  const [view, setView] = useState<BodyView>('progress');
+  const mode: HighlightMode = view === 'fatigue' ? 'progress' : view;
   const [compare, setCompare] = useState<CompareTo>('previous');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [allWeights, setAllWeights] = useState(false);
@@ -130,6 +144,21 @@ function BodyDetailContent() {
     goal,
   } = useBodyAvatar(compare, mode);
 
+  // Training fatigue per muscle, refreshed every minute while the screen is open.
+  const sessions = useSessionStore((s) => s.sessions);
+  const [fatigueAt, setFatigueAt] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setFatigueAt(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const fatigue = useMemo(() => muscleFatigue(sessions, fatigueAt), [sessions, fatigueAt]);
+  const weekSets = useMemo(() => muscleVolume(sessions, 7, fatigueAt), [sessions, fatigueAt]);
+  const fatigueColors = useMemo(
+    () => (model && view === 'fatigue' ? buildFatigueColors(model, fatigue) : null),
+    [model, view, fatigue],
+  );
+  const shownColors = view === 'fatigue' ? fatigueColors : vertexColors;
+
   const since = baseline
     ? formatDayKey(baseline.day, i18n.language, { day: 'numeric', month: 'short' })
     : undefined;
@@ -145,9 +174,16 @@ function BodyDetailContent() {
     pager.current?.scrollTo({ x: i * (pageWidth + gap), animated: true });
     setPage(i);
   };
-  const onPageSettled = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) =>
-      setPage(Math.round(e.nativeEvent.contentOffset.x / (pageWidth + gap))),
+  // The tab follows the slide while it moves (waiting for the scroll to settle made the tab
+  // lag behind by a second or two at the last slide, where the scroll view bounces).
+  const onPagerScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const next = Math.max(
+        0,
+        Math.min(PAGES.length - 1, Math.round(e.nativeEvent.contentOffset.x / (pageWidth + gap))),
+      );
+      setPage((current) => (current === next ? current : next));
+    },
     [pageWidth],
   );
 
@@ -216,8 +252,8 @@ function BodyDetailContent() {
           />
         </View>
 
-        {/* Swipe between the weight and the 3D body. On the body, a slow sideways drag turns
-          it, a quick swipe changes slide, and an up/down drag scrolls the page. */}
+        {/* Swipe from the weight to the 3D body. On the body every sideways drag turns it,
+          however fast (the slide doesn't follow the finger there): the tabs above go back. */}
         <ScrollView
           ref={pager}
           horizontal
@@ -225,8 +261,11 @@ function BodyDetailContent() {
           snapToInterval={pageWidth + gap}
           snapToAlignment="start"
           disableIntervalMomentum
+          bounces={false}
+          scrollEnabled={page === 0}
           showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={onPageSettled}
+          onScroll={onPagerScroll}
+          scrollEventThrottle={16}
           contentContainerStyle={{ paddingHorizontal: 16, gap }}
           style={{ flexGrow: 0 }}
         >
@@ -252,32 +291,30 @@ function BodyDetailContent() {
             <View className="flex-1 items-center justify-center">
               {failed ? (
                 <Text className="text-subtle">{t('body.loadFailed')}</Text>
-              ) : isExpanded && model && positions && vertexColors && solution ? (
+              ) : isExpanded && model && positions && shownColors && solution ? (
                 <BodyViewer
                   positions={positions}
-                  colors={vertexColors}
+                  colors={shownColors}
                   indices={model.indices}
                   heightM={current.heightCm / 100}
                   accessibilityLabel={t('body.viewerA11y')}
                   style={{ width: '100%', height: '100%' }}
                   scrollFriendly
-                  onSwipe={(direction) => goTo(direction === 'right' ? 0 : 1)}
                 />
               ) : (
                 <ActivityIndicator color={colors.muted} />
               )}
             </View>
-            {baseline ? (
+            {baseline || view === 'fatigue' ? (
               <View className="pb-2">
-                <Legend mode={mode} />
+                <Legend mode={view} />
               </View>
             ) : null}
-            <View className="flex-row gap-2 px-3 pb-3">
+            <View className="gap-2 px-3 pb-3">
               <SegmentedControl
                 size="sm"
-                className="flex-1"
-                value={mode}
-                onChange={setMode}
+                value={view}
+                onChange={setView}
                 segments={[
                   {
                     value: 'progress',
@@ -289,26 +326,32 @@ function BodyDetailContent() {
                     label: t('body.modeChange'),
                     accessibilityLabel: `${t('body.colours')}: ${t('body.modeChange')}`,
                   },
-                ]}
-              />
-              <SegmentedControl
-                size="sm"
-                className="flex-1"
-                value={compare}
-                onChange={setCompare}
-                segments={[
                   {
-                    value: 'previous',
-                    label: t('body.comparePrevious'),
-                    accessibilityLabel: `${t('body.compareWith')}: ${t('body.comparePrevious')}`,
-                  },
-                  {
-                    value: 'first',
-                    label: t('body.compareFirst'),
-                    accessibilityLabel: `${t('body.compareWith')}: ${t('body.compareFirst')}`,
+                    value: 'fatigue',
+                    label: t('body.modeFatigue'),
+                    accessibilityLabel: `${t('body.colours')}: ${t('body.modeFatigue')}`,
                   },
                 ]}
               />
+              {view !== 'fatigue' && (
+                <SegmentedControl
+                  size="sm"
+                  value={compare}
+                  onChange={setCompare}
+                  segments={[
+                    {
+                      value: 'previous',
+                      label: t('body.comparePrevious'),
+                      accessibilityLabel: `${t('body.compareWith')}: ${t('body.comparePrevious')}`,
+                    },
+                    {
+                      value: 'first',
+                      label: t('body.compareFirst'),
+                      accessibilityLabel: `${t('body.compareWith')}: ${t('body.compareFirst')}`,
+                    },
+                  ]}
+                />
+              )}
             </View>
           </View>
         </ScrollView>
@@ -323,6 +366,15 @@ function BodyDetailContent() {
         </View>
 
         <View className="px-4">
+          {view === 'fatigue' && page === 1 && (
+            <>
+              <Text accessibilityRole="header" className="mb-1 mt-6 text-lg font-bold text-foreground">
+                {t('fatigue.title')}
+              </Text>
+              <Text className="mb-3 text-sm text-muted">{t('fatigue.subtitle')}</Text>
+              <FatigueList muscles={fatigue} weekSets={weekSets} />
+            </>
+          )}
           <SectionHeader
             title={t('body.weightLog')}
             action={t('bodyWeight.logWeight')}

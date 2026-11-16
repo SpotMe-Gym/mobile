@@ -33,7 +33,10 @@ describe('toFoodRef', () => {
   });
 
   it('detects liquids and kJ-only energy', () => {
-    const ref = toFoodRef({ code: '2', serving_quantity_unit: 'ml', nutriments: { 'energy-kj_100g': 418.4 } }, 'x');
+    const ref = toFoodRef(
+      { code: '2', serving_quantity_unit: 'ml', nutriments: { 'energy-kj_100g': 418.4 } },
+      'x',
+    );
     expect(ref?.base).toBe('ml');
     expect(ref?.per100?.kcal).toBe(100);
   });

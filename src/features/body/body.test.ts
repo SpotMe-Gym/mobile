@@ -24,7 +24,10 @@ describe('body store helpers', () => {
   });
 
   it('sanitizes persisted state', () => {
-    const s = sanitizeBodyState({ measurements: [entry('2026-10-02', { waist: 80 }), { day: 'bad' }], biaReports: 'x' });
+    const s = sanitizeBodyState({
+      measurements: [entry('2026-10-02', { waist: 80 }), { day: 'bad' }],
+      biaReports: 'x',
+    });
     expect(s.measurements).toHaveLength(1);
     expect(s.biaReports).toEqual([]);
   });
@@ -117,7 +120,11 @@ describe('BIA validation', () => {
       visceralFatLevel: 999,
       segmental: { armL: { leanKg: 3.4, fatKg: 0.9 }, legR: { leanKg: -1 } },
     });
-    expect(r).toMatchObject({ bodyFatPct: 18.4, skeletalMuscleKg: 36, segmental: { armL: { leanKg: 3.4, fatKg: 0.9 } } });
+    expect(r).toMatchObject({
+      bodyFatPct: 18.4,
+      skeletalMuscleKg: 36,
+      segmental: { armL: { leanKg: 3.4, fatKg: 0.9 } },
+    });
     expect(r?.visceralFatLevel).toBeUndefined();
     expect(r?.segmental?.legR).toBeUndefined();
   });

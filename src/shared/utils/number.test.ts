@@ -1,4 +1,9 @@
-import { formatNumber, parseDecimal, sanitizeDecimalInput, sanitizeIntegerInput } from '@/shared/utils/number';
+import {
+  formatNumber,
+  parseDecimal,
+  sanitizeDecimalInput,
+  sanitizeIntegerInput,
+} from '@/shared/utils/number';
 
 describe('parseDecimal', () => {
   it.each([

@@ -111,7 +111,8 @@ export function migrateUserState(persisted: unknown, version: number): Partial<U
   const s = isRecord(persisted) ? persisted : {};
   if (version >= 2) return s as Partial<UserState>;
   // v1 → v2: 'other' became 'neutral' ("Neutral / prefer not to say").
-  if (version === 1) return { ...s, gender: s.gender === 'other' ? 'neutral' : s.gender } as Partial<UserState>;
+  if (version === 1)
+    return { ...s, gender: s.gender === 'other' ? 'neutral' : s.gender } as Partial<UserState>;
 
   // v0 → v1: string numbers → numbers, display labels → enum ids, calories → kcal,
   // weight history moves to its own store (handed off through a one-shot MMKV key).

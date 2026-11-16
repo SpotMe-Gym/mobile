@@ -3,8 +3,11 @@ import { getLocales } from 'expo-localization';
 import { z } from 'zod';
 import type { FoodRef } from '@/features/nutrition/nutritionStore';
 import { ApiError, fetchJson } from '@/shared/lib/http';
+import { rankFoods, type Candidate } from '@/features/nutrition/api/rankFoods';
 
 const OFF_BASE = 'https://world.openfoodfacts.org';
+/** Open Food Facts' full-text search service: phrase matching per language, and fast. */
+const SEARCH_BASE = 'https://search.openfoodfacts.org';
 const FIELDS = [
   'code',
   'product_name',
@@ -17,6 +20,7 @@ const FIELDS = [
   'serving_quantity_unit',
   'product_quantity_unit',
 ].join(',');
+const SEARCH_FIELDS = `${FIELDS},unique_scans_n,countries_tags`;
 
 // Open Food Facts asks every app to identify itself with a descriptive User-Agent.
 // TODO(release): append a contact address, e.g. "(spotme.app; contact@your-domain)".
@@ -37,7 +41,10 @@ const looseNumber = z.preprocess((v) => {
 const productSchema = z.object({
   code: z.coerce.string(),
   product_name: z.string().optional().catch(undefined),
-  brands: z.string().optional().catch(undefined),
+  // A comma-separated string from the product API, a list from the search service.
+  brands: z.preprocess((v) => (Array.isArray(v) ? v.join(',') : v), z.string().optional()).catch(undefined),
+  unique_scans_n: looseNumber,
+  countries_tags: z.array(z.string()).optional().catch(undefined),
   image_front_small_url: z.string().optional().catch(undefined),
   image_url: z.string().optional().catch(undefined),
   serving_size: z.string().optional().catch(undefined),
@@ -135,6 +142,67 @@ export async function fetchProduct(
   return ref;
 }
 
+const searchResponseV3 = z.object({ hits: z.array(z.unknown()).catch([]) });
+
+function toCandidates(products: readonly unknown[], fallbackName: string): Candidate[] {
+  return products.flatMap((raw) => {
+    const parsed = productSchema.safeParse(raw);
+    if (!parsed.success) return [];
+    const ref = toFoodRef(parsed.data, fallbackName);
+    // Results without nutrition can't be logged meaningfully — hide them.
+    return ref?.per100
+      ? [{ ref, scans: parsed.data.unique_scans_n, countries: parsed.data.countries_tags }]
+      : [];
+  });
+}
+
+/** The search service: matches the words as a phrase in the user's language first. */
+async function searchService(
+  query: string,
+  language: string,
+  fallbackName: string,
+  signal?: AbortSignal,
+): Promise<Candidate[]> {
+  const langs = [...new Set([language.slice(0, 2).toLowerCase(), 'en'])].join(',');
+  const params = new URLSearchParams({ q: query, langs, page_size: '60', fields: SEARCH_FIELDS });
+  const json = searchResponseV3.parse(
+    await fetchJson(`${SEARCH_BASE}/search?${params.toString()}`, {
+      headers: HEADERS,
+      signal,
+      timeoutMs: 10_000,
+    }),
+  );
+  return toCandidates(json.hits, fallbackName);
+}
+
+/** The older search endpoint, slower and often rate-limited: only when the service fails. */
+async function searchLegacy(
+  query: string,
+  country: string,
+  language: string,
+  fallbackName: string,
+  signal?: AbortSignal,
+): Promise<Candidate[]> {
+  const params = new URLSearchParams({
+    search_terms: query,
+    search_simple: '1',
+    action: 'process',
+    json: '1',
+    page_size: '50',
+    fields: SEARCH_FIELDS,
+    cc: country,
+    lc: language,
+  });
+  const json = searchResponseSchema.parse(
+    await fetchJson(`${OFF_BASE}/cgi/search.pl?${params.toString()}`, {
+      headers: HEADERS,
+      signal,
+      timeoutMs: 15_000,
+    }),
+  );
+  return toCandidates(json.products, fallbackName);
+}
+
 export async function searchProducts(
   query: string,
   {
@@ -149,28 +217,17 @@ export async function searchProducts(
     signal?: AbortSignal;
   },
 ): Promise<FoodRef[]> {
-  const params = new URLSearchParams({
-    search_terms: query.trim(),
-    search_simple: '1',
-    action: 'process',
-    json: '1',
-    page_size: '30',
-    fields: FIELDS,
-    cc: country,
-    lc: language,
-  });
-  const json = searchResponseSchema.parse(
-    await fetchJson(`${OFF_BASE}/cgi/search.pl?${params.toString()}`, {
-      headers: HEADERS,
-      signal,
-      timeoutMs: 15_000,
-    }),
-  );
-  return json.products.flatMap((raw) => {
-    const parsed = productSchema.safeParse(raw);
-    if (!parsed.success) return [];
-    const ref = toFoodRef(parsed.data, fallbackName);
-    // Results without nutrition can't be logged meaningfully — hide them.
-    return ref?.per100 ? [ref] : [];
-  });
+  const q = query.trim();
+  let candidates: Candidate[];
+  try {
+    candidates = await searchService(q, language, fallbackName, signal);
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    candidates = await searchLegacy(q, country, language, fallbackName, signal);
+  }
+  // The service found nothing usable (rare spelling, brand-only query): ask the old one too.
+  if (candidates.length === 0) {
+    candidates = await searchLegacy(q, country, language, fallbackName, signal).catch(() => []);
+  }
+  return rankFoods(q, candidates, country);
 }

@@ -1,4 +1,11 @@
-import { availableUnits, baseToPortion, defaultPortion, macrosForPortion, mealForTime, portionToBase } from '@/features/nutrition/utils/portion';
+import {
+  availableUnits,
+  baseToPortion,
+  defaultPortion,
+  macrosForPortion,
+  mealForTime,
+  portionToBase,
+} from '@/features/nutrition/utils/portion';
 import type { FoodRef } from '@/features/nutrition/nutritionStore';
 
 const nutella: FoodRef = {

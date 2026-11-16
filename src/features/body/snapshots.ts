@@ -43,7 +43,11 @@ function weightOn(weights: readonly WeightEntry[], day: DayKey | undefined): num
   return found ?? weights[0]?.kg;
 }
 
-function snapshotAt(src: BodySources, entries: readonly MeasurementEntry[], day: DayKey | undefined): BodySnapshot {
+function snapshotAt(
+  src: BodySources,
+  entries: readonly MeasurementEntry[],
+  day: DayKey | undefined,
+): BodySnapshot {
   const gender = avatarGender(src.gender);
   const heightCm = src.heightCm && src.heightCm > 0 ? src.heightCm : DEFAULT_HEIGHT[gender];
   const weightKg = weightOn(src.weights, day) ?? DEFAULT_BMI * (heightCm / 100) ** 2;

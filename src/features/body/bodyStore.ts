@@ -4,12 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { newId } from '@/shared/lib/ids';
 import { isDayKey, toDayKey, type DayKey } from '@/shared/utils/date';
 import { isMeasurementKey } from '@/features/body/measurementCatalog';
-import type {
-  BiaReport,
-  MeasurementEntry,
-  MeasurementKey,
-  MeasurementValues,
-} from '@/features/body/types';
+import type { BiaReport, MeasurementEntry, MeasurementKey, MeasurementValues } from '@/features/body/types';
 
 interface BodyState {
   /** Sorted oldest → newest. */
@@ -49,7 +44,13 @@ export const useBodyStore = create<BodyState>()(
         set((s) => ({
           measurements: [
             ...s.measurements,
-            { id: newId(), source: 'manual' as const, day, createdAt: new Date().toISOString(), values: clean },
+            {
+              id: newId(),
+              source: 'manual' as const,
+              day,
+              createdAt: new Date().toISOString(),
+              values: clean,
+            },
           ].sort(byDate),
         }));
       },
@@ -82,11 +83,16 @@ export function sanitizeBodyState(persisted: unknown): Pick<BodyState, 'measurem
   const s = typeof persisted === 'object' && persisted !== null ? (persisted as Record<string, unknown>) : {};
   const measurements = Array.isArray(s.measurements)
     ? s.measurements
-        .filter((m): m is MeasurementEntry => typeof m === 'object' && m !== null && isDayKey((m as MeasurementEntry).day))
+        .filter(
+          (m): m is MeasurementEntry =>
+            typeof m === 'object' && m !== null && isDayKey((m as MeasurementEntry).day),
+        )
         .map((m) => ({ ...m, source: 'manual' as const, values: cleanValues(m.values ?? {}) }))
     : [];
   const biaReports = Array.isArray(s.biaReports)
-    ? s.biaReports.filter((r): r is BiaReport => typeof r === 'object' && r !== null && isDayKey((r as BiaReport).day))
+    ? s.biaReports.filter(
+        (r): r is BiaReport => typeof r === 'object' && r !== null && isDayKey((r as BiaReport).day),
+      )
     : [];
   return { measurements: measurements.sort(byDate), biaReports: biaReports.sort(byDate) };
 }

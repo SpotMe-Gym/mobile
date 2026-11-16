@@ -1,9 +1,21 @@
-import { createContext, useCallback, useContext, useMemo, useRef, type ComponentRef, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  type ComponentRef,
+  type ReactNode,
+} from 'react';
 import { Dimensions, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, type SharedValue } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { useExpandableCard, type CardDimensions, type ExpandableCardConfig } from '@/shared/expandable-card/useExpandableCard';
+import {
+  useExpandableCard,
+  type CardDimensions,
+  type ExpandableCardConfig,
+} from '@/shared/expandable-card/useExpandableCard';
 import { colors } from '@/theme/colors';
 import type { CardSize } from '@/shared/expandable-card/types';
 

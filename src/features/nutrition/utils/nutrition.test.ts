@@ -1,16 +1,36 @@
-import { calculateTargets, isWeightChangeFavourable, kcalFromMacros, macrosForAmount, splitCalories } from '@/features/nutrition/utils/nutrition';
+import {
+  calculateTargets,
+  isWeightChangeFavourable,
+  kcalFromMacros,
+  macrosForAmount,
+  splitCalories,
+} from '@/features/nutrition/utils/nutrition';
 import { formatWeightValue } from '@/shared/utils/unitConversion';
 
 describe('calculateTargets (Mifflin-St Jeor)', () => {
   it('matches a hand-computed male maintenance example', () => {
     // BMR = 10*80 + 6.25*180 - 5*30 + 5 = 1780; × 1.55 = 2759
-    const t = calculateTargets({ weightKg: 80, heightCm: 180, age: 30, gender: 'male', activity: 'moderate', goal: 'maintain' });
+    const t = calculateTargets({
+      weightKg: 80,
+      heightCm: 180,
+      age: 30,
+      gender: 'male',
+      activity: 'moderate',
+      goal: 'maintain',
+    });
     expect(t.kcal).toBe(2759);
     expect(t).toEqual({ kcal: 2759, ...splitCalories(2759) });
   });
 
   it('applies the goal offset and clamps to the minimum', () => {
-    const t = calculateTargets({ weightKg: 45, heightCm: 150, age: 70, gender: 'female', activity: 'sedentary', goal: 'lose' });
+    const t = calculateTargets({
+      weightKg: 45,
+      heightCm: 150,
+      age: 70,
+      gender: 'female',
+      activity: 'sedentary',
+      goal: 'lose',
+    });
     expect(t.kcal).toBe(1200);
   });
 });

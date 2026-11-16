@@ -10,13 +10,22 @@ import { Button } from '@/shared/ui/Button';
 import { IconButton } from '@/shared/ui/IconButton';
 import { NumberField } from '@/shared/ui/NumberField';
 import { MealPicker } from '@/features/nutrition/components/MealPicker';
-import { isMealType, useNutritionStore, type FoodRef, type MealType } from '@/features/nutrition/nutritionStore';
+import {
+  isMealType,
+  useNutritionStore,
+  type FoodRef,
+  type MealType,
+} from '@/features/nutrition/nutritionStore';
 import { useToday } from '@/shared/hooks/useToday';
 import { successFeedback } from '@/shared/lib/haptics';
 import { newId } from '@/shared/lib/ids';
 import { colors } from '@/theme/colors';
 import { kcalFromMacros } from '@/features/nutrition/utils/nutrition';
-import { quickAddSchema, resolveKcal, type QuickAddValues } from '@/features/nutrition/schemas/quickAddSchema';
+import {
+  quickAddSchema,
+  resolveKcal,
+  type QuickAddValues,
+} from '@/features/nutrition/schemas/quickAddSchema';
 import { formatNumber } from '@/shared/utils/number';
 import { mealForTime } from '@/features/nutrition/utils/portion';
 

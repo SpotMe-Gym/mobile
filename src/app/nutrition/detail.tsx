@@ -6,7 +6,10 @@ import { AiButton } from '@/shared/components/AiButton';
 import { DailySummaryCard } from '@/features/nutrition/components/DailySummaryCard';
 import { MealList } from '@/features/nutrition/components/MealList';
 import { NutritionCardContent } from '@/features/nutrition/components/NutritionCardContent';
-import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '@/shared/expandable-card/ExpandableCardLayout';
+import {
+  ExpandableCardLayoutWithContext,
+  useExpandableCardContext,
+} from '@/shared/expandable-card/ExpandableCardLayout';
 import { useDailyTotals, useDayEntries, useNutritionStore } from '@/features/nutrition/nutritionStore';
 import { useUserStore } from '@/features/profile/userStore';
 import { useHasHydrated } from '@/shared/hooks/useHasHydrated';

@@ -1,0 +1,10 @@
+{
+  "name": "spotme-live-activity",
+  "version": "1.0.0",
+  "description": "Starts, updates and ends SpotMe's workout Live Activity (Lock Screen and Dynamic Island).",
+  "main": "index.ts",
+  "license": "UNLICENSED",
+  "private": true,
+  "author": "Damiano",
+  "homepage": "https://github.com/"
+}

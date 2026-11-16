@@ -57,37 +57,37 @@ export const useDashboardStore = create<DashboardState>()(
       widgets: DEFAULT_WIDGETS,
 
       setWidgetSize: (id, size) =>
-        set(state => ({
-          widgets: state.widgets.map(w => (w.id === id ? { ...w, size } : w)),
+        set((state) => ({
+          widgets: state.widgets.map((w) => (w.id === id ? { ...w, size } : w)),
         })),
 
       removeWidget: (id) =>
-        set(state => ({
-          widgets: state.widgets.filter(w => w.id !== id),
+        set((state) => ({
+          widgets: state.widgets.filter((w) => w.id !== id),
         })),
 
       addWidget: (id, size) => {
-        if (get().widgets.some(w => w.id === id)) return;
+        if (get().widgets.some((w) => w.id === id)) return;
         if (!isRegisteredWidgetId(id)) return;
-        set(state => ({
+        set((state) => ({
           widgets: [...state.widgets, { id, size }],
         }));
       },
 
       setOrder: (ids) =>
-        set(state => {
-          const byId = new Map(state.widgets.map(w => [w.id, w]));
-          const ordered = ids.map(id => byId.get(id)).filter((w): w is DashboardWidget => !!w);
-          const rest = state.widgets.filter(w => !ids.includes(w.id));
+        set((state) => {
+          const byId = new Map(state.widgets.map((w) => [w.id, w]));
+          const ordered = ids.map((id) => byId.get(id)).filter((w): w is DashboardWidget => !!w);
+          const rest = state.widgets.filter((w) => !ids.includes(w.id));
           return { widgets: [...ordered, ...rest] };
         }),
 
       reorderWidgets: (fromId, toId) => {
         if (fromId === toId) return;
-        set(state => {
+        set((state) => {
           const widgets = [...state.widgets];
-          const from = widgets.findIndex(w => w.id === fromId);
-          const to = widgets.findIndex(w => w.id === toId);
+          const from = widgets.findIndex((w) => w.id === fromId);
+          const to = widgets.findIndex((w) => w.id === toId);
           if (from < 0 || to < 0) return state;
           const [item] = widgets.splice(from, 1);
           if (!item) return state;
@@ -108,9 +108,14 @@ export const useDashboardStore = create<DashboardState>()(
         if (version < 3) {
           const next: unknown[] = [];
           for (const widget of raw) {
-            if (widget && typeof widget === 'object' && 'id' in widget && (widget as { id: string }).id === 'quickActions') {
+            if (
+              widget &&
+              typeof widget === 'object' &&
+              'id' in widget &&
+              (widget as { id: string }).id === 'quickActions'
+            ) {
               const size = (widget as { size?: WidgetSize }).size;
-              const actionSize = size === 'full' ? 'half' : size ?? 'half';
+              const actionSize = size === 'full' ? 'half' : (size ?? 'half');
               next.push({ id: 'logMeal', size: actionSize });
               next.push({ id: 'addWeight', size: actionSize });
             } else {
@@ -124,28 +129,28 @@ export const useDashboardStore = create<DashboardState>()(
 
         if (version < 2) {
           for (const extra of DEFAULT_WIDGETS) {
-            if (!widgets.some(w => w.id === extra.id)) {
+            if (!widgets.some((w) => w.id === extra.id)) {
               widgets = [...widgets, extra];
             }
           }
         }
 
         // v4: the Body card (3D measurements) joins existing layouts once, before Recent Activity.
-        if (version < 4 && !widgets.some(w => w.id === 'body')) {
-          const at = widgets.findIndex(w => w.id === 'recentActivity');
+        if (version < 4 && !widgets.some((w) => w.id === 'body')) {
+          const at = widgets.findIndex((w) => w.id === 'recentActivity');
           const body: DashboardWidget = { id: 'body', size: 'half' };
           widgets = at < 0 ? [...widgets, body] : [...widgets.slice(0, at), body, ...widgets.slice(at)];
         }
 
         // v5: Motion Lab (film your execution, analyse a machine) joins existing layouts once.
-        if (version < 5 && !widgets.some(w => w.id === 'motionLab')) {
-          const at = widgets.findIndex(w => w.id === 'body' || w.id === 'recentActivity');
+        if (version < 5 && !widgets.some((w) => w.id === 'motionLab')) {
+          const at = widgets.findIndex((w) => w.id === 'body' || w.id === 'recentActivity');
           const lab: DashboardWidget = { id: 'motionLab', size: 'full' };
           widgets = at < 0 ? [...widgets, lab] : [...widgets.slice(0, at), lab, ...widgets.slice(at)];
         }
 
         return { widgets };
       },
-    }
-  )
+    },
+  ),
 );

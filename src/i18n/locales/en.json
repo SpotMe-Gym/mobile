@@ -426,7 +426,8 @@
     "showLess": "Show less",
     "change30": "30 days",
     "entries": "Entries",
-    "lastWeighIn": "Last"
+    "lastWeighIn": "Last",
+    "modeFatigue": "Fatigue"
   },
   "account": {
     "section": "Account",
@@ -863,5 +864,25 @@
     "deleteTitle": "Delete this analysis?",
     "deleteMessage": "It can't be recovered.",
     "notFound": "This analysis is no longer here."
+  },
+  "fatigue": {
+    "title": "Muscle fatigue",
+    "subtitle": "Estimated from your logged sets: how much of each muscle's recent work it hasn't recovered from yet.",
+    "empty": "No recent training",
+    "emptyHint": "Log a workout and the muscles you trained show up here with how long they need to recover.",
+    "level": {
+      "fresh": "Fresh",
+      "light": "Light",
+      "moderate": "Moderate",
+      "high": "High"
+    },
+    "freshIn": "Fresh in about {{hours}} h",
+    "ready": "Ready to train",
+    "weekSets_one": "{{count}} set this week",
+    "weekSets_other": "{{count}} sets this week",
+    "volume": "Volume",
+    "volumeKg": "{{kg}} {{unit}} moved",
+    "vsLast": "{{sign}}{{pct}}% vs last time",
+    "muscleNow": "{{muscle}}: {{level}}"
   }
 }

@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { Step } from '@/features/sessions/player';
 import type { WorkoutSession } from '@/features/sessions/sessionStore';
 import type { usePlayer } from '@/features/sessions/player/usePlayer';
-import { useUnitConverter } from '@/features/profile/hooks/useUnitConverter';
+import { usePlayerTexts } from '@/features/sessions/player/usePlayerTexts';
 import { useHeartRateStore } from '@/features/heartRate/heartRateStore';
 import { onWatchCommand, sendWatchState, startWatchWorkout } from '@/features/watch/watch';
-import { watchStateFor, type WatchTexts } from '@/features/watch/watchState';
+import { watchStateFor } from '@/features/watch/watchState';
 
 type Player = ReturnType<typeof usePlayer>;
 
@@ -15,8 +14,7 @@ type Player = ReturnType<typeof usePlayer>;
  * every change of step or pause, and turns its Done / pause / skip into player actions.
  */
 export function useWatchSync(session: WorkoutSession | undefined, p: Player, phaseName: (s: Step) => string) {
-  const { t } = useTranslation();
-  const { convertWeight, units } = useUnitConverter();
+  const texts = usePlayerTexts(phaseName);
   const connected = useHeartRateStore((s) => s.watchConnected);
   const controls = useRef(p.controls);
   useEffect(() => {
@@ -48,26 +46,6 @@ export function useWatchSync(session: WorkoutSession | undefined, p: Player, pha
   const { player, steps } = p;
   useEffect(() => {
     if (!session || !connected) return;
-    const texts: WatchTexts = {
-      phase: phaseName,
-      setOf: (n, total) => t('player.setOf', { n, total }),
-      target: (block) =>
-        block.weight
-          ? t('player.targetWeight', {
-              reps: block.reps || '–',
-              weight: `${convertWeight(block.weight).formatted} ${units.weight}`,
-            })
-          : t('player.targetReps', { reps: block.reps || '–' }),
-      nextSet: (n, total) => `${t('player.upNext')}: ${t('player.nextSet', { n, total })}`,
-      nextExercise: (name) => `${t('player.upNext')}: ${name}`,
-      finish: t('player.lastOne'),
-      labels: {
-        done: t('player.setDone'),
-        pause: t('player.pause'),
-        resume: t('player.resume'),
-        skip: t('player.skipRest'),
-      },
-    };
     const state = watchStateFor(session.plan, steps, player, Date.now(), texts);
     if (state) sendWatchState(state);
     // Only when the step, pause or timing changes: not on every clock tick.

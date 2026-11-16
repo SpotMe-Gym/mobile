@@ -56,12 +56,29 @@ describe('nutritionStore v1 → v2', () => {
       '2026-10-20': {
         date: '2026-10-20',
         meals: [
-          { name: 'Lunch', foods: [{ id: '123', name: 'Pasta', calories: 400, protein: 12, carbs: 80, fat: 3 }, { id: '123', name: 'Pasta', calories: 400, protein: 12, carbs: 80, fat: 3 }] },
+          {
+            name: 'Lunch',
+            foods: [
+              { id: '123', name: 'Pasta', calories: 400, protein: 12, carbs: 80, fat: 3 },
+              { id: '123', name: 'Pasta', calories: 400, protein: 12, carbs: 80, fat: 3 },
+            ],
+          },
           { name: 'Breakfast', foods: [] },
         ],
       },
     },
-    knownFoods: { '123': { id: '123', name: 'Pasta', calories: 400, protein: 12, carbs: 80, fat: 3, tags: ['Lunch'], lastUsed: '2026-10-20T12:00:00Z' } },
+    knownFoods: {
+      '123': {
+        id: '123',
+        name: 'Pasta',
+        calories: 400,
+        protein: 12,
+        carbs: 80,
+        fat: 3,
+        tags: ['Lunch'],
+        lastUsed: '2026-10-20T12:00:00Z',
+      },
+    },
   };
 
   it('gives duplicate foods unique entry ids', () => {
@@ -69,7 +86,12 @@ describe('nutritionStore v1 → v2', () => {
     const entries = s.days?.['2026-10-20'] ?? [];
     expect(entries).toHaveLength(2);
     expect(entries[0]?.id).not.toBe(entries[1]?.id);
-    expect(entries[0]).toMatchObject({ meal: 'lunch', foodCode: '123', unit: 'portion', macros: { kcal: 400 } });
+    expect(entries[0]).toMatchObject({
+      meal: 'lunch',
+      foodCode: '123',
+      unit: 'portion',
+      macros: { kcal: 400 },
+    });
   });
 
   it('drops corrupted portion-scaled history values so they get re-fetched', () => {
@@ -82,7 +104,14 @@ describe('workoutStore v0–v4 → v5', () => {
   it('re-keys the schedule by ISO weekday and drops unknown ids', () => {
     const s = migrateWorkoutState(
       {
-        workouts: [{ id: '1', name: 'Push', duration: 45, exercises: [{ id: 'e1', name: 'Bench', sets: 3, reps: '8', difficulty: 'x' }] }],
+        workouts: [
+          {
+            id: '1',
+            name: 'Push',
+            duration: 45,
+            exercises: [{ id: 'e1', name: 'Bench', sets: 3, reps: '8', difficulty: 'x' }],
+          },
+        ],
         schedule: { Monday: ['1'], Tuesday: ['ghost'], Sunday: '1' },
       },
       2,
@@ -90,13 +119,20 @@ describe('workoutStore v0–v4 → v5', () => {
     expect(s.schedule?.[1]).toEqual(['1']);
     expect(s.schedule?.[2]).toEqual([]);
     expect(s.schedule?.[7]).toEqual(['1']); // v0 stored a single string per day
-    expect(s.workouts?.[0]?.exercises[0]).toMatchObject({ restTime: 60, executionTime: 45, type: 'exercise' });
+    expect(s.workouts?.[0]?.exercises[0]).toMatchObject({
+      restTime: 60,
+      executionTime: 45,
+      type: 'exercise',
+    });
   });
 });
 
 describe('userStore v1 → v2', () => {
   it("renames gender 'other' to 'neutral'", () => {
-    expect(migrateUserState({ name: 'A', gender: 'other' }, 1)).toMatchObject({ name: 'A', gender: 'neutral' });
+    expect(migrateUserState({ name: 'A', gender: 'other' }, 1)).toMatchObject({
+      name: 'A',
+      gender: 'neutral',
+    });
   });
   it('keeps other genders untouched', () => {
     expect(migrateUserState({ gender: 'female' }, 1)).toMatchObject({ gender: 'female' });

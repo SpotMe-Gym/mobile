@@ -6,7 +6,12 @@ import { cn } from '@/shared/lib/cn';
 import { lightImpact } from '@/shared/lib/haptics';
 import { colors } from '@/theme/colors';
 import type { FoodRef, PortionUnit } from '@/features/nutrition/nutritionStore';
-import { formatNumber, parseDecimal, sanitizeDecimalInput, sanitizeIntegerInput } from '@/shared/utils/number';
+import {
+  formatNumber,
+  parseDecimal,
+  sanitizeDecimalInput,
+  sanitizeIntegerInput,
+} from '@/shared/utils/number';
 import { DECIMALS, QUICK_AMOUNTS, STEP, portionToBase } from '@/features/nutrition/utils/portion';
 import { IconButton } from '@/shared/ui/IconButton';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
@@ -38,7 +43,8 @@ export function PortionEditor({
   // External changes (chips, steppers, unit switches) replace the text; typing doesn't.
   if (synced.quantity !== quantity || synced.unit !== unit) {
     setSynced({ quantity, unit });
-    if (parseDecimal(text) !== quantity || synced.unit !== unit) setText(quantity === null ? '' : fmt(quantity));
+    if (parseDecimal(text) !== quantity || synced.unit !== unit)
+      setText(quantity === null ? '' : fmt(quantity));
   }
 
   const handleText = (next: string) => {

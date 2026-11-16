@@ -19,6 +19,7 @@ import { colors } from '@/theme/colors';
 import { ErrorFallback } from '@/shared/components/ErrorFallback';
 import { watchAccount } from '@/features/account/accountStore';
 import { startSyncLoop } from '@/features/sync/syncLoop';
+import { clearStaleLiveActivity } from '@/features/sessions/player/liveActivity';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -56,6 +57,12 @@ export default function RootLayout() {
   useEffect(() => watchAccount(), []);
   // Two-way sync with the website while signed in with sync on (no-op otherwise).
   useEffect(() => startSyncLoop(), []);
+  // A Live Activity left on the Lock Screen by a workout that's no longer running (the app
+  // was closed mid-session and the session ended elsewhere) goes away once the stores load.
+  useEffect(() => {
+    const id = setTimeout(clearStaleLiveActivity, 4000);
+    return () => clearTimeout(id);
+  }, []);
 
   // Safety net: never keep the splash up forever if a storage read hangs or fails.
   useEffect(() => {

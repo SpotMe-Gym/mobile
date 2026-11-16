@@ -45,7 +45,10 @@ import { requestExercise } from '@/features/exercises/pickerStore';
 import { useUnitConverter } from '@/features/profile/hooks/useUnitConverter';
 import { HeartRateChip } from '@/features/heartRate/components/HeartRateChip';
 import { HeartRateSheet } from '@/features/heartRate/components/HeartRateSheet';
-import { connectSavedMonitor, disconnectMonitor, onHeartRate } from '@/features/heartRate/bleHeartRate';
+import { disconnectMonitor, onHeartRate } from '@/features/heartRate/bleHeartRate';
+import { ExerciseLoad } from '@/features/sessions/components/ExerciseLoad';
+import { endLiveActivity, useLiveActivity } from '@/features/sessions/player/liveActivity';
+import { useHeartRateKeeper } from '@/features/sessions/player/useHeartRateKeeper';
 import { MusicBar } from '@/features/music/components/MusicBar';
 import { useWatchSync } from '@/features/watch/useWatchSync';
 import { endWatchWorkout } from '@/features/watch/watch';
@@ -81,14 +84,17 @@ export default function SessionScreen() {
   const [hrOpen, setHrOpen] = useState(false);
 
   // Heart rate: connect the remembered monitor, record readings into the session.
-  useEffect(() => {
-    void connectSavedMonitor();
-    const off = onHeartRate((bpm, at) => useSessionStore.getState().addHeartRate(sessionId, bpm, at));
-    return off;
-  }, [sessionId]);
+  useEffect(
+    () => onHeartRate((bpm, at) => useSessionStore.getState().addHeartRate(sessionId, bpm, at)),
+    [sessionId],
+  );
+  // Connects the remembered monitor and the watch, and retries by itself while they're silent.
+  useHeartRateKeeper(p.session !== undefined && !p.session.endedAt);
 
   // The SpotMe watch app, if there is one: opened at the start, kept in step with the player.
   useWatchSync(p.session, p, (s) => phaseName(t, s));
+  // The same on the Lock Screen and in the Dynamic Island.
+  useLiveActivity(p.session, p, (s) => phaseName(t, s));
 
   const session = p.session;
   if (!session) return null;
@@ -97,6 +103,7 @@ export default function SessionScreen() {
     finishSession(session, t, i18n.language, () => {
       void disconnectMonitor();
       endWatchWorkout();
+      endLiveActivity();
       router.back();
     });
 
@@ -180,12 +187,7 @@ export default function SessionScreen() {
   );
 }
 
-function finishSession(
-  session: WorkoutSession,
-  t: TFunction,
-  lang: string,
-  done: () => void,
-) {
+function finishSession(session: WorkoutSession, t: TFunction, lang: string, done: () => void) {
   if (session.sets.length === 0) {
     Alert.alert(t('session.emptyTitle'), t('session.emptyMessage'), [
       { text: t('session.keepGoing'), style: 'cancel' },
@@ -380,6 +382,7 @@ function StepView({
 
       <NextUpCard session={session} steps={steps} index={index} />
       {step.kind === 'work' && block && <LoggedSets session={session} block={block} />}
+      {block && block.type !== 'rest' && <ExerciseLoad key={block.id} session={session} block={block} />}
     </View>
   );
 }

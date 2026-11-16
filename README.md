@@ -46,6 +46,13 @@ To work in Xcode instead, open `ios/SpotMe.xcworkspace` and pick the **SpotMe** 
 | `bun run i18n:check` | fails if `en.json` and `it.json` keys differ |
 | `bun run doctor` | expo-doctor |
 
+### Training load, fatigue and the Live Activity
+
+- **Volume and fatigue** (`src/features/sessions/fatigue.ts`): volume is what was lifted (sets, reps, kilograms). Fatigue is a training-load estimate per muscle: each logged set adds a dose to its muscles (helpers count half, effort scales it) that fades with time, faster for small muscles. The player shows the current exercise's volume against last time and its muscles' fatigue; the 3D body has a **Fatigue** colour mode with a per-muscle list. `fatigueForAi()` gives it to the AI coach.
+- **Live Activity** (`targets/live`, `modules/spotme-live-activity`): the workout on the Lock Screen and in the Dynamic Island: exercise, set, timer, what's next, heart rate. iOS suspends the app while the phone is locked, so each countdown carries the step that follows and the activity switches to it by itself when the timer runs out.
+- **Heart rate** reconnects by itself during a workout (`useHeartRateKeeper`): a strap or watch that stays silent for 12 s is retried.
+- **Food search** uses Open Food Facts' search service (`search.openfoodfacts.org`), falls back to the older endpoint, and re-ranks on the phone (`rankFoods.ts`): name coverage first, then country, popularity and completeness; duplicates and entries with impossible numbers are dropped.
+
 ### Motion Lab
 
 A section of its own (the Motion Lab card on the home, `/motion`) with two options. Both work from a side-on video, analysed on the phone with Apple Vision (`modules/spotme-motion`, iPhone only for now); the video isn't stored, only the numbers and one still frame.

@@ -56,7 +56,10 @@ describe('solveMorphs', () => {
 
   it('lands the exact height and the body mass', () => {
     const s = solveMorphs(male.calibration, snap({ heightCm: 190, weightKg: 92 }));
-    const h = (base.heightCm + (s.weights.macro_height_up ?? 0) * (male.calibration.morphs.macro_height_up?.heightCm ?? 0)) * s.scale;
+    const h =
+      (base.heightCm +
+        (s.weights.macro_height_up ?? 0) * (male.calibration.morphs.macro_height_up?.heightCm ?? 0)) *
+      s.scale;
     expect(h).toBeCloseTo(190, 1);
     expect(Math.abs(s.predictedKg - 92) / 92).toBeLessThan(0.05);
   });
@@ -67,7 +70,10 @@ describe('solveMorphs', () => {
     expect((heavy.predictedCm.waist ?? 0) - (lean.predictedCm.waist ?? 0)).toBeGreaterThan(8);
     expect(Math.abs(heavy.predictedKg - 103) / 103).toBeLessThan(0.12);
     // Logged values still win over the mass-derived guess.
-    const logged = solveMorphs(male.calibration, snap({ heightCm: 183, weightKg: 103, measurements: { waist: 90 } }));
+    const logged = solveMorphs(
+      male.calibration,
+      snap({ heightCm: 183, weightKg: 103, measurements: { waist: 90 } }),
+    );
     expect(Math.abs((logged.predictedCm.waist ?? 0) - 90)).toBeLessThan(1);
   });
 
@@ -87,7 +93,10 @@ describe('solveMorphs', () => {
   });
 
   it('applies weights to the mesh', () => {
-    const s = solveMorphs(male.calibration, snap({ measurements: { bicepsL: (base.measurementsCm.bicepsL ?? 0) + 4 } }));
+    const s = solveMorphs(
+      male.calibration,
+      snap({ measurements: { bicepsL: (base.measurementsCm.bicepsL ?? 0) + 4 } }),
+    );
     const pos = applyMorphs(male, s);
     expect(pos.length).toBe(male.positions.length);
     const moved = pos.some((v, i) => Math.abs(v - (male.positions[i] ?? 0)) > 1e-3);

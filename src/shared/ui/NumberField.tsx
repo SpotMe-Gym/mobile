@@ -4,7 +4,12 @@ import type { LucideIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/cn';
 import { colors } from '@/theme/colors';
-import { formatNumber, parseDecimal, sanitizeDecimalInput, sanitizeIntegerInput } from '@/shared/utils/number';
+import {
+  formatNumber,
+  parseDecimal,
+  sanitizeDecimalInput,
+  sanitizeIntegerInput,
+} from '@/shared/utils/number';
 import { Icon } from '@/shared/ui/Icon';
 
 interface NumberFieldProps extends Omit<TextInputProps, 'value' | 'onChangeText' | 'keyboardType'> {

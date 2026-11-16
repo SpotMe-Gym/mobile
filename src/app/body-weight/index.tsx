@@ -8,7 +8,10 @@ import { useTranslation } from 'react-i18next';
 import { ScreenHeader } from '@/shared/components/ScreenHeader';
 import { AiButton } from '@/shared/components/AiButton';
 import { IconButton } from '@/shared/ui/IconButton';
-import { ExpandableCardLayoutWithContext, useExpandableCardContext } from '@/shared/expandable-card/ExpandableCardLayout';
+import {
+  ExpandableCardLayoutWithContext,
+  useExpandableCardContext,
+} from '@/shared/expandable-card/ExpandableCardLayout';
 import { BodyWeightCardContent } from '@/features/body-weight/components/BodyWeightCardContent';
 import { ActionButton } from '@/features/dashboard/widgets/quickActions';
 import { WeightChart } from '@/features/body-weight/components/WeightChart';

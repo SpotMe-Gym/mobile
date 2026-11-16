@@ -426,7 +426,8 @@
     "showLess": "Mostra meno",
     "change30": "30 giorni",
     "entries": "Pesate",
-    "lastWeighIn": "Ultima"
+    "lastWeighIn": "Ultima",
+    "modeFatigue": "Fatica"
   },
   "account": {
     "section": "Account",
@@ -863,5 +864,25 @@
     "deleteTitle": "Eliminare questa analisi?",
     "deleteMessage": "Non potrà essere recuperata.",
     "notFound": "Questa analisi non c'è più."
+  },
+  "fatigue": {
+    "title": "Affaticamento muscolare",
+    "subtitle": "Stimato dalle serie registrate: quanta parte del lavoro recente di ogni muscolo non è ancora recuperata.",
+    "empty": "Nessun allenamento recente",
+    "emptyHint": "Registra un allenamento e i muscoli allenati compaiono qui con il tempo di recupero.",
+    "level": {
+      "fresh": "Fresco",
+      "light": "Leggero",
+      "moderate": "Moderato",
+      "high": "Alto"
+    },
+    "freshIn": "Fresco tra circa {{hours}} h",
+    "ready": "Pronto per allenarsi",
+    "weekSets_one": "{{count}} serie questa settimana",
+    "weekSets_other": "{{count}} serie questa settimana",
+    "volume": "Volume",
+    "volumeKg": "{{kg}} {{unit}} spostati",
+    "vsLast": "{{sign}}{{pct}}% rispetto all'ultima volta",
+    "muscleNow": "{{muscle}}: {{level}}"
   }
 }

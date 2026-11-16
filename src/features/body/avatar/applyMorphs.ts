@@ -5,8 +5,13 @@ import type { AvatarModel, MorphSolution, MorphName } from '@/features/body/avat
  * snapshot change (≈13k vertices, a few sparse targets): a few milliseconds, and it keeps
  * the renderer free of GPU morph-target limits on mobile GL.
  */
-export function applyMorphs(model: AvatarModel, solution: Pick<MorphSolution, 'weights' | 'scale'>, out?: Float32Array) {
-  const result = out && out.length === model.positions.length ? out : new Float32Array(model.positions.length);
+export function applyMorphs(
+  model: AvatarModel,
+  solution: Pick<MorphSolution, 'weights' | 'scale'>,
+  out?: Float32Array,
+) {
+  const result =
+    out && out.length === model.positions.length ? out : new Float32Array(model.positions.length);
   result.set(model.positions);
   for (const [name, w] of Object.entries(solution.weights)) {
     if (!w) continue;

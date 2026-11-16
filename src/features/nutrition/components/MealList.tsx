@@ -7,7 +7,12 @@ import { Card } from '@/shared/ui/Card';
 import { Button } from '@/shared/ui/Button';
 import { IconButton } from '@/shared/ui/IconButton';
 import { Icon } from '@/shared/ui/Icon';
-import { MEAL_TYPES, useNutritionStore, type LogEntry, type MealType } from '@/features/nutrition/nutritionStore';
+import {
+  MEAL_TYPES,
+  useNutritionStore,
+  type LogEntry,
+  type MealType,
+} from '@/features/nutrition/nutritionStore';
 import { colors } from '@/theme/colors';
 import { formatNumber } from '@/shared/utils/number';
 import type { DayKey } from '@/shared/utils/date';

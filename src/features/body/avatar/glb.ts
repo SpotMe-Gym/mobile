@@ -1,4 +1,10 @@
-import type { AvatarCalibration, AvatarModel, MorphName, SparseScalar, SparseVec3 } from '@/features/body/avatar/types';
+import type {
+  AvatarCalibration,
+  AvatarModel,
+  MorphName,
+  SparseScalar,
+  SparseVec3,
+} from '@/features/body/avatar/types';
 import type { MeasurementKey } from '@/features/body/types';
 
 /**
@@ -38,7 +44,9 @@ interface Gltf {
       attributes: Record<string, number>;
       indices: number;
       targets: { POSITION: number }[];
-      extensions?: { SPOTME_body?: AvatarCalibration & { zones: Record<string, { indices: number; weights: number }> } };
+      extensions?: {
+        SPOTME_body?: AvatarCalibration & { zones: Record<string, { indices: number; weights: number }> };
+      };
     }[];
     extras?: { targetNames?: string[] };
   }[];
@@ -57,7 +65,8 @@ function asciiDecode(bytes: Uint8Array): string {
 
 export function parseAvatarGlb(buffer: ArrayBuffer): AvatarModel {
   const view = new DataView(buffer);
-  if (buffer.byteLength < 20 || view.getUint32(0, true) !== MAGIC) throw new AvatarFormatError('Not a GLB file');
+  if (buffer.byteLength < 20 || view.getUint32(0, true) !== MAGIC)
+    throw new AvatarFormatError('Not a GLB file');
   if (view.getUint32(4, true) !== 2) throw new AvatarFormatError('Unsupported glTF version');
 
   let offset = 12;
@@ -74,7 +83,8 @@ export function parseAvatarGlb(buffer: ArrayBuffer): AvatarModel {
   if (!json || binOffset < 0) throw new AvatarFormatError('GLB is missing its JSON or BIN chunk');
   const gltf = json;
 
-  const viewStart = (index: number, extra = 0) => binOffset + (gltf.bufferViews[index]?.byteOffset ?? 0) + extra;
+  const viewStart = (index: number, extra = 0) =>
+    binOffset + (gltf.bufferViews[index]?.byteOffset ?? 0) + extra;
   const comps = (a: Accessor) => (a.type === 'VEC3' ? 3 : 1);
 
   function typed(componentType: number, start: number, length: number) {
@@ -113,7 +123,8 @@ export function parseAvatarGlb(buffer: ArrayBuffer): AvatarModel {
   if (!primitive || !ext) throw new AvatarFormatError('GLB has no SPOTME_body data');
   const positionIndex = primitive.attributes.POSITION;
   const partIndex = primitive.attributes._PART;
-  if (positionIndex === undefined || partIndex === undefined) throw new AvatarFormatError('Missing attributes');
+  if (positionIndex === undefined || partIndex === undefined)
+    throw new AvatarFormatError('Missing attributes');
 
   const positions = dense(positionIndex) as Float32Array;
   const names = gltf.meshes[0]?.extras?.targetNames ?? [];
@@ -128,7 +139,10 @@ export function parseAvatarGlb(buffer: ArrayBuffer): AvatarModel {
     const raw = dense(z.weights) as Uint8Array;
     const weights = new Float32Array(raw.length);
     for (let i = 0; i < raw.length; i++) weights[i] = (raw[i] ?? 0) / 255;
-    zones[key as MeasurementKey] = { indices: dense(z.indices) as Uint16Array, weights } satisfies SparseScalar;
+    zones[key as MeasurementKey] = {
+      indices: dense(z.indices) as Uint16Array,
+      weights,
+    } satisfies SparseScalar;
   }
 
   const { zones: _zones, ...calibration } = ext;

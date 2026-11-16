@@ -1,7 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import { useUserStore } from '@/features/profile/userStore';
 import { useWeightStore, selectLatestWeight } from '@/features/body-weight/weightStore';
-import { convertKgToLbs, convertLbsToKg, formatWeightValue, convertCmToFeet } from '@/shared/utils/unitConversion';
+import {
+  convertKgToLbs,
+  convertLbsToKg,
+  formatWeightValue,
+  convertCmToFeet,
+} from '@/shared/utils/unitConversion';
 
 export interface DisplayValue<U extends string> {
   value: number;
