@@ -70,7 +70,19 @@ set +e
 ( cd "$WORK" && agy -p "$PROMPT" --model "$MODEL" --print-timeout "$TIMEOUT" "${FLAGS[@]}" </dev/null >"$LOG" 2>&1 )
 CODE=$?
 set -e
-echo "  finished in $(( ($(date +%s) - START) / 60 )) min, exit $CODE"
+ELAPSED=$(( $(date +%s) - START ))
+echo "  finished in $(( ELAPSED / 60 )) min, exit $CODE"
+# agy exits 0 with a partial (often empty) answer when --print-timeout runs out, so check the clock.
+case "$TIMEOUT" in
+  *h) LIMIT=$(( ${TIMEOUT%h} * 3600 )) ;;
+  *m) LIMIT=$(( ${TIMEOUT%m} * 60 )) ;;
+  *s) LIMIT=${TIMEOUT%s} ;;
+  *) LIMIT=0 ;;
+esac
+if [ "$CODE" -eq 0 ] && [ "$LIMIT" -gt 0 ] && [ "$ELAPSED" -ge "$LIMIT" ]; then
+  echo "! Hit the $TIMEOUT limit: the answer is partial or empty. Raise timeout: in the spec and run it again."
+  CODE=124
+fi
 
 if [ "$MODE" = "write" ]; then
   echo; echo "Changes on agy/$NAME (uncommitted, for review):"

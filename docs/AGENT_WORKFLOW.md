@@ -50,6 +50,8 @@ What the Antigravity Pro plan offers (`agy models`, `agy -p "/usage"`):
 - **Gemini 4 Hydrogen** (Low/Medium/High/XHigh): the newest and strongest; the only one with XHigh.
 - **Claude Opus 5.5, Claude Sonnet 5.5** (Low/Medium/High), **GPT-OSS 120B** (Medium): a separate quota pool. Not used for reviews, which should come from a different model than the one that wrote the code (Claude). Sonnet is the fallback for write jobs when the Gemini limit runs out.
 
+Argon (High) is slow: it didn't finish review 001 (two Swift modules plus the watch target) in 30 minutes, where Flash (High) took 14. Give `high` jobs `timeout: 45m` or more, or split them.
+
 Quotas: Gemini models share a 5-hour and a weekly limit; Claude and GPT share another. A 14-minute Flash (High) review used about 3% of the Gemini 5-hour limit and 1% of the weekly one. Check with `agy -p "/usage"` before a batch of jobs.
 
 ## Costs
@@ -62,3 +64,4 @@ Quotas: Gemini models share a 5-hour and a weekly limit; Claude and GPT share an
 | Date | Spec | Mode | Run time | Outcome | Corrections needed |
 |---|---|---|---|---|---|
 | 2026-11-16 | 001-review-native-trackers | read-only, Flash (High) | 14 min | 6 findings: 1 valid (watch workout aborts if mirroring fails), 1 plausible (Vision tracker not re-seeded after a lost frame), 4 wrong or cosmetic. Nothing at launch. | First run failed: model renamed to Gemini 3.8 Flash. It suggested removing iOS `workout-processing`, which mirroring needs (iOS 17+) |
+| 2026-11-16 | 001-review-native-trackers | read-only, Argon (High) | 15 min, then 30 min | No report either time: it hit the time limit while still reviewing. Used about 21% of the Gemini 5-hour limit and 3% of Argon's weekly limit. | Not usable at `effort: high` for a review this size. The script now reports a timed-out run as failed (agy exits 0 with an empty answer) |

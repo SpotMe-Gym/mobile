@@ -2,7 +2,7 @@
 name: 001-review-native-trackers
 mode: read-only
 effort: high
-timeout: 15m
+timeout: 30m
 ---
 
 # Review: will the Swift modules compile and run correctly?
