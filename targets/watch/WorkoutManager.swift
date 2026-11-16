@@ -37,12 +37,14 @@ final class WorkoutManager: NSObject, ObservableObject {
         builder.delegate = self
         self.session = session
         self.builder = builder
-        try await session.startMirroringToCompanionDevice()
         let start = Date()
         session.startActivity(with: start)
         try await builder.beginCollection(at: start)
         running = true
         startTicker()
+        // The iPhone follows the workout only if it accepts the mirror (iOS 17+). If it doesn't,
+        // the watch still records the workout to Apple Health on its own.
+        try? await session.startMirroringToCompanionDevice()
       } catch {
         reset()
       }
