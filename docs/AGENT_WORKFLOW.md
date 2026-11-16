@@ -32,9 +32,28 @@ The rule of thumb for delegating: **delegate when the spec is shorter than the c
 - State how it will be checked (`bun run typecheck`, the test file to pass).
 - No secrets, no `.env` values, ever.
 
+## Models
+
+Each spec says how much effort the job needs (`effort:` in its front matter) and `scripts/agy-job.sh` picks the model. `model:` overrides it for one spec; the script checks the name against `agy models` before starting.
+
+| `effort:` | Model | For |
+|---|---|---|
+| `low` | Gemini 3.8 Flash (Low) | Mechanical: translations, fixtures, catalogues, renames |
+| `medium` (default) | Gemini 3.8 Flash (Medium) | Boilerplate from an exact spec: data models, validators, tests to a given list |
+| `high` | Gemini 4 Argon (High) | Reviews of logic or native code; write jobs with real logic in them |
+| `max` | Gemini 4 Hydrogen (High) | Hard reviews: concurrency, security, maths. Hydrogen (XHigh) through `model:` if High isn't enough |
+
+What the Antigravity Pro plan offers (`agy models`, `agy -p "/usage"`):
+
+- **Gemini 3.8 Flash** (Low/Medium/High): fast and cheap. agy's own `flash` subagent.
+- **Gemini 4 Argon** (Low/Medium/High): agy's `pro` subagent. Has its own weekly limit on top of the Gemini one, so keep it for jobs that need it.
+- **Gemini 4 Hydrogen** (Low/Medium/High/XHigh): the newest and strongest; the only one with XHigh.
+- **Claude Opus 5.5, Claude Sonnet 5.5** (Low/Medium/High), **GPT-OSS 120B** (Medium): a separate quota pool. Not used for reviews, which should come from a different model than the one that wrote the code (Claude). Sonnet is the fallback for write jobs when the Gemini limit runs out.
+
+Quotas: Gemini models share a 5-hour and a weekly limit; Claude and GPT share another. A 14-minute Flash (High) review used about 3% of the Gemini 5-hour limit and 1% of the weekly one. Check with `agy -p "/usage"` before a batch of jobs.
+
 ## Costs
 
-- Default model: `Gemini 3.8 Flash (Medium)`; `Flash (High)` for reviews. Change per spec with `model:`.
 - Split a big job into 2–4 narrow ones rather than one long one: they finish sooner and a bad one costs less to redo.
 - Don't run a write job to save ten minutes of typing.
 
@@ -42,4 +61,4 @@ The rule of thumb for delegating: **delegate when the spec is shorter than the c
 
 | Date | Spec | Mode | Run time | Outcome | Corrections needed |
 |---|---|---|---|---|---|
-| 2026-11-16 | 001-review-native-trackers | read-only | 14 min | 6 findings: 1 valid (watch workout aborts if mirroring fails), 1 plausible (Vision tracker not re-seeded after a lost frame), 4 wrong or cosmetic. Nothing at launch. | First run failed: model renamed to Gemini 3.8 Flash. It suggested removing iOS `workout-processing`, which mirroring needs (iOS 17+) |
+| 2026-11-16 | 001-review-native-trackers | read-only, Flash (High) | 14 min | 6 findings: 1 valid (watch workout aborts if mirroring fails), 1 plausible (Vision tracker not re-seeded after a lost frame), 4 wrong or cosmetic. Nothing at launch. | First run failed: model renamed to Gemini 3.8 Flash. It suggested removing iOS `workout-processing`, which mirroring needs (iOS 17+) |

@@ -1,7 +1,7 @@
 ---
 name: 002-machine-profile-format
 mode: write
-model: Gemini 3.8 Flash (Medium)
+effort: medium
 timeout: 20m
 ---
 

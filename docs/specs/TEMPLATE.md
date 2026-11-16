@@ -1,7 +1,7 @@
 ---
 name: NNN-short-name
 mode: write            # write | read-only
-model: Gemini 3.8 Flash (Medium)
+effort: medium         # low | medium | high | max: picks the model (docs/AGENT_WORKFLOW.md); model: overrides
 timeout: 15m
 ---
 

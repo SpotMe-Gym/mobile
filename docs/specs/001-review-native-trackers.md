@@ -1,7 +1,7 @@
 ---
 name: 001-review-native-trackers
 mode: read-only
-model: Gemini 3.8 Flash (High)
+effort: high
 timeout: 15m
 ---
 

@@ -3,7 +3,7 @@
 #
 #   scripts/agy-job.sh docs/specs/001-name.md
 #
-# The spec's front matter decides how it runs:
+# The spec's front matter decides how it runs (effort picks the model, see docs/AGENT_WORKFLOW.md):
 #   mode: read-only  → in this folder, sandboxed, nothing is changed
 #   mode: write      → in its own git worktree (../.agy-worktrees/<name>) on branch agy/<name>,
 #                      so the job can't collide with work in this folder
@@ -20,8 +20,23 @@ command -v agy >/dev/null || { echo "agy not found. Install the Antigravity CLI 
 meta() { awk -v k="$1" 'NR==1&&$0!="---"{exit} NR>1&&$0=="---"{exit} index($0,k":")==1{sub("^"k":[ \t]*","");sub("[ \t]+#.*$","");print;exit}' "$SPEC"; }
 NAME="$(meta name)"; NAME="${NAME:-$(basename "$SPEC" .md)}"
 MODE="$(meta mode)"; MODE="${MODE:-read-only}"
-MODEL="$(meta model)"; MODEL="${MODEL:-Gemini 3.8 Flash (Medium)}"
+EFFORT="$(meta effort)"; EFFORT="${EFFORT:-medium}"
+# The model follows the effort the job needs (docs/AGENT_WORKFLOW.md, "Models"); `model:` overrides.
+case "$EFFORT" in
+  low) DEFAULT_MODEL="Gemini 3.8 Flash (Low)" ;;
+  medium) DEFAULT_MODEL="Gemini 3.8 Flash (Medium)" ;;
+  high) DEFAULT_MODEL="Gemini 4 Argon (High)" ;;
+  max) DEFAULT_MODEL="Gemini 4 Hydrogen (High)" ;;
+  *) echo "Unknown effort: $EFFORT (low, medium, high or max)"; exit 2 ;;
+esac
+MODEL="$(meta model)"; MODEL="${MODEL:-$DEFAULT_MODEL}"
 TIMEOUT="$(meta timeout)"; TIMEOUT="${TIMEOUT:-15m}"
+
+# Models get renamed: check before starting rather than after a failed run.
+MODELS="$(agy models 2>/dev/null | cut -f2)"
+if [ -n "$MODELS" ] && ! grep -qxF "$MODEL" <<<"$MODELS"; then
+  echo "Model not available: $MODEL"; echo "Available:"; sed 's/^/  /' <<<"$MODELS"; exit 2
+fi
 
 mkdir -p logs/agy
 LOG="$ROOT/logs/agy/$NAME.log"
@@ -44,7 +59,7 @@ else
 $PROMPT"
 fi
 
-echo "› $NAME ($MODE, $MODEL, up to $TIMEOUT)"
+echo "› $NAME ($MODE, effort $EFFORT: $MODEL, up to $TIMEOUT)"
 echo "  folder: $WORK"
 echo "  log:    $LOG  (stays empty until the job ends)"
 # What was already uncommitted, so the read-only check only reports what the job changed.
