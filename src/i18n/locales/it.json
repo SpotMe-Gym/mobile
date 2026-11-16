@@ -31,7 +31,8 @@
     "gramsValue": "{{value}} g",
     "yesterday": "Ieri",
     "daysAgo_one": "{{count}} giorno fa",
-    "daysAgo_other": "{{count}} giorni fa"
+    "daysAgo_other": "{{count}} giorni fa",
+    "remove": "Rimuovi"
   },
   "errors": {
     "offline": "Impossibile connettersi. Controlla la connessione a internet.",
@@ -190,7 +191,17 @@
     "deleteWorkout": "Elimina allenamento",
     "deleteTitle": "Eliminare l'allenamento?",
     "deleteMessage": "\"{{name}}\" verrà rimosso dai tuoi piani.",
-    "weight": "Peso"
+    "weight": "Peso",
+    "reorder": "Riordina {{name}}",
+    "openEditor": "Apre l'editor",
+    "closeEditor": "Chiude l'editor",
+    "restFor": "recupero {{time}}",
+    "timedFor": "a tempo {{time}}",
+    "dragHint": "Tocca un esercizio per modificarlo. Tieni premuto ≡ e trascina per riordinare.",
+    "tapHint": "Tocca l'esercizio per modificarlo.",
+    "totalSets_one": "{{count}} serie",
+    "totalSets_other": "{{count}} serie",
+    "minutesLabel": "Minuti"
   },
   "profile": {
     "title": "Profilo",
