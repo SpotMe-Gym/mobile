@@ -14,6 +14,8 @@ final class WorkoutManager: NSObject, ObservableObject {
   @Published private(set) var state: PhoneState?
 
   private var session: HKWorkoutSession?
+  /// Set while a start is in progress, so a second start from the iPhone doesn't make another session.
+  private var starting = false
   private var builder: HKLiveWorkoutBuilder?
   private var ticker: Timer?
   private var lastCue: String?
@@ -26,8 +28,10 @@ final class WorkoutManager: NSObject, ObservableObject {
 
   /// Called when the iPhone asks to start (via the app delegate).
   func start(with configuration: HKWorkoutConfiguration) {
-    guard session == nil else { return }
+    guard session == nil, !starting else { return }
+    starting = true
     Task {
+      defer { starting = false }
       await requestAuthorization()
       do {
         let session = try HKWorkoutSession(healthStore: store, configuration: configuration)
@@ -100,7 +104,8 @@ final class WorkoutManager: NSObject, ObservableObject {
   fileprivate func apply(_ message: Message) {
     switch message {
     case .state(let next):
-      if next.startedAt != state?.startedAt { lastCue = nil }
+      // A new step, or the same timer moved (+15s on the iPhone): its 3-2-1 can play again.
+      if next.startedAt != state?.startedAt || next.endsAt != state?.endsAt { lastCue = nil }
       state = next
     case .end:
       end()

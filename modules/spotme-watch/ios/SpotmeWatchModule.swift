@@ -36,14 +36,18 @@ public final class SpotmeWatchModule: Module {
       self.connectivity.activate()
     }
 
-    AsyncFunction("status") { () -> [String: Any] in
-      let wc = self.connectivity
-      return [
-        "healthAvailable": HKHealthStore.isHealthDataAvailable(),
-        "isPaired": wc.isPaired,
-        "isWatchAppInstalled": wc.isWatchAppInstalled,
-        "connected": self.mirroredSession != nil,
-      ]
+    AsyncFunction("status") { (promise: Promise) in
+      // isPaired and isWatchAppInstalled read false until WCSession has activated, which can
+      // still be under way when the app opens straight into a workout.
+      self.connectivity.whenActivated {
+        let wc = self.connectivity
+        promise.resolve([
+          "healthAvailable": HKHealthStore.isHealthDataAvailable(),
+          "isPaired": wc.isPaired,
+          "isWatchAppInstalled": wc.isWatchAppInstalled,
+          "connected": self.mirroredSession != nil,
+        ])
+      }
     }.runOnQueue(.main)
 
     AsyncFunction("requestAuthorization") { (promise: Promise) in
@@ -156,16 +160,37 @@ private final class MirroredSessionDelegate: NSObject, HKWorkoutSessionDelegate 
 
 /// WatchConnectivity only to know whether a watch is paired and the SpotMe watch app installed.
 private final class Connectivity: NSObject, WCSessionDelegate {
+  /// Waiting for activation (main queue only).
+  private var waiting: [() -> Void] = []
+
   func activate() {
     guard WCSession.isSupported() else { return }
     WCSession.default.delegate = self
     WCSession.default.activate()
   }
 
+  /// Runs `body` on the main queue once WCSession has activated, or after 2 s if it hasn't.
+  func whenActivated(_ body: @escaping () -> Void) {
+    guard WCSession.isSupported(), WCSession.default.activationState != .activated else {
+      body()
+      return
+    }
+    waiting.append(body)
+    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in self?.flush() }
+  }
+
+  private func flush() {
+    let pending = waiting
+    waiting = []
+    pending.forEach { $0() }
+  }
+
   var isPaired: Bool { WCSession.isSupported() && WCSession.default.isPaired }
   var isWatchAppInstalled: Bool { WCSession.isSupported() && WCSession.default.isWatchAppInstalled }
 
-  func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
+  func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+    DispatchQueue.main.async { self.flush() }
+  }
   func sessionDidBecomeInactive(_ session: WCSession) {}
   func sessionDidDeactivate(_ session: WCSession) {
     WCSession.default.activate()

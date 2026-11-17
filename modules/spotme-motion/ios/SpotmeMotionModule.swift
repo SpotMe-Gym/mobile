@@ -52,11 +52,12 @@ public class SpotmeMotionModule: Module {
           }
           let file = try SpotmeMotionModule.storeDirectory().appendingPathComponent("\(name).jpg")
           try data.write(to: file, options: .atomic)
+          let duration = CMTimeGetSeconds(video.duration)
           let info: [String: Any] = [
             "uri": file.absoluteString,
             "width": picture.width,
             "height": picture.height,
-            "duration": CMTimeGetSeconds(video.duration),
+            "duration": duration.isFinite ? duration : 0,
           ]
           promise.resolve(info)
         } catch {
@@ -168,7 +169,7 @@ public class SpotmeMotionModule: Module {
         // Each point on its own, so one lost tracker doesn't take the others with it.
         var samples: [Any] = []
         var first: CGPoint?
-        for tracker in trackers {
+        for (index, tracker) in trackers.enumerated() {
           guard let tracker = tracker, (try? sequence.perform([tracker], on: image)) != nil,
             let result = tracker.results?.first as? VNDetectedObjectObservation
           else {
@@ -177,7 +178,9 @@ public class SpotmeMotionModule: Module {
           }
           tracker.inputObservation = result
           let box = result.boundingBox
-          if first == nil { first = CGPoint(x: box.midX, y: box.midY) }
+          // The person is picked near the handle: only while its tracker is sure of it (the
+          // JS side's MIN_CONFIDENCE), so a lost handle doesn't point at someone else.
+          if index == 0, result.confidence >= 0.3 { first = CGPoint(x: box.midX, y: box.midY) }
           samples.append([
             round4(Double(box.midX)), round4(1 - Double(box.midY)), round4(Double(result.confidence)),
           ])
